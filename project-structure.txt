@@ -1,0 +1,385 @@
+-- ============================================================
+--  UEMS - University Exam Management System
+===============================================================
+
+| Component     | Tech                       |
+| ------------- | -------------------------- |
+| Database      | MySQL (XAMPP)              |
+| Backend API   | Next.js API routes         |
+| Frontend UI   | Next.js (React/TSX)        |
+| ORM / DB Tool | `mysql2/promise` (raw SQL) |
+| Shadcn        | tailwind v4                |
+
+i.e Lecturer → Question Bank → Paper Creation → Internal Review → Submit to HOD
+
+HOD Receives Paper → Quality Review → Provide Feedback → 
+    ↓
+[APPROVE] → Forward to Exam Department
+    ↓
+[REJECT] → Return to Lecturer with Comments → Lecturer Revises → Resubmit
+
+WORKFLOW:
+1. Lecturer creates paper (draft)
+2. Lecturer submits paper → status: 'submitted'
+3. HOD reviews → status: 'hod_review'
+4. HOD approves → status: 'hod_approved' → status: 'ready_for_print'
+5. Exam Master prints → status: 'printing' → 'printed'
+6. Paper published → status: 'published'
+
+NOTE: Dont generate files that I have ...I already have my data in my database 
+      so i wanna build the files ✅️
+
+# UEMS - Complete Project Structure
+## Updated with All Missing Pages & Components
+
+```
+📦 uems/
+│
+├── 📄 components.json (Config)
+├── ⚙️ eslint.config.mjs (Linting)
+├── ⚙️ next.config.ts (Next.js Config)
+├── 📄 next-env.d.ts (Types)
+├── 📦 package.json (Dependencies)
+├── 📦 package-lock.json (Lockfile)
+├── ⚙️ postcss.config.js (CSS)
+├── 📝 project-structure.txt (Docs)
+├── 📁 public/ (Static Assets)
+│   ├── 📁 static/
+│   │   └── 📁 images/
+│   │       ├── 🖼️ avatar.png
+│   │       ├── 🖼️ kiu-home.png
+│   │       ├── 🖼️ kiu-logo.png
+│   │       ├── 🖼️ kiu-Photoroom_black.png
+│   │       ├── 🖼️ kiu-Photoroom_white.png
+│   │       ├── 🖼️ kiu-seal.png
+│   │       └── 🖼️ logo.png
+│   └── 🖼️ vercel.svg
+├── 📄 README.md (Documentation)
+├── 📁 sql/ (Database)
+│   ├️🗃️ questions.sql
+│   ├️🗃️ schema.sql
+│   ├️🗃️ seed.sql
+│   └️🗃️ study_units.sql
+├── 📁 src/ (Source Code)
+│   ├── 📁 app/ (App Router)
+│   │   ├── 📁 api/ (API Routes)
+│   │   │   ├── 📁 approvals/
+│   │   │   │   ├── 📁 [paperId]/
+│   │   │   │   │   ├── 📁 approve/
+│   │   │   │   │   │   └── 🔧 route.ts
+│   │   │   │   │   └── 📁 reject/
+│   │   │   │   │       └── 🔧 route.ts
+│   │   │   │   ├── 📁 pending/
+│   │   │   │   │   └── 🔧 route.ts
+│   │   │   │   └── 🔧 route.ts
+│   │   │   ├── 📁 audit/
+│   │   │   │   └── 📁 logs/
+│   │   │   │       └── 🔧 route.ts
+│   │   │   ├── 📁 auth/
+│   │   │   │   ├── 📁 change-password/
+│   │   │   │   │   └── 🔧 route.ts
+│   │   │   │   ├── 📁 login/
+│   │   │   │   │   └── 🔧 route.ts
+│   │   │   │   ├── 📁 logout/
+│   │   │   │   │   └── 🔧 route.ts
+│   │   │   │   ├── 📁 me/
+│   │   │   │   │   └── 🔧 route.ts
+│   │   │   │   └── 📁 register/
+│   │   │   │       └── 🔧 route.ts
+│   │   │   ├── 📁 colleges/
+│   │   │   │   ├── 📁 [id]/
+│   │   │   │   │   └── 🔧 route.ts
+│   │   │   │   └── 🔧 route.ts
+│   │   │   ├── 📁 courses/
+│   │   │   │   ├── 📁 [id]/
+│   │   │   │   │   ├── 🔧 route.ts
+│   │   │   │   │   ├── 📁 stats/
+│   │   │   │   │   │   └── 🔧 route.ts
+│   │   │   │   │   └── 📁 study-units/
+│   │   │   │   │       ├── 🔧 route.ts
+│   │   │   │   │       └── 📁 [unitId]/
+│   │   │   │   │           └── 🔧 route.ts
+│   │   │   │   └── 🔧 route.ts
+│   │   │   ├── 📁 dashboard/
+│   │   │   │   └── 📁 stats/
+│   │   │   │       └── 🔧 route.ts
+│   │   │   ├── 📁 debug/
+│   │   │   │   └── 📁 db-check/
+│   │   │   │       └── 🔧 route.ts
+│   │   │   ├── 📁 departments/
+│   │   │   │   ├── 📁 [id]/
+│   │   │   │   │   └── 🔧 route.ts
+│   │   │   │   └── 🔧 route.ts
+│   │   │   ├── 📁 exam-papers/
+│   │   │   │   ├── 📁 create/
+│   │   │   │   │   └── 🔧 route.ts
+│   │   │   │   ├── 📁 [paperId]/
+│   │   │   │   │   ├── 📁 approve/
+│   │   │   │   │   │   └── 🔧 route.ts
+│   │   │   │   │   ├── 📁 comments/
+│   │   │   │   │   │   └── 🔧 route.ts
+│   │   │   │   │   ├── 📁 complete-print/
+│   │   │   │   │   │   └── 🔧 route.ts
+│   │   │   │   │   ├── 📁 history/
+│   │   │   │   │   │   └── 🔧 route.ts
+│   │   │   │   │   ├── 📁 publish/
+│   │   │   │   │   │   └── 🔧 route.ts
+│   │   │   │   │   ├── 📁 questions/
+│   │   │   │   │   │   ├── 📁 [questionId]/
+│   │   │   │   │   │   │   └── 🔧 route.ts
+│   │   │   │   │   │   └── 🔧 route.ts
+│   │   │   │   │   ├── 📁 ready-for-print/
+│   │   │   │   │   │   └── 🔧 route.ts
+│   │   │   │   │   ├── 🔧 route.ts
+│   │   │   │   │   ├── 📁 start-print/
+│   │   │   │   │   ├── 📁 submit/
+│   │   │   │   │   │   └── 🔧 route.ts
+│   │   │   │   │   └── 📁 workflow/
+│   │   │   │   │       └── 🔧 route.ts
+│   │   │   │   └── 🔧 route.ts
+│   │   │   ├── 📁 notifications/
+│   │   │   │   ├── 📁 feedback/
+│   │   │   │   │   └── 🔧 route.ts
+│   │   │   │   ├── 📁 history/
+│   │   │   │   │   └── 🔧 route.ts
+│   │   │   │   ├── 📁 [id]/
+│   │   │   │   │   ├── 📁 read/
+│   │   │   │   │   │   └── 🔧 route.ts
+│   │   │   │   │   └── 🔧 route.ts
+│   │   │   │   ├── 📁 mark-all-read/
+│   │   │   │   │   └── 🔧 route.ts
+│   │   │   │   └── 🔧 route.ts
+│   │   │   ├── 📁 paper-comments/
+│   │   │   │   └── 📁 [id]/
+│   │   │   │       └── 📁 resolve/
+│   │   │   │           └── 🔧 route.ts
+│   │   │   ├── 📁 permissions/
+│   │   │   │   ├── 📁 grant/
+│   │   │   │   │   └── 🔧 route.ts
+│   │   │   │   ├── 📁 [id]/
+│   │   │   │   │   └── 🔧 route.ts
+│   │   │   │   └── 🔧 route.ts
+│   │   │   ├── 📁 print-queue/
+│   │   │   │   ├── 📁 history/
+│   │   │   │   │   └── 🔧 route.ts
+│   │   │   │   ├── 📁 [paperId]/
+│   │   │   │   │   ├── 📁 complete/
+│   │   │   │   │   │   └── 🔧 route.ts
+│   │   │   │   │   ├── 🔧 route.ts
+│   │   │   │   │   └── 📁 start/
+│   │   │   │   │       └── 🔧 route.ts
+│   │   │   │   └── 🔧 route.ts
+│   │   │   ├── 📁 programmes/
+│   │   │   │   ├── 📁 [id]/
+│   │   │   │   │   └── 🔧 route.ts
+│   │   │   │   └── 🔧 route.ts
+│   │   │   ├── 📁 question-bank/
+│   │   │   │   ├── 📁 create/
+│   │   │   │   │   └── 🔧 route.ts
+│   │   │   │   ├── 📁 [id]/
+│   │   │   │   │   └── 🔧 route.ts
+│   │   │   │   └── 🔧 route.ts
+│   │   │   ├── 📁 questions/
+│   │   │   │   └── 🔧 route.ts
+│   │   │   ├── 📁 reports/
+│   │   │   │   ├── 📁 dashboard/
+│   │   │   │   │   └── 🔧 route.ts
+│   │   │   │   ├── 📁 papers/
+│   │   │   │   │   └── 🔧 route.ts
+│   │   │   │   ├── 📁 questions/
+│   │   │   │   │   └── 🔧 route.ts
+│   │   │   │   └── 📁 workflow/
+│   │   │   │       └── 🔧 route.ts
+│   │   │   ├── 📁 stats/
+│   │   │   │   ├── 📁 profile/
+│   │   │   │   │   └── 🔧 route.ts
+│   │   │   │   ├── 📁 recent-activity/
+│   │   │   │   │   └── 🔧 route.ts
+│   │   │   │   └── 🔧 route.ts
+│   │   │   ├── 📁 study-units/
+│   │   │   │   └── 🔧 route.ts
+│   │   │   ├── 📁 users/
+│   │   │   │   ├── 📁 [id]/
+│   │   │   │   │   ├── 🔧 route.ts
+│   │   │   │   │   └── 📁 stats/
+│   │   │   │   │       └── 🔧 route.ts
+│   │   │   │   └── 🔧 route.ts
+│   │   │   └── 📁 workflows/
+│   │   │       ├── 📁 feedback/
+│   │   │       │   └── 🔧 route.ts
+│   │   │       ├── 📁 history/
+│   │   │       │   └── 🔧 route.ts
+│   │   │       ├── 📁 inbox/
+│   │   │       │   └── 🔧 route.ts
+│   │   │       └── 📁 outbox/
+│   │   │           └── 🔧 route.ts
+│   │   ├── 📁 auth/ (Auth Pages)
+│   │   │   ├── 📁 forgot-password/
+│   │   │   │   └── 📄 page.tsx
+│   │   │   ├── 📄 layout.tsx
+│   │   │   ├── 📁 login/
+│   │   │   │   └── 📄 page.tsx
+│   │   │   ├── 📁 register/
+│   │   │   │   └── 📄 page.tsx
+│   │   │   └── 📁 reset-password/
+│   │   │       └── 📄 page.tsx
+│   │   ├── 📁 (dashboard)/ (Dashboard Pages)
+│   │   │   ├── 📁 approvals/
+│   │   │   │   ├── 📄 page.tsx
+│   │   │   │   └── 📁 [paperId]/
+│   │   │   │       └── 📄 page.tsx
+│   │   │   ├── 📁 audit/
+│   │   │   │   └── 📄 page.tsx
+│   │   │   ├── 📁 colleges/
+│   │   │   │   ├── 📁 create/
+│   │   │   │   │   └── 📄 page.tsx
+│   │   │   │   ├── 📁 edit/
+│   │   │   │   │   └── 📁 [id]/
+│   │   │   │   │       └── 📄 page.tsx
+│   │   │   │   ├── 📁 [id]/
+│   │   │   │   │   ├── 📁 departments/
+│   │   │   │   │   │   ├── 📁 create/
+│   │   │   │   │   │   │   └── 📄 page.tsx
+│   │   │   │   │   │   ├── 📁 [deptId]/
+│   │   │   │   │   │   │   ├── 📁 edit/
+│   │   │   │   │   │   │   │   └── 📄 page.tsx
+│   │   │   │   │   │   │   └── 📄 page.tsx
+│   │   │   │   │   │   └── 📄 page.tsx
+│   │   │   │   │   └── 📄 page.tsx
+│   │   │   │   └── 📄 page.tsx
+│   │   │   ├── 📁 courses/
+│   │   │   │   ├── 📁 create/
+│   │   │   │   │   └── 📄 page.tsx
+│   │   │   │   ├── 📁 edit/
+│   │   │   │   │   └── 📁 [id]/
+│   │   │   │   │       └── 📄 page.tsx
+│   │   │   │   ├── 📁 [id]/
+│   │   │   │   │   ├── 📄 page.tsx
+│   │   │   │   │   └── 📁 study-units/
+│   │   │   │   │       ├── 📁 create/
+│   │   │   │   │       │   └── 📄 page.tsx
+│   │   │   │   │       ├── 📄 page.tsx
+│   │   │   │   │       └── 📁 [unitId]/
+│   │   │   │   │           ├── 📁 edit/
+│   │   │   │   │           │   └── 📄 page.tsx
+│   │   │   │   │           └── 📄 page.tsx
+│   │   │   │   └── 📄 page.tsx
+│   │   │   ├── 📁 exam-papers/
+│   │   │   │   ├── 📁 create/
+│   │   │   │   │   └── 📄 page.tsx
+│   │   │   │   ├── 📄 page.tsx
+│   │   │   │   ├── 📁 [paperId]/
+│   │   │   │   │   ├── 📁 edit/
+│   │   │   │   │   │   └── 📄 page.tsx
+│   │   │   │   │   ├── 📄 page.tsx
+│   │   │   │   │   ├── 📁 preview/
+│   │   │   │   │   │   └── 📄 page.tsx
+│   │   │   │   │   └── 📁 select-questions/
+│   │   │   │   │       └── 📄 page.tsx
+│   │   │   │   └── 📁 submitted/
+│   │   │   │       └── 📄 page.tsx
+│   │   │   ├── 📁 notifications/
+│   │   │   │   ├── 📁 feedback/
+│   │   │   │   │   └── 📄 page.tsx
+│   │   │   │   ├── 📁 history/
+│   │   │   │   │   └── 📄 page.tsx
+│   │   │   │   ├── 📁 inbox/
+│   │   │   │   │   └── 📄 page.tsx
+│   │   │   │   ├── 📁 outbox/
+│   │   │   │   │   └── 📄 page.tsx
+│   │   │   │   └── 📄 page.tsx
+│   │   │   ├── 📄 page.tsx (Dashboard Home)
+│   │   │   ├── 📁 permissions/
+│   │   │   │   ├── 📁 debug/
+│   │   │   │   │   └── 📄 page.tsx
+│   │   │   │   ├── 📁 grant/
+│   │   │   │   │   └── 📄 page.tsx
+│   │   │   │   ├── 📁 [id]/
+│   │   │   │   │   ├── 📁 edit/
+│   │   │   │   │   │   └── 📄 page.tsx
+│   │   │   │   │   └── 📄 page.tsx
+│   │   │   │   └── 📄 page.tsx
+│   │   │   ├── 📁 print-queue/
+│   │   │   │   ├── 📁 history/
+│   │   │   │   │   └── 📄 page.tsx
+│   │   │   │   ├── 📄 page.tsx
+│   │   │   │   └── 📁 [paperId]/
+│   │   │   │       ├── 📄 page.tsx
+│   │   │   │       └── 📁 print/
+│   │   │   │           └── 📄 page.tsx
+│   │   │   ├── 📁 profile/
+│   │   │   │   └── 📄 page.tsx
+│   │   │   ├── 📁 programmes/
+│   │   │   │   ├── 📁 create/
+│   │   │   │   │   └── 📄 page.tsx
+│   │   │   │   ├── 📁 edit/
+│   │   │   │   │   └── 📁 [id]/
+│   │   │   │   │       └── 📄 page.tsx
+│   │   │   │   ├── 📁 [id]/
+│   │   │   │   │   └── 📄 page.tsx
+│   │   │   │   ├── 📁 import/
+│   │   │   │   │   └── 📄 page.tsx
+│   │   │   │   └── 📄 page.tsx
+│   │   │   ├── 📁 question-bank/
+│   │   │   │   ├── 📁 create/
+│   │   │   │   │   └── 📄 page.tsx
+│   │   │   │   ├── 📁 edit/
+│   │   │   │   │   └── 📁 [id]/
+│   │   │   │   │       └── 📄 page.tsx
+│   │   │   │   └── 📄 page.tsx
+│   │   │   ├── 📁 reports/
+│   │   │   │   ├── 📄 page.tsx
+│   │   │   │   ├── 📁 papers/
+│   │   │   │   │   └── 📄 page.tsx
+│   │   │   │   ├── 📁 questions/
+│   │   │   │   │   └── 📄 page.tsx
+│   │   │   │   └── 📁 workflow/
+│   │   │   │       └── 📄 page.tsx
+│   │   │   ├── 📁 settings/
+│   │   │   │   ├── 📄 page.tsx
+│   │   │   │   ├── 📁 preferences/
+│   │   │   │   │   └── 📄 page.tsx
+│   │   │   │   ├── 📁 profile/
+│   │   │   │   │   └── 📄 page.tsx
+│   │   │   │   ├── 📁 security/
+│   │   │   │   │   └── 📄 page.tsx
+│   │   │   │   └── 📁 system/
+│   │   │   │       └── 📄 page.tsx
+│   │   │   └── 📁 users/
+│   │   │       ├── 📁 create/
+│   │   │       │   └── 📄 page.tsx
+│   │   │       ├── 📁 [id]/
+│   │   │       │   ├── 📁 edit/
+│   │   │       │   │   └── 📄 page.tsx
+│   │   │       │   └── 📄 page.tsx
+│   │   │       ├── 📁 import/
+│   │   │       │   └── 📄 page.tsx
+│   │   │       └── 📄 page.tsx
+│   │   ├── 🖼️ favicon.ico
+│   │   ├── 🎨 globals.css (Global Styles)
+│   │   ├️📄 globals.d.ts (Types)
+│   │   ├️📄 layout.tsx (Root Layout)
+│   │   ├️📄 not-found.tsx (404 Page)
+│   │   ├️🎨 page.module.css
+│   │   ├️🤖 robots.ts
+│   │   └️🔍 seo.tsx (SEO Component)
+│   ├── 📁 components/ (React Components)
+│   │   ├── 📁 ui/ (UI Components)
+│   ├── 📁 data/ (Static Data)
+│   │   ├️📊 headerNavLinks.ts
+│   │   └️📊 siteMetadata.js
+│   ├── 📁 lib/ (Utilities & Libraries)
+│   │   ├️🔧 auditLogger.ts
+│   │   ├️🔐 auth.ts
+│   │   ├️🗄️ db.ts
+│   │   ├️🔧 generateSearchJson.ts
+│   │   ├️🔐 rbac.ts
+│   │   └️🔧 utils.ts
+│   ├── 🔀 proxy.ts
+│   └── 📁 types/ (TypeScript Types)
+│       ├️📄 css.d.ts
+│       ├️📄 env.d.ts
+│       ├️📄 index.ts
+│       └️📄 siteMetadata.d.ts
+├️⚙️ tailwind.config.js (Tailwind Config)
+└️⚙️ tsconfig.json (TypeScript Config)
