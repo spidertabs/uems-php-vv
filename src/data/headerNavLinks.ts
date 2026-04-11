@@ -1,9 +1,9 @@
-// data/headerNavLinks.ts
+// src/data/headerNavLinks.ts
 export interface NavLink {
   title: string;
   href: string;
   emoji?: string;
-  roles?: string[]; // Restrict by user role
+  roles?: string[];
 }
 
 const headerNavLinks: NavLink[] = [
@@ -11,18 +11,18 @@ const headerNavLinks: NavLink[] = [
   {
     title: '📊 Dashboard',
     href: '/',
-    roles: ['lecturer', 'hod', 'dean', 'exam_master', 'admin'],
+    roles: ['lecturer', 'hod', 'dean', 'exam_master', 'admin', 'viva_coordinator'],
   },
   {
     title: '👤 Profile',
     href: '/profile',
   },
-  
+
   // Academic Content
   {
     title: '📬 Notifications',
     href: '/notifications/',
-    roles: ['lecturer', 'hod', 'dean', 'exam_master', 'admin'],
+    roles: ['lecturer', 'hod', 'dean', 'exam_master', 'admin', 'viva_coordinator'],
   },
   {
     title: '✅ Approvals',
@@ -34,7 +34,7 @@ const headerNavLinks: NavLink[] = [
     href: '/exam-papers',
     roles: ['lecturer', 'hod', 'exam_master', 'admin'],
   },
-    {
+  {
     title: '📝 Question Bank',
     href: '/question-bank',
     roles: ['lecturer', 'hod', 'admin'],
@@ -46,7 +46,7 @@ const headerNavLinks: NavLink[] = [
     href: '/courses',
     roles: ['admin', 'hod'],
   },
-    {
+  {
     title: '🎓 Programmes',
     href: '/programmes',
     roles: ['admin', 'hod'],
@@ -56,15 +56,36 @@ const headerNavLinks: NavLink[] = [
     href: '/colleges',
     roles: ['admin', 'hod'],
   },
+
   // Workflow & Communication
-
-
   {
     title: '🖨️ Print Queue',
     href: '/print-queue',
     roles: ['exam_master', 'admin'],
   },
-  
+
+  // ── PhD Viva Voce ─────────────────────────────────────────
+  {
+    title: '🎓 PhD Dashboard',
+    href: '/phd',
+    roles: ['viva_coordinator', 'admin', 'dean'],
+  },
+  {
+    title: '👨‍🎓 Candidates',
+    href: '/phd/candidates',
+    roles: ['viva_coordinator', 'admin'],
+  },
+  {
+    title: '📅 Viva Schedules',
+    href: '/phd/schedules',
+    roles: ['viva_coordinator', 'admin'],
+  },
+  {
+    title: '📋 PhD Reports',
+    href: '/phd/reports',
+    roles: ['viva_coordinator', 'admin', 'dean'],
+  },
+
   // Management & Reports
   {
     title: '👥 Users',
@@ -86,12 +107,12 @@ const headerNavLinks: NavLink[] = [
     href: '/audit',
     roles: ['admin', 'dean', 'hod'],
   },
-  
-  // Bottom Section (Settings will be separated in layout)
+
+  // Bottom Section
   {
     title: '⚙️ Settings',
     href: '/settings',
-    roles: ['lecturer', 'hod', 'dean', 'exam_master', 'admin'],
+    roles: ['lecturer', 'hod', 'dean', 'exam_master', 'admin', 'viva_coordinator'],
   },
 ];
 

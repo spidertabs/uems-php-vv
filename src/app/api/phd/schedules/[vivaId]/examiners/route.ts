@@ -1,0 +1,150 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { NextRequest, NextResponse } from 'next/server';
+import { verifyAuth } from '@/lib/auth';
+import { query } from '@/lib/db';
+import { notifyExaminerAssigned } from '@/lib/phd/notifications';
+
+export async function GET(
+  req: NextRequest,
+  context: { params: Promise<{ vivaId: string }> }
+) {
+  try {
+    const user = await verifyAuth(req);
+    if (!user || !['viva_coordinator', 'admin', 'hod'].includes(user.role)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    }
+
+    const { vivaId: vivaIdStr } = await context.params;
+    const vivaId = parseInt(vivaIdStr);
+
+    const examiners = await query<any[]>(
+      `SELECT ve.id, ve.viva_id, ve.examiner_id, ve.role, 
+              ve.confirmed, ve.confirmed_at, ve.created_at, ve.updated_at,
+              u.email, u.first_name, u.last_name
+       FROM viva_examiners ve
+       JOIN users u ON ve.examiner_id = u.id
+       WHERE ve.viva_id = ?
+       ORDER BY ve.role, u.last_name`,
+      [vivaId]
+    );
+
+    return NextResponse.json(examiners);
+  } catch (error) {
+    console.error('Error fetching examiners:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch examiners' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(
+  req: NextRequest,
+  context: { params: Promise<{ vivaId: string }> }
+) {
+  try {
+    const user = await verifyAuth(req);
+    if (!user || !['viva_coordinator', 'admin'].includes(user.role)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    }
+
+    const { vivaId: vivaIdStr } = await context.params;
+    const vivaId = parseInt(vivaIdStr);
+    const body = await req.json();
+    const { examiner_id, role } = body;
+
+    if (!examiner_id || !role) {
+      return NextResponse.json(
+        { error: 'Missing required fields' },
+        { status: 400 }
+      );
+    }
+
+    const validRoles = ['chairperson', 'internal_examiner', 'external_examiner'];
+    if (!validRoles.includes(role)) {
+      return NextResponse.json(
+        { error: 'Invalid role' },
+        { status: 400 }
+      );
+    }
+
+    // Check viva exists
+    const viva = await query<any[]>(
+      'SELECT id FROM viva_schedules WHERE id = ?',
+      [vivaId]
+    );
+
+    if (!viva || viva.length === 0) {
+      return NextResponse.json(
+        { error: 'Schedule not found' },
+        { status: 404 }
+      );
+    }
+
+    // Check examiner exists
+    const examiner = await query<any[]>(
+      'SELECT id FROM users WHERE id = ?',
+      [examiner_id]
+    );
+
+    if (!examiner || examiner.length === 0) {
+      return NextResponse.json(
+        { error: 'Examiner not found' },
+        { status: 404 }
+      );
+    }
+
+    // Validation: max 1 chairperson
+    if (role === 'chairperson') {
+      const existingChairperson = await query<any[]>(
+        `SELECT id FROM viva_examiners WHERE viva_id = ? AND role = 'chairperson'`,
+        [vivaId]
+      );
+
+      if (existingChairperson && existingChairperson.length > 0) {
+        return NextResponse.json(
+          { error: 'A chairperson is already assigned' },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Check for duplicate role+examiner per viva
+    const existing = await query<any[]>(
+      `SELECT id FROM viva_examiners WHERE viva_id = ? AND examiner_id = ? AND role = ?`,
+      [vivaId, examiner_id, role]
+    );
+
+    if (existing && existing.length > 0) {
+      return NextResponse.json(
+        { error: 'This examiner is already assigned with this role' },
+        { status: 400 }
+      );
+    }
+
+    // Assign examiner
+    const result = await query<any>(
+      `INSERT INTO viva_examiners (viva_id, examiner_id, role, confirmed, created_at, updated_at)
+       VALUES (?, ?, ?, FALSE, NOW(), NOW())`,
+      [vivaId, examiner_id, role]
+    );
+
+    // Notify assigned examiner via centralised helper
+    await notifyExaminerAssigned(vivaId, examiner_id);
+
+    // Audit log
+    await query(
+      `INSERT INTO audit_logs (user_id, action, table_name, record_id, new_values, created_at)
+       VALUES (?, 'CREATE', 'viva_examiners', ?, ?, NOW())`,
+      [user.id, (result as any).insertId, JSON.stringify({ viva_id: vivaId, examiner_id, role })]
+    );
+
+    return NextResponse.json({ id: result.insertId }, { status: 201 });
+  } catch (error) {
+    console.error('Error assigning examiner:', error);
+    return NextResponse.json(
+      { error: 'Failed to assign examiner' },
+      { status: 500 }
+    );
+  }
+}

@@ -13,7 +13,7 @@ export interface UserPayload {
   email: string;
   first_name: string;
   last_name: string;
-  role: 'lecturer' | 'hod' | 'dean' | 'exam_master' | 'admin';
+  role: 'lecturer' | 'hod' | 'dean' | 'exam_master' | 'admin' | 'viva_coordinator';
   department_id: number | null;
   college_id: number | null;
 }

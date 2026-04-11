@@ -321,6 +321,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       dean: 'bg-purple-500',
       hod: 'bg-indigo-500',
       lecturer: 'bg-blue-500',
+      viva_coordinator: 'bg-emerald-600',
     };
     return colors[role] || 'bg-gray-500';
   };
@@ -332,6 +333,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       dean: '🎓',
       hod: '📚',
       lecturer: '👨‍🏫',
+      viva_coordinator: '🔬',
     };
     return icons[role] || '👤';
   };

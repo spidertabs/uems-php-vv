@@ -797,3 +797,69 @@ export async function canManageUser(managerId: number, targetUserId: number): Pr
     return false;
   }
 }
+
+// =====================================================
+// PHASE E — PhD Viva Voce RBAC helpers
+// =====================================================
+
+/**
+ * Returns true if the user has the viva_coordinator role (or is admin).
+ * Use this for coordinator-only actions (scheduling, recommendation, etc.)
+ */
+export function isVivaCoordinator(user: UserPayload): boolean {
+  return user.role === 'viva_coordinator' || user.role === 'admin';
+}
+
+/**
+ * Returns true if the user is assigned as an examiner for the given vivaId.
+ * Use this to gate the evaluation form and evaluation API routes.
+ */
+export async function isPhdExaminerFor(userId: number, vivaId: number): Promise<boolean> {
+  try {
+    const rows = await query<any[]>(
+      'SELECT id FROM viva_examiners WHERE viva_id = ? AND examiner_id = ? LIMIT 1',
+      [vivaId, userId]
+    );
+    return rows.length > 0;
+  } catch (error) {
+    console.error('Error checking examiner assignment:', error);
+    return false;
+  }
+}
+
+/**
+ * Returns true if the user is the supervisor (or co-supervisor) of the candidate
+ * associated with the given vivaId.
+ * Use this to gate supervisor-facing views (candidate detail, report).
+ */
+export async function isCandidateSupervisorForViva(
+  userId: number,
+  vivaId: number
+): Promise<boolean> {
+  try {
+    const rows = await query<any[]>(
+      `SELECT pc.id
+       FROM viva_schedules vs
+       JOIN phd_candidates pc ON vs.candidate_id = pc.id
+       WHERE vs.id = ?
+         AND (pc.supervisor_id = ? OR pc.co_supervisor_id = ?)
+       LIMIT 1`,
+      [vivaId, userId, userId]
+    );
+    return rows.length > 0;
+  } catch (error) {
+    console.error('Error checking supervisor for viva:', error);
+    return false;
+  }
+}
+
+/**
+ * Returns true if the user can VIEW a given viva's detail page.
+ * Grants access to: coordinator, admin, dean, assigned examiner, supervisor.
+ */
+export async function canViewViva(user: UserPayload, vivaId: number): Promise<boolean> {
+  if (['viva_coordinator', 'admin', 'dean'].includes(user.role)) return true;
+  if (await isPhdExaminerFor(user.id, vivaId)) return true;
+  if (await isCandidateSupervisorForViva(user.id, vivaId)) return true;
+  return false;
+}
