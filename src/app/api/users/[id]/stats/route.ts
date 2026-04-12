@@ -6,7 +6,7 @@ import { verifyAuth } from '@/lib/auth';
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await verifyAuth(req);
@@ -14,7 +14,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const userId = parseInt(params.id);
+    const { id: rawId } = await context.params; const userId = parseInt(rawId);
 
     // Users can view their own stats, admins can view anyone's
     if (user.id !== userId && user.role !== 'admin') {

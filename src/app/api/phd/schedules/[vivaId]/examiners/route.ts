@@ -19,7 +19,7 @@ export async function GET(
 
     const examiners = await query<any[]>(
       `SELECT ve.id, ve.viva_id, ve.examiner_id, ve.role, 
-              ve.confirmed, ve.confirmed_at, ve.created_at, ve.updated_at,
+              ve.confirmed, ve.confirmed_at, ve.notified_at,
               u.email, u.first_name, u.last_name
        FROM viva_examiners ve
        JOIN users u ON ve.examiner_id = u.id

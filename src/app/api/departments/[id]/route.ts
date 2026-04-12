@@ -5,10 +5,10 @@ import { query } from '@/lib/db';
 // GET single department
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const deptId = params.id;
+    const deptId = (await context.params).id;
 
     const departments = await query(
       `SELECT 
@@ -42,10 +42,10 @@ export async function GET(
 // PUT - Update department
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const deptId = params.id;
+    const deptId = (await context.params).id;
     const body = await request.json();
     const { code, name, description } = body;
 
@@ -117,10 +117,10 @@ export async function PUT(
 // DELETE - Delete department
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const deptId = params.id;
+    const deptId = (await context.params).id;
 
     // Check if department exists
     const existing = await query(

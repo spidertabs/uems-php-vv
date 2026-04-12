@@ -8,7 +8,7 @@ import { verifyAuth } from '@/lib/auth';
 // PUT /api/paper-comments/[id]/resolve - Mark comment as resolved
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await verifyAuth(req);
@@ -16,7 +16,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const commentId = parseInt(params.id);
+    const commentId = parseInt((await context.params).id);
 
     // Verify the comment exists and user has permission
     const comment = await query<any[]>(

@@ -8,7 +8,7 @@ import { verifyAuth } from '@/lib/auth';
 // DELETE /api/notifications/[id] - Delete a notification
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await verifyAuth(req);
@@ -16,7 +16,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const notificationId = parseInt(params.id);
+    const notificationId = parseInt((await context.params).id);
 
     // Verify ownership
     const notification = await query<any[]>(

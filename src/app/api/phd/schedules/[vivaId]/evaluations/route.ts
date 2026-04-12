@@ -25,7 +25,6 @@ export async function GET(
               ve.presentation_score, ve.literature_score,
               ve.strengths, ve.weaknesses, ve.recommended_corrections, 
               ve.general_comments, ve.is_submitted, ve.submitted_at,
-              ve.created_at, ve.updated_at,
               u.email, u.first_name, u.last_name
        FROM viva_evaluations ve
        JOIN users u ON ve.examiner_id = u.id

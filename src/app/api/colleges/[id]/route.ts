@@ -65,10 +65,10 @@ export async function GET(request: NextRequest) {
 // PUT - Update college
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const collegeId = parseId(params.id);
+    const collegeId = parseId((await context.params).id);
     if (collegeId === null) {
       return NextResponse.json(
         { error: 'Invalid college ID' },
@@ -140,10 +140,10 @@ export async function PUT(
 // DELETE - Delete college
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const collegeId = parseId(params.id);
+    const collegeId = parseId((await context.params).id);
     if (collegeId === null) {
       return NextResponse.json(
         { error: 'Invalid college ID' },

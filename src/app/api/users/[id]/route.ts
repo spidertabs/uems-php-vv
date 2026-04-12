@@ -8,7 +8,7 @@ import bcrypt from 'bcryptjs';
 // GET /api/users/[id] - Get single user
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await verifyAuth(req);
@@ -16,7 +16,8 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const userId = parseInt(params.id);
+    const { id } = await context.params;
+  const userId = parseInt(id);
 
     // Users can view their own profile, admins can view anyone
     if (user.id !== userId && user.role !== 'admin') {
@@ -66,7 +67,7 @@ export async function GET(
 // PUT /api/users/[id] - Update user
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await verifyAuth(req);
@@ -74,7 +75,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const userId = parseInt(params.id);
+    const { id: rawId } = await context.params; const userId = parseInt(rawId);
 
     // Users can update their own profile, admins can update anyone
     if (user.id !== userId && user.role !== 'admin') {
@@ -213,7 +214,7 @@ export async function PUT(
 // DELETE /api/users/[id] - Soft delete user
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await verifyAuth(req);
@@ -226,7 +227,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const userId = parseInt(params.id);
+    const { id: rawId } = await context.params; const userId = parseInt(rawId);
 
     // Prevent deleting yourself
     if (user.id === userId) {

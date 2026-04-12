@@ -37,6 +37,7 @@ A unified digital platform for managing the complete academic examination lifecy
 ### Problem Statement
 
 Traditional examination management involves:
+
 - ❌ Manual paper handling and version control
 - ❌ Disconnected approval workflows
 - ❌ Lack of audit trails
@@ -48,6 +49,7 @@ Traditional examination management involves:
 ### Our Solution
 
 UEMS-PHD-VV provides:
+
 - ✅ Digital question bank with categorisation
 - ✅ Automated approval workflows (Lecturer → HOD → Exam Master)
 - ✅ Real-time notifications and status tracking
@@ -65,6 +67,7 @@ UEMS-PHD-VV provides:
 ## ✨ Key Features
 
 ### 📚 Question Bank Management
+
 - Create and categorise questions by course, study unit, and difficulty
 - Support for multiple question types (MCQ, Essay, Practical, Case Study, etc.)
 - Bloom's taxonomy classification
@@ -72,6 +75,7 @@ UEMS-PHD-VV provides:
 - HOD approval workflow for questions
 
 ### 📝 Exam Paper Creation
+
 - Visual paper builder with drag-and-drop
 - **Hierarchical question support** with unlimited nesting levels
 - Section management (Section A, B, C, etc.)
@@ -81,15 +85,18 @@ UEMS-PHD-VV provides:
 - Real-time preview
 
 ### ✅ Exam Paper Approval Workflow
+
 ```
 Draft → Submit → HOD Review → HOD Approval → Ready for Print → Printing → Printed → Published
 ```
+
 - Multi-stage approval process
 - Feedback and comments at each stage
 - Full version history with snapshots
 - In-app notifications at every transition
 
 ### 🖨️ Print Management
+
 - Centralised print queue for Exam Master
 - Track printing status and quantities
 - Print history and audit trail
@@ -98,32 +105,39 @@ Draft → Submit → HOD Review → HOD Approval → Ready for Print → Printin
 ### 🎓 PhD Viva Voce Administration *(New in v3.1)*
 
 #### Candidate Management
+
 - Register PhD candidates and link to their user account and programme
 - Track candidate status through the full doctoral lifecycle:
+
   ```
   Enrolled → Thesis Submitted → Viva Scheduled → Viva Completed
   → Corrections Pending → Corrections Submitted → Awarded / Withdrawn
   ```
+
 - Record supervisors and co-supervisors per candidate
 
 #### Thesis Submission Tracking
+
 - Upload and store thesis PDF versions
 - **Automatic version incrementing** on each re-submission (database trigger)
 - Submission notes and file metadata
 
 #### Viva Scheduling
+
 - Schedule oral defence sessions with date, time, venue, and duration
 - Manage status transitions: `scheduled → in_progress → completed` (or `postponed / cancelled`)
 - Record postponement reasons
 - Coordinator-assigned scheduling with full audit trail
 
 #### Examiner Panel Management
+
 - Assign three-member panels: **Chairperson**, **Internal Examiner**, **External Examiner**
 - Track individual confirmation status per examiner
 - Record notification timestamps
 - Prevent duplicate assignments (unique constraint per viva + examiner)
 
 #### Structured Evaluations
+
 - Each examiner submits an independent evaluation with four scored criteria:
 
   | Criterion | Max Marks |
@@ -139,6 +153,7 @@ Draft → Submit → HOD Review → HOD Approval → Ready for Print → Printin
 - `overall_score` is a **generated column** — always consistent, never manually entered
 
 #### Panel Recommendations
+
 - One binding recommendation per viva, issued by the Viva Coordinator:
   - `pass`
   - `pass_with_minor_corrections`
@@ -148,12 +163,14 @@ Draft → Submit → HOD Review → HOD Approval → Ready for Print → Printin
 - Final panel comments recorded centrally
 
 ### 👥 User Management
+
 - Role-based permissions (Lecturer, HOD, Dean, Exam Master, Viva Coordinator, Admin)
 - Granular course-level permissions
 - HOD can grant question creation rights to lecturers
 - Secure session-based authentication
 
 ### 📊 Reports & Analytics
+
 - Dashboard with key metrics across both modules
 - Paper statistics by status, course, and programme
 - Viva schedule overview (coordinator dashboard)
@@ -181,6 +198,7 @@ Draft → Submit → HOD Review → HOD Approval → Ready for Print → Printin
 ## 🔄 System Workflow
 
 ### Lecturer Journey
+
 1. **Create Paper**: Select course, exam type, and academic details
 2. **Add Questions**: Choose from question bank or add new questions
 3. **Add Sub-Questions**: Create hierarchical structures (e.g., 1a, 1b, 1b(i))
@@ -189,6 +207,7 @@ Draft → Submit → HOD Review → HOD Approval → Ready for Print → Printin
 6. **Receive Feedback**: View HOD comments and revise if needed
 
 ### HOD Journey
+
 1. **Review Submissions**: View pending papers in approval queue
 2. **Quality Check**: Review questions, marks, and structure
 3. **Provide Feedback**: Add comments or request revisions
@@ -196,6 +215,7 @@ Draft → Submit → HOD Review → HOD Approval → Ready for Print → Printin
 5. **Forward**: Approved papers move to print queue
 
 ### Exam Master Journey
+
 1. **View Print Queue**: See all papers ready for printing
 2. **Start Printing**: Mark paper as "printing"
 3. **Set Quantity**: Specify number of copies
@@ -203,6 +223,7 @@ Draft → Submit → HOD Review → HOD Approval → Ready for Print → Printin
 5. **Publish**: Make paper available for exam day
 
 ### Viva Coordinator Journey *(New)*
+
 1. **Register Candidate**: Create PhD candidate record linked to programme and supervisor
 2. **Track Thesis**: Log thesis submission(s); system auto-increments version numbers
 3. **Schedule Viva**: Set date, time, venue, and duration
@@ -212,6 +233,7 @@ Draft → Submit → HOD Review → HOD Approval → Ready for Print → Printin
 7. **Update Candidate Status**: System triggers automatically advance candidate status on key events
 
 ### PhD Candidate Status Flow *(New)*
+
 ```
 Enrolled
   └─→ Thesis Submitted       (coordinator logs thesis upload)
@@ -228,6 +250,7 @@ Enrolled
 ## 📸 Screenshots
 
 ### 🔐 Register Page
+
 *User registration interface for new accounts*
 
 ![Register](./public/screenshots/register_d.png)
@@ -235,6 +258,7 @@ Enrolled
 ---
 
 ### 🔐 Login Page
+
 *Secure authentication interface*
 
 ![Login](./public/screenshots/login.png)
@@ -242,6 +266,7 @@ Enrolled
 ---
 
 ### 🏠 Dashboard
+
 *Main dashboard showing system overview and key metrics across both modules*
 
 ![Dashboard](./public/screenshots/dashboard.png)
@@ -249,6 +274,7 @@ Enrolled
 ---
 
 ### 📋 Question Bank
+
 *Browse and manage questions by course and study unit*
 
 ![Question Bank](./public/screenshots/question-bank.png)
@@ -256,6 +282,7 @@ Enrolled
 ---
 
 ### ✍️ Exam Paper Creation
+
 *Create exam papers with visual question builder*
 
 ![Paper Creation](./public/screenshots/paper-creation.png)
@@ -263,6 +290,7 @@ Enrolled
 ---
 
 ### 🌳 Hierarchical Questions
+
 *Add sub-questions with unlimited nesting (a, b, c, i, ii, iii)*
 
 ![Hierarchical Questions](./public/screenshots/hierarchical-questions.png)
@@ -270,6 +298,7 @@ Enrolled
 ---
 
 ### 📄 Paper Preview
+
 *Preview formatted exam paper before submission*
 
 ![Paper Preview](./public/screenshots/paper-preview.png)
@@ -277,6 +306,7 @@ Enrolled
 ---
 
 ### ✅ Approval Workflow
+
 *HOD review and approval interface*
 
 ![Approval Workflow](./public/screenshots/approval-workflow.png)
@@ -284,6 +314,7 @@ Enrolled
 ---
 
 ### 🖨️ Print Queue
+
 *Exam Master print management dashboard*
 
 ![Print Queue](./public/screenshots/print-queue.png)
@@ -291,6 +322,7 @@ Enrolled
 ---
 
 ### 🎓 PhD Candidate Management *(New)*
+
 *Register and track PhD candidates through their full doctoral lifecycle*
 
 ![PhD Candidates](./public/screenshots/phd-candidates.png)
@@ -298,6 +330,7 @@ Enrolled
 ---
 
 ### 📤 Thesis Submissions *(New)*
+
 *Upload and version-track thesis documents per candidate*
 
 ![Thesis Submissions](./public/screenshots/thesis-submissions.png)
@@ -305,6 +338,7 @@ Enrolled
 ---
 
 ### 📅 Viva Scheduling *(New)*
+
 *Schedule oral defence sessions and manage panel assignments*
 
 ![Viva Schedule](./public/screenshots/viva-schedule.png)
@@ -312,6 +346,7 @@ Enrolled
 ---
 
 ### 👨‍⚖️ Examiner Panel *(New)*
+
 *Assign and confirm the three-member examination panel*
 
 ![Examiner Panel](./public/screenshots/examiner-panel.png)
@@ -319,6 +354,7 @@ Enrolled
 ---
 
 ### 📊 Viva Evaluations *(New)*
+
 *Structured per-examiner scoring across four assessment criteria*
 
 ![Viva Evaluations](./public/screenshots/viva-evaluations.png)
@@ -326,6 +362,7 @@ Enrolled
 ---
 
 ### 📋 Viva Recommendations *(New)*
+
 *Issue and record the panel's binding recommendation and outcome*
 
 ![Viva Recommendations](./public/screenshots/viva-recommendations.png)
@@ -333,6 +370,7 @@ Enrolled
 ---
 
 ### 🔔 Notifications
+
 *Real-time notifications for both exam paper events and viva milestones*
 
 ![Notifications](./public/screenshots/notifications.png)
@@ -340,6 +378,7 @@ Enrolled
 ---
 
 ### 📊 Reports & Analytics
+
 *Comprehensive reports spanning both the exam paper and viva voce modules*
 
 ![Reports](./public/screenshots/reports.png)
@@ -347,6 +386,7 @@ Enrolled
 ---
 
 ### 👥 User Management
+
 *Manage users, roles, and permissions including Viva Coordinator accounts*
 
 ![User Management](./public/screenshots/user-management.png)
@@ -354,6 +394,7 @@ Enrolled
 ---
 
 ### 🏛️ Organisational Structure
+
 *Manage colleges, departments, and programmes — shared across both modules*
 
 ![Organisational Structure](./public/screenshots/organizational-structure.png)
@@ -371,12 +412,14 @@ Enrolled
 ### Installation
 
 1. **Clone the repository**
+
    ```bash
    git clone https://github.com/spidertabs/uems.git
    cd uems
    ```
 
 2. **Install dependencies**
+
    ```bash
    npm install
    # or
@@ -386,6 +429,7 @@ Enrolled
 3. **Set up environment variables**
 
    Create a `.env.local` file in the root directory:
+
    ```env
    # Database Configuration
    DB_HOST=localhost
@@ -405,6 +449,7 @@ Enrolled
 4. **Set up the database**
 
    Start XAMPP and run the SQL scripts in order:
+
    ```bash
    mysql -u root -p
 
@@ -428,6 +473,7 @@ Enrolled
    ```
 
 5. **Run the development server**
+
    ```bash
    npm run dev
    ```
@@ -618,6 +664,7 @@ The schema is organised into 15 sections in a single `schema.sql` file.
 ## 👥 User Roles
 
 ### 🎓 Lecturer
+
 - Create exam papers for assigned courses
 - Add questions to the question bank (with HOD permission)
 - Submit papers for HOD approval
@@ -625,6 +672,7 @@ The schema is organised into 15 sections in a single `schema.sql` file.
 - Track paper status in real time
 
 ### 👔 HOD (Head of Department)
+
 - Create courses and study units
 - Create and approve questions
 - Grant course permissions to lecturers
@@ -632,18 +680,21 @@ The schema is organised into 15 sections in a single `schema.sql` file.
 - Serve as PhD supervisor or panel examiner
 
 ### 🏛️ Dean
+
 - Oversee college-level exam operations
 - Review papers across departments
 - Provide high-level feedback
 - Optional approval layer for final exams
 
 ### 🖨️ Exam Master
+
 - View all approved papers
 - Manage the print queue
 - Track printing status and quantities
 - Mark papers as printed or published
 
 ### 🎓 Viva Coordinator *(New)*
+
 - Register and manage PhD candidates
 - Log thesis submissions
 - Schedule viva sessions and assign examination panels
@@ -652,6 +703,7 @@ The schema is organised into 15 sections in a single `schema.sql` file.
 - Update candidate lifecycle status
 
 ### ⚙️ Admin
+
 - Full system access across both modules
 - User and role management
 - System configuration
@@ -663,6 +715,7 @@ The schema is organised into 15 sections in a single `schema.sql` file.
 ## 🔌 API Routes
 
 ### Authentication
+
 ```
 POST   /api/auth/login
 POST   /api/auth/logout
@@ -672,6 +725,7 @@ POST   /api/auth/change-password
 ```
 
 ### Exam Papers
+
 ```
 GET    /api/exam-papers
 POST   /api/exam-papers/create
@@ -686,6 +740,7 @@ DELETE /api/exam-papers/[paperId]/questions/[questionId]
 ```
 
 ### Question Bank
+
 ```
 GET    /api/question-bank
 POST   /api/question-bank/create
@@ -695,6 +750,7 @@ DELETE /api/question-bank/[id]
 ```
 
 ### Approvals
+
 ```
 GET    /api/approvals/pending
 POST   /api/approvals/[paperId]/approve
@@ -702,6 +758,7 @@ POST   /api/approvals/[paperId]/reject
 ```
 
 ### Print Queue
+
 ```
 GET    /api/print-queue
 GET    /api/print-queue/[paperId]
@@ -710,6 +767,7 @@ POST   /api/print-queue/[paperId]/complete
 ```
 
 ### PhD Candidates *(New)*
+
 ```
 GET    /api/phd/candidates
 POST   /api/phd/candidates/create
@@ -718,6 +776,7 @@ PUT    /api/phd/candidates/[candidateId]
 ```
 
 ### Thesis Submissions *(New)*
+
 ```
 GET    /api/phd/candidates/[candidateId]/thesis
 POST   /api/phd/candidates/[candidateId]/thesis/upload
@@ -725,6 +784,7 @@ GET    /api/phd/thesis/[thesisId]
 ```
 
 ### Viva Schedules *(New)*
+
 ```
 GET    /api/phd/schedules
 POST   /api/phd/schedules/create
@@ -735,6 +795,7 @@ POST   /api/phd/schedules/[vivaId]/postpone
 ```
 
 ### Viva Examiners *(New)*
+
 ```
 GET    /api/phd/schedules/[vivaId]/examiners
 POST   /api/phd/schedules/[vivaId]/examiners/assign
@@ -743,6 +804,7 @@ DELETE /api/phd/schedules/[vivaId]/examiners/[examinerId]
 ```
 
 ### Viva Evaluations *(New)*
+
 ```
 GET    /api/phd/schedules/[vivaId]/evaluations
 POST   /api/phd/evaluations/create
@@ -751,12 +813,14 @@ POST   /api/phd/evaluations/[evaluationId]/submit
 ```
 
 ### Viva Recommendations *(New)*
+
 ```
 GET    /api/phd/schedules/[vivaId]/recommendation
 POST   /api/phd/recommendations/create
 ```
 
 ### Notifications
+
 ```
 GET    /api/notifications
 POST   /api/notifications/[id]/read
@@ -768,6 +832,7 @@ POST   /api/notifications/mark-all-read
 ## 🎯 Development Roadmap
 
 ### ✅ Phase 1 (Completed — UEMS Core)
+
 - [x] Database schema design
 - [x] Authentication system
 - [x] Question bank CRUD
@@ -776,6 +841,7 @@ POST   /api/notifications/mark-all-read
 - [x] Print queue management
 
 ### ✅ Phase 2 (Completed — PhD Viva Voce Integration)
+
 - [x] Unified database schema (UEMS + Viva Voce)
 - [x] PhD candidate lifecycle management
 - [x] Thesis submission with auto-versioning
@@ -789,6 +855,7 @@ POST   /api/notifications/mark-all-read
 - [x] Full viva report stored procedure
 
 ### 🔄 Phase 3 (In Progress)
+
 - [ ] Bulk operations on exam papers
 - [ ] Advanced reporting and analytics dashboard
 - [ ] Full-text search and smart filters
@@ -796,6 +863,7 @@ POST   /api/notifications/mark-all-read
 - [ ] PDF export for exam papers and viva reports
 
 ### 📅 Phase 4 (Planned)
+
 - [ ] Plagiarism detection for thesis submissions
 - [ ] Mobile app (React Native)
 - [ ] AI-powered question suggestions
@@ -855,7 +923,7 @@ This project is licensed under the MIT Licence — see the [LICENCE](LICENCE) fi
 For questions, issues, or suggestions:
 
 - **Project Team**: Gava Hans, Ocen Isaac, Sempuwo Mathew David
-- **Email**: spider.tabs@gmail.com
+- **Email**: <spider.tabs@gmail.com>
 
 ---
 
@@ -864,6 +932,6 @@ For questions, issues, or suggestions:
   <p>
     <img src="./public/static/images/kiu-logo.png" alt="KIU Logo" width="100">
   </p>
-  <p><em>Gava Hans • Ocen Isaac • Sempuwo Mathew David</em></p>
+  <p><em>Gava Hans • Ocen Isaac • Kamuntu David • Sempuwo Mathew David</em></p>
   <p><strong>UEMS-PHD-VV v3.1</strong></p>
 </div>

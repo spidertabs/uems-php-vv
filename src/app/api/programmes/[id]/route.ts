@@ -9,7 +9,7 @@ import type { Programme } from '@/types';
 // GET single programme
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getUserFromSession();
@@ -30,7 +30,7 @@ export async function GET(
       LEFT JOIN departments d ON p.department_id = d.id
       LEFT JOIN colleges c ON p.college_id = c.id
       WHERE p.id = ?`,
-      [params.id]
+      [(await context.params).id]
     );
 
     if (programmes.length === 0) {
@@ -57,7 +57,7 @@ export async function GET(
 // PUT update programme
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getUserFromSession();
@@ -72,7 +72,7 @@ export async function PUT(
     // Get old values for audit
     const oldData = await query<Programme[]>(
       'SELECT * FROM programmes WHERE id = ?',
-      [params.id]
+      [(await context.params).id]
     );
 
     if (oldData.length === 0) {
@@ -113,7 +113,7 @@ export async function PUT(
       // Check for duplicate code (excluding current programme)
       const existing = await query<Programme[]>(
         'SELECT id FROM programmes WHERE code = ? AND id != ?',
-        [code, params.id]
+        [code, (await context.params).id]
       );
       if (existing.length > 0) {
         return NextResponse.json(
@@ -161,7 +161,7 @@ export async function PUT(
     }
 
     updates.push('updated_at = CURRENT_TIMESTAMP');
-    values.push(params.id);
+    values.push((await context.params).id);
 
     await query(
       `UPDATE programmes SET ${updates.join(', ')} WHERE id = ?`,
@@ -173,7 +173,7 @@ export async function PUT(
       userId: user.id,
       action: AUDIT_ACTIONS.UPDATE,
       entityType: AUDIT_ENTITIES.PROGRAMME,
-      entityId: parseInt(params.id),
+      entityId: parseInt((await context.params).id),
       oldValues: oldData[0],
       newValues: body,
     });
@@ -188,7 +188,7 @@ export async function PUT(
       LEFT JOIN departments d ON p.department_id = d.id
       LEFT JOIN colleges c ON p.college_id = c.id
       WHERE p.id = ?`,
-      [params.id]
+      [(await context.params).id]
     );
 
     return NextResponse.json({
@@ -209,7 +209,7 @@ export async function PUT(
 // DELETE programme
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getUserFromSession();
@@ -224,7 +224,7 @@ export async function DELETE(
     // Get programme data for audit
     const programmes = await query<Programme[]>(
       'SELECT * FROM programmes WHERE id = ?',
-      [params.id]
+      [(await context.params).id]
     );
 
     if (programmes.length === 0) {
@@ -237,7 +237,7 @@ export async function DELETE(
     // Check if programme has courses
     const courses = await query<any[]>(
       'SELECT COUNT(*) as count FROM courses WHERE programme_id = ?',
-      [params.id]
+      [(await context.params).id]
     );
 
     if (courses[0].count > 0) {
@@ -250,14 +250,14 @@ export async function DELETE(
       );
     }
 
-    await query('DELETE FROM programmes WHERE id = ?', [params.id]);
+    await query('DELETE FROM programmes WHERE id = ?', [(await context.params).id]);
 
     // Log audit
     await logAuditFromRequest(request, {
       userId: user.id,
       action: AUDIT_ACTIONS.DELETE,
       entityType: AUDIT_ENTITIES.PROGRAMME,
-      entityId: parseInt(params.id),
+      entityId: parseInt((await context.params).id),
       oldValues: programmes[0],
     });
 

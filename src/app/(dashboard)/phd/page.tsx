@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 // src/app/(dashboard)/phd/page.tsx
 'use client';
 
@@ -7,7 +8,6 @@ import { useRouter } from 'next/navigation';
 import {
   CANDIDATE_STATUS_LABELS,
   CANDIDATE_STATUS_COLORS,
-  VIVA_STATUS_COLORS,
   OUTCOME_LABELS,
   OUTCOME_COLORS,
   type CandidateStatus,
@@ -66,7 +66,7 @@ export default function PhdDashboardPage() {
 
   const fetchDashboardData = async () => {
     try {
-      const [statsRes, schedulesRes, candidatesRes] = await Promise.all([
+      const [statsRes, schedulesRes] = await Promise.all([
         fetch('/api/phd/stats'),
         fetch('/api/phd/schedules?status=scheduled&limit=5'),
         fetch('/api/phd/candidates?limit=all'),

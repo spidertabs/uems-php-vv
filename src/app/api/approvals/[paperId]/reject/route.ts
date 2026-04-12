@@ -6,7 +6,7 @@ import { verifyAuth } from '@/lib/auth';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { paperId: string } }
+  context: { params: Promise<{ paperId: string }> }
 ) {
   try {
     const user = await verifyAuth(request);
@@ -22,7 +22,7 @@ export async function POST(
       );
     }
 
-    const paperId = parseInt(params.paperId);
+    const paperId = parseInt((await context.params).paperId);
     const body = await request.json();
     const { comments } = body;
 
