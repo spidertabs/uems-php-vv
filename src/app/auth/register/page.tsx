@@ -75,7 +75,7 @@ export default function RegisterPage() {
     <div className="mx-auto max-w-md px-6 py-6">
       <div className="mb-6 text-center">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Create Account</h2>
-        <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">Sign up to get started</p>
+        <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">Sign up to get started — access exam papers, question bank, and PhD Viva Voce</p>
       </div>
 
       {errors.general && (

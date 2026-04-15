@@ -9,59 +9,105 @@ export async function GET(
 ) {
   try {
     const user = await verifyAuth(req);
-    if (!user || !['viva_coordinator', 'admin', 'hod'].includes(user.role)) {
+    if (!user || !['viva_coordinator', 'admin', 'dean'].includes(user.role)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
     const { vivaId: vivaIdStr } = await context.params;
     const vivaId = parseInt(vivaIdStr);
 
-    // Get viva schedule info to verify access
-    const schedule = await query<any[]>(
-      `SELECT vs.id, vs.candidate_id, pc.supervisor_id
+    // Get viva schedule details with candidate and programme info
+    const scheduleResult = await query<any[]>(
+      `SELECT 
+         vs.id,
+         vs.scheduled_date,
+         vs.scheduled_time,
+         vs.venue,
+         vs.duration_minutes,
+         vs.status,
+         CONCAT(u.first_name, ' ', u.last_name) as candidate_name,
+         pc.registration_number,
+         pc.thesis_title,
+         p.name as programme_name,
+         p.code as programme_code,
+         CONCAT(s.first_name, ' ', s.last_name) as supervisor_name,
+         vr.outcome,
+         vr.correction_deadline,
+         vr.final_comments,
+         vr.issued_at as recommendation_issued
        FROM viva_schedules vs
        JOIN phd_candidates pc ON vs.candidate_id = pc.id
+       JOIN users u ON pc.user_id = u.id
+       JOIN programmes p ON pc.programme_id = p.id
+       LEFT JOIN users s ON pc.supervisor_id = s.id
+       LEFT JOIN viva_recommendations vr ON vs.id = vr.viva_id
        WHERE vs.id = ?`,
       [vivaId]
     );
 
-    if (!schedule || schedule.length === 0) {
+    if (!scheduleResult || scheduleResult.length === 0) {
       return NextResponse.json(
         { error: 'Schedule not found' },
         { status: 404 }
       );
     }
 
-    // Check access: only coordinator, admin, hod, or the candidate's supervisor
-    const isSupervisor = schedule[0].supervisor_id === user.id;
-    const hasAccess = user.role === 'admin' || user.role === 'hod' || isSupervisor;
+    const schedule = scheduleResult[0];
 
-    if (!hasAccess) {
-      return NextResponse.json(
-        { error: 'You do not have access to this report' },
-        { status: 403 }
-      );
-    }
-
-    // Call stored procedure sp_get_viva_report
-    const report = await query<any>(
-      `CALL sp_get_viva_report(?)`,
+    // Get evaluations from examiners
+    const evaluationsResult = await query<any[]>(
+      `SELECT 
+         ve.id,
+         ve.examiner_id,
+         CONCAT(u.first_name, ' ', u.last_name) as examiner_name,
+         u.email as examiner_email,
+         vex.role as examiner_role,
+         ve.originality_score,
+         ve.methodology_score,
+         ve.presentation_score,
+         ve.literature_score,
+         ve.overall_score,
+         ve.strengths,
+         ve.weaknesses,
+         ve.recommended_corrections,
+         ve.general_comments,
+         ve.submitted_at
+       FROM viva_evaluations ve
+       JOIN users u ON ve.examiner_id = u.id
+       JOIN viva_examiners vex ON ve.viva_id = vex.viva_id AND ve.examiner_id = vex.examiner_id
+       WHERE ve.viva_id = ?
+       ORDER BY ve.submitted_at ASC`,
       [vivaId]
     );
 
-    // The stored procedure returns multiple result sets
-    // First result set: schedule details, second result set: evaluations
-    const scheduleInfo = report[0] || [];
-    const evaluations = report[1] || [];
+    const evaluations = evaluationsResult.map(row => ({
+      id: row.id,
+      examiner_id: row.examiner_id,
+      examiner_name: row.examiner_name,
+      examiner_email: row.examiner_email,
+      examiner_role: row.examiner_role,
+      originality_score: row.originality_score,
+      methodology_score: row.methodology_score,
+      presentation_score: row.presentation_score,
+      literature_score: row.literature_score,
+      overall_score: row.overall_score,
+      strengths: row.strengths,
+      weaknesses: row.weaknesses,
+      recommended_corrections: row.recommended_corrections,
+      general_comments: row.general_comments,
+      submitted_at: row.submitted_at,
+    }));
 
-    return NextResponse.json({
-      schedule: scheduleInfo.length > 0 ? scheduleInfo[0] : null,
-      evaluations: evaluations
-    });
+    const report = {
+      schedule,
+      evaluations,
+    };
+
+    return NextResponse.json({ report });
   } catch (error) {
     console.error('Error fetching report:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch report' },
+      { error: 'Failed to fetch report', details: String(error) },
       { status: 500 }
     );
   }

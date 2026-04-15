@@ -832,7 +832,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
             {/* Sidebar */}
             <aside
-              className={`fixed left-0 top-16 z-20 h-[calc(100vh-4rem)] w-64 overflow-y-auto border-r border-gray-200 bg-white shadow-lg transition-transform duration-300 dark:border-gray-700 dark:bg-gray-800 ${
+              className={`fixed left-0 top-16 z-20 h-[calc(100vh-4rem)] w-64 flex flex-col border-r border-gray-200 bg-white shadow-lg transition-transform duration-300 dark:border-gray-700 dark:bg-gray-800 ${
                 sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
               }`}
             >
@@ -852,8 +852,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 </Link>
               </div>
 
-              {/* Navigation Links */}
-              <nav className="space-y-1 p-3">
+              {/* Navigation Links - Scrollable */}
+              <nav className="flex-1 space-y-1 overflow-y-auto p-3">
                 {mainNavLinks.map((link) => {
                   const isActive = isActiveLink(link.href);
                   return (
@@ -877,9 +877,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 })}
               </nav>
 
-              {/* Settings (Bottom) */}
+              {/* Settings (Bottom - Fixed) */}
               {settingsLink && (
-                <div className="absolute bottom-0 w-full border-t border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-800">
+                <div className="flex-shrink-0 border-t border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-800">
                   <Link
                     href={settingsLink.href}
                     onClick={() => setSidebarOpen(false)}

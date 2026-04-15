@@ -317,11 +317,26 @@ export async function POST(
       sectionValue = section || 'A';
       
       // Count main questions in THIS SECTION (numbering restarts per section)
-      const maxMainQ = await query<any[]>(
-        'SELECT COALESCE(MAX(CAST(question_number AS UNSIGNED)), 0) + 1 as next_num FROM exam_paper_questions WHERE exam_paper_id = ? AND section = ? AND parent_question_id IS NULL',
+      // Get all question numbers and extract the numeric prefix to find the max
+      const allQuestionsInSection = await query<any[]>(
+        `SELECT question_number FROM exam_paper_questions 
+         WHERE exam_paper_id = ? AND section = ? AND parent_question_id IS NULL
+         ORDER BY question_number`,
         [paperId, sectionValue]
       );
-      mainQuestionNumber = maxMainQ[0]?.next_num || 1;
+      
+      // Extract numeric prefix from each question_number (e.g., "1" from "1a", "1(a)", "1" from "1", etc.)
+      let maxNumber = 0;
+      allQuestionsInSection.forEach((row: any) => {
+        const numMatch = String(row.question_number).match(/^(\d+)/);
+        if (numMatch) {
+          const num = parseInt(numMatch[1], 10);
+          if (num > maxNumber) {
+            maxNumber = num;
+          }
+        }
+      });
+      mainQuestionNumber = maxNumber + 1;
       
       // Get sequence order (for ordering within section)
       const maxSeq = await query<any[]>(

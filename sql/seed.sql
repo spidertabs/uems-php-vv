@@ -131,10 +131,10 @@ INSERT INTO programmes (code, name, level, duration_years, department_id, colleg
 ('LLMCL', 'Master of Laws - Commercial Law', 'masters', 2, 11, 5, 'Master of laws specializing in commercial law', TRUE),
 ('LLMGL', 'Master of Laws - General Law', 'masters', 2, 10, 5, 'General master of laws programme', TRUE),
 
--- ============================================================
+-- ========================================================
 -- CEM – College of Economics & Management (college_id = 9)
 -- ACC = 25 | BUS = 26 | HRM = 27 | ENT = 29 | SCM = 31
--- ============================================================
+-- ========================================================
 ('BHRM', 'Bachelor of Human Resource Management', 'bachelors', 3, 27, 9, 'Bachelor degree in human resource management', TRUE),
 ('BESBM', 'Bachelor of Entrepreneurship & Small Business Management', 'bachelors', 3, 29, 9,
  'Bachelor degree in entrepreneurship and small business', TRUE),
@@ -144,10 +144,10 @@ INSERT INTO programmes (code, name, level, duration_years, department_id, colleg
 ('BIBA', 'Bachelor of International Business Administration', 'bachelors', 3, 26, 9, 'Bachelor degree in international business', TRUE),
 ('BSPM', 'Bachelor of Supply and Procurement Management', 'bachelors', 3, 31, 9, 'Bachelor degree in supply chain and procurement management', TRUE),
 
--- ============================================================
+-- ========================================================================
 -- CEODL – College of Education, Open & Distance Learning (college_id = 10)
 -- EDU = 32 | ENG = 33 | LING = 34 | EDADMIN = 35
--- ============================================================
+-- ========================================================================
 ('PGDE', 'Postgraduate Diploma in Education', 'diploma', 1, 32, 10, 'Postgraduate diploma in education', TRUE),
 ('PGDEMA', 'Postgraduate Diploma in Educational Management and Administration', 'diploma', 1, 35, 10, 'Postgraduate diploma in education management', TRUE),
 ('MAENG', 'Master of Arts in English', 'masters', 2, 33, 10, 'Master programme in English language studies', TRUE),
@@ -155,10 +155,10 @@ INSERT INTO programmes (code, name, level, duration_years, department_id, colleg
 ('MEDEMA', 'Master of Education in Education Management and Administration', 'masters', 2, 35, 10, 'Master of education management programme', TRUE),
 ('PHDMSEA', 'PhD in Management Sciences - Educational Administration', 'phd', 3, 35, 10, 'Doctoral research in educational administration', TRUE),
 
--- ============================================================
+-- =================================================================
 -- CHSS – College of Humanities & Social Sciences (college_id = 11)
 -- SWS = 36 | GIC = 37 | DVS = 39 | CRP = 40 | MCO = 41 | PAD = 42
--- ============================================================
+-- =================================================================
 ('DGC', 'Diploma in Guidance and Counselling', 'diploma', 2, 37, 11, 'Diploma in guidance and counselling', TRUE),
 ('DMC', 'Diploma in Mass Communication', 'diploma', 2, 41, 11, 'Diploma in mass communication', TRUE),
 ('PGDDS', 'Postgraduate Diploma in Development Studies', 'diploma', 1, 39, 11, 'Postgraduate diploma in development studies', TRUE),

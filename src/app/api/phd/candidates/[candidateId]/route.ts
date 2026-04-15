@@ -16,32 +16,46 @@ export async function GET(
     const { candidateId: candidateIdStr } = await context.params;
     const candidateId = parseInt(candidateIdStr);
 
-    const candidate = await query<any[]>(
+    const rows = await query<any[]>(
       `SELECT 
         pc.id, pc.user_id, pc.registration_number, 
         pc.thesis_title, pc.programme_id, pc.supervisor_id, 
         pc.co_supervisor_id, pc.status, pc.enrolment_year,
         pc.created_at, pc.updated_at,
-        u.email, u.first_name, u.last_name,
+        CONCAT(u.first_name, ' ', u.last_name) AS candidate_name,
+        u.email AS candidate_email,
         p.name AS programme_name,
-        s.first_name AS supervisor_first_name, 
-        s.last_name AS supervisor_last_name
+        p.code AS programme_code,
+        CONCAT(s.first_name, ' ', s.last_name) AS supervisor_name,
+        s.email AS supervisor_email,
+        cs.first_name AS co_sup_first,
+        cs.last_name AS co_sup_last
       FROM phd_candidates pc
       JOIN users u ON pc.user_id = u.id
       JOIN programmes p ON pc.programme_id = p.id
-      JOIN users s ON pc.supervisor_id = s.id
-      WHERE pc.id = ?`,
+      LEFT JOIN users s ON pc.supervisor_id = s.id
+      LEFT JOIN users cs ON pc.co_supervisor_id = cs.id
+      WHERE pc.id = ? AND pc.deleted_at IS NULL`,
       [candidateId]
     );
 
-    if (candidate.length === 0) {
+    if (rows.length === 0) {
       return NextResponse.json(
         { error: 'Candidate not found' },
         { status: 404 }
       );
     }
 
-    return NextResponse.json(candidate[0]);
+    const row = rows[0];
+    const candidate = {
+      ...row,
+      co_supervisor_name:
+        row.co_sup_first && row.co_sup_last
+          ? `${row.co_sup_first} ${row.co_sup_last}`
+          : null,
+    };
+
+    return NextResponse.json({ candidate });
   } catch (error) {
     console.error('Error fetching candidate:', error);
     return NextResponse.json(

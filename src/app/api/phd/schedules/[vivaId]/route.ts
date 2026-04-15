@@ -23,7 +23,7 @@ async function buildVivaDetail(vivaId: number): Promise<any | null> {
      JOIN users uc ON pc.user_id = uc.id
      JOIN programmes p ON pc.programme_id = p.id
      LEFT JOIN users s ON pc.supervisor_id = s.id
-     WHERE vs.id = ?
+     WHERE vs.id = ? AND pc.deleted_at IS NULL
      LIMIT 1`,
     [vivaId]
   );

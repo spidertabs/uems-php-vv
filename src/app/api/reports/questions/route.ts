@@ -78,8 +78,7 @@ export async function GET(request: NextRequest) {
           q.question_type,
           COUNT(*) as count,
           AVG(q.marks) as avg_marks,
-          AVG(q.usage_count) as avg_usage,
-          AVG(q.avg_student_score) as avg_performance
+          AVG(q.usage_count) as avg_usage
         FROM questions q
         JOIN courses c ON q.course_id = c.id
         WHERE q.deleted_at IS NULL AND q.is_active = TRUE
@@ -132,7 +131,6 @@ export async function GET(request: NextRequest) {
           q.difficulty_level,
           q.marks,
           q.usage_count,
-          q.avg_student_score,
           c.code as course_code,
           c.title as course_title,
           CONCAT(u.first_name, ' ', u.last_name) as created_by

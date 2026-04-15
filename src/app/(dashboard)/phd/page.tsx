@@ -69,7 +69,6 @@ export default function PhdDashboardPage() {
       const [statsRes, schedulesRes] = await Promise.all([
         fetch('/api/phd/stats'),
         fetch('/api/phd/schedules?status=scheduled&limit=5'),
-        fetch('/api/phd/candidates?limit=all'),
       ]);
 
       if (statsRes.status === 401) {

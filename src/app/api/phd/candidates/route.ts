@@ -15,6 +15,7 @@ export async function GET(req: NextRequest) {
     const programmeId = searchParams.get('programme_id');
     const supervisorId = searchParams.get('supervisor_id');
     const search = searchParams.get('search');
+    const limit = searchParams.get('limit');
 
     let sql = `
       SELECT 
@@ -29,8 +30,8 @@ export async function GET(req: NextRequest) {
       FROM phd_candidates pc
       JOIN users u ON pc.user_id = u.id
       JOIN programmes p ON pc.programme_id = p.id
-      JOIN users s ON pc.supervisor_id = s.id
-      WHERE 1=1
+      LEFT JOIN users s ON pc.supervisor_id = s.id
+      WHERE pc.deleted_at IS NULL
     `;
 
     const params: (string | number)[] = [];
@@ -58,8 +59,17 @@ export async function GET(req: NextRequest) {
 
     sql += ' ORDER BY pc.created_at DESC';
 
+    // Add limit if specified and it's a number or 'all'
+    if (limit && limit !== 'all') {
+      const limitNum = parseInt(limit);
+      if (!isNaN(limitNum) && limitNum > 0) {
+        sql += ' LIMIT ?';
+        params.push(limitNum);
+      }
+    }
+
     const candidates = await query<any[]>(sql, params);
-    return NextResponse.json(candidates);
+    return NextResponse.json({ candidates });
   } catch (error) {
     console.error('Error fetching candidates:', error);
     return NextResponse.json(

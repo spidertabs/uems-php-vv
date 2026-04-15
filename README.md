@@ -482,6 +482,10 @@ Enrolled
 
    Navigate to [http://localhost:3000](http://localhost:3000)
 
+### Registration & Authentication
+
+**All user types (lecturers, HODs, admins, exam masters, deans, viva coordinators, and PhD candidates) use a unified authentication system.** Registration creates a user account, and role assignment determines which modules and features they can access. PhD candidates are registered as users with the appropriate role and have immediate access to the PhD Viva Voce module alongside other users.
+
 ### Default Login Credentials
 
 All accounts share the default password: **`uems@2026`**

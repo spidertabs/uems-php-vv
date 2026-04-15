@@ -16,11 +16,11 @@ import {
 } from '@/types/phd';
 
 interface VivaRecord {
-  id: number;
+  viva_id: number;
   scheduled_date: string;
   scheduled_time: string;
   venue: string;
-  status: string;
+  viva_status: string;
   outcome: string | null;
 }
 
@@ -349,13 +349,13 @@ export default function CandidateDetailPage() {
             <div className="space-y-3">
               {vivas.map((v) => (
                 <div
-                  key={v.id}
+                  key={v.viva_id}
                   className="flex items-center justify-between rounded-xl border border-gray-200 bg-white p-5 shadow-md dark:border-gray-700 dark:bg-gray-800"
                 >
                   <div>
                     <div className="flex items-center gap-3">
-                      <span className={`rounded-full px-3 py-1 text-xs font-medium ${VIVA_STATUS_COLORS[v.status as keyof typeof VIVA_STATUS_COLORS]}`}>
-                        {v.status.replace('_', ' ').toUpperCase()}
+                      <span className={`rounded-full px-3 py-1 text-xs font-medium ${VIVA_STATUS_COLORS[v.viva_status as keyof typeof VIVA_STATUS_COLORS]}`}>
+                        {v.viva_status.replace('_', ' ').toUpperCase()}
                       </span>
                       {v.outcome && (
                         <span className={`rounded-full px-3 py-1 text-xs font-medium ${OUTCOME_COLORS[v.outcome as keyof typeof OUTCOME_COLORS]}`}>
@@ -369,7 +369,7 @@ export default function CandidateDetailPage() {
                     <p className="text-sm text-gray-500 dark:text-gray-400">📍 {v.venue}</p>
                   </div>
                   <Link
-                    href={`/phd/schedules/${v.id}`}
+                    href={`/phd/schedules/${v.viva_id}`}
                     className="rounded-lg bg-emerald-100 px-4 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900 dark:text-emerald-200"
                   >
                     {v.outcome ? 'View Report' : 'View Viva'}

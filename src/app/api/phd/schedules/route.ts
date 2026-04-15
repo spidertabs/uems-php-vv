@@ -16,18 +16,30 @@ export async function GET(req: NextRequest) {
     const dateFrom = searchParams.get('date_from');
     const dateTo = searchParams.get('date_to');
     const candidateId = searchParams.get('candidate_id');
+    const limit = searchParams.get('limit');
 
     let sql = `
-      SELECT vs.id, vs.candidate_id, vs.thesis_id, vs.scheduled_date, 
-             vs.scheduled_time, vs.venue, vs.duration_minutes, vs.status,
+      SELECT vs.id AS viva_id, vs.candidate_id, vs.thesis_id, vs.scheduled_date, 
+             vs.scheduled_time, vs.venue, vs.duration_minutes, 
+             vs.status AS viva_status,
              vs.created_at, vs.updated_at,
-             pc.registration_number, u.first_name, u.last_name,
-             p.name AS programme_name
+             pc.registration_number, 
+             pc.thesis_title,
+             pc.status AS candidate_status,
+             CONCAT(u.first_name, ' ', u.last_name) AS candidate_name,
+             CONCAT(COALESCE(s.first_name, ''), ' ', COALESCE(s.last_name, '')) AS supervisor_name,
+             p.name AS programme_name,
+             COALESCE(vr.outcome, NULL) AS outcome,
+             (SELECT COUNT(*) FROM viva_examiners WHERE viva_id = vs.id AND confirmed = TRUE) AS confirmed_examiners,
+             (SELECT COUNT(*) FROM viva_examiners WHERE viva_id = vs.id) AS total_examiners,
+             (SELECT COUNT(*) FROM viva_evaluations WHERE viva_id = vs.id AND is_submitted = TRUE) AS evaluations_submitted
       FROM viva_schedules vs
       JOIN phd_candidates pc ON vs.candidate_id = pc.id
       JOIN users u ON pc.user_id = u.id
       JOIN programmes p ON pc.programme_id = p.id
-      WHERE 1=1
+      LEFT JOIN users s ON pc.supervisor_id = s.id
+      LEFT JOIN viva_recommendations vr ON vs.id = vr.viva_id
+      WHERE pc.deleted_at IS NULL
     `;
 
     const params: (string | number)[] = [];
@@ -54,8 +66,17 @@ export async function GET(req: NextRequest) {
 
     sql += ' ORDER BY vs.scheduled_date DESC';
 
+    // Add limit if specified
+    if (limit && limit !== 'all') {
+      const limitNum = parseInt(limit);
+      if (!isNaN(limitNum) && limitNum > 0) {
+        sql += ' LIMIT ?';
+        params.push(limitNum);
+      }
+    }
+
     const schedules = await query<any[]>(sql, params);
-    return NextResponse.json(schedules);
+    return NextResponse.json({ schedules });
   } catch (error) {
     console.error('Error fetching schedules:', error);
     return NextResponse.json(
