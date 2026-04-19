@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 // src/app/(dashboard)/phd/schedules/page.tsx
 'use client';
 
@@ -38,7 +39,7 @@ const STATUS_OPTIONS: { value: VivaStatus | 'all'; label: string }[] = [
   { value: 'cancelled', label: 'Cancelled' },
 ];
 
-export default function VivaSchedulesPage() {
+function VivaSchedulesPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -281,4 +282,7 @@ export default function VivaSchedulesPage() {
       </div>
     </div>
   );
+}
+export default function VivaSchedulesPage() {
+  return <Suspense fallback={<div>Loading...</div>}><VivaSchedulesPageInner /></Suspense>;
 }

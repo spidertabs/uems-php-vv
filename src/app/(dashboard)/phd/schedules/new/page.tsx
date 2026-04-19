@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 // src/app/(dashboard)/phd/schedules/new/page.tsx
 'use client';
  
@@ -20,7 +21,7 @@ interface ThesisOption {
   submitted_at: string;
 }
  
-export default function ScheduleVivaPage() {
+function ScheduleVivaPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
  
@@ -220,4 +221,7 @@ export default function ScheduleVivaPage() {
       </div>
     </div>
   );
+}
+export default function ScheduleVivaPage() {
+  return <Suspense fallback={<div>Loading...</div>}><ScheduleVivaPageInner /></Suspense>;
 }
