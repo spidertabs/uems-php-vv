@@ -221,13 +221,6 @@ function ScheduleVivaPageInner() {
     </div>
   );
 }
-function ScheduleVivaPageInner() {
-  return <Suspense fallback={<div>Loading...</div>}><ScheduleVivaPageInner /></Suspense>;
-}
-
-function ScheduleVivaPageInner() {
-  return <Suspense fallback={<div>Loading...</div>}><ScheduleVivaPageInner /></Suspense>;
-}
 
 export default function ScheduleVivaPage() {
   return <Suspense fallback={<div>Loading...</div>}><ScheduleVivaPageInner /></Suspense>;
