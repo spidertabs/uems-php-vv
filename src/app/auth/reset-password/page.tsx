@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable react-hooks/exhaustive-deps */
 // src/app/auth/reset-password/page.tsx
@@ -11,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Eye, EyeOff, Lock, CheckCircle, AlertCircle } from 'lucide-react';
 
-export default function ResetPasswordPage() {
+function ResetPasswordPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
@@ -314,4 +315,7 @@ export default function ResetPasswordPage() {
       </form>
     </div>
   );
+}
+export default function ResetPasswordPage() {
+  return <Suspense fallback={<div>Loading...</div>}><ResetPasswordPageInner /></Suspense>;
 }
