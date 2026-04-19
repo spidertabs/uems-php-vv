@@ -319,6 +319,10 @@ function ResetPasswordPageInner() {
   return <Suspense fallback={<div>Loading...</div>}><ResetPasswordPageInner /></Suspense>;
 }
 
+function ResetPasswordPageInner() {
+  return <Suspense fallback={<div>Loading...</div>}><ResetPasswordPageInner /></Suspense>;
+}
+
 export default function ResetPasswordPage() {
   return <Suspense fallback={<div>Loading...</div>}><ResetPasswordPageInner /></Suspense>;
 }

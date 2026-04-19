@@ -286,6 +286,10 @@ function VivaSchedulesPageInner() {
   return <Suspense fallback={<div>Loading...</div>}><VivaSchedulesPageInner /></Suspense>;
 }
 
+function VivaSchedulesPageInner() {
+  return <Suspense fallback={<div>Loading...</div>}><VivaSchedulesPageInner /></Suspense>;
+}
+
 export default function VivaSchedulesPage() {
   return <Suspense fallback={<div>Loading...</div>}><VivaSchedulesPageInner /></Suspense>;
 }
