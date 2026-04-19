@@ -1,10 +1,9 @@
-import { Suspense } from 'react';
+'use client';
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable react-hooks/exhaustive-deps */
 // src/app/auth/reset-password/page.tsx
-'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect , Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -316,6 +315,10 @@ function ResetPasswordPageInner() {
     </div>
   );
 }
+function ResetPasswordPageInner() {
+  return <Suspense fallback={<div>Loading...</div>}><ResetPasswordPageInner /></Suspense>;
+}
+
 export default function ResetPasswordPage() {
   return <Suspense fallback={<div>Loading...</div>}><ResetPasswordPageInner /></Suspense>;
 }

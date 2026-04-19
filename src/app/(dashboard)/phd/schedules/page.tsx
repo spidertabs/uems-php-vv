@@ -1,8 +1,7 @@
-import { Suspense } from 'react';
-// src/app/(dashboard)/phd/schedules/page.tsx
 'use client';
+// src/app/(dashboard)/phd/schedules/page.tsx
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState , Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -283,6 +282,10 @@ function VivaSchedulesPageInner() {
     </div>
   );
 }
+function VivaSchedulesPageInner() {
+  return <Suspense fallback={<div>Loading...</div>}><VivaSchedulesPageInner /></Suspense>;
+}
+
 export default function VivaSchedulesPage() {
   return <Suspense fallback={<div>Loading...</div>}><VivaSchedulesPageInner /></Suspense>;
 }
