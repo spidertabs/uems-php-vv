@@ -1,4 +1,4 @@
-/* eslint-disable react-hooks/exhaustive-deps */
+// src/app/(dashboard)/phd/layout.tsx
 'use client';
 
 export default function PhDLayout({ children }: { children: React.ReactNode }) {

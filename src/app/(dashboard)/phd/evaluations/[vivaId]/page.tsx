@@ -1,27 +1,71 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 // src/app/(dashboard)/phd/evaluations/[vivaId]/page.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
-import { EXAMINER_ROLE_LABELS, type ExaminerRole } from '@/types/phd';
+import {
+  OUTCOME_LABELS,
+  OUTCOME_COLORS,
+  EXAMINER_ROLE_LABELS,
+  type VivaOutcome,
+  type ExaminerRole,
+} from '@/types/phd';
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface VivaInfo {
-  id: number;
+  viva_id?: number;
+  id?: number;
+  candidate_id: number;
+  candidate_name: string;
+  registration_number: string;
+  programme_code: string;
+  programme_name: string;
+  thesis_title: string;
   scheduled_date: string;
   scheduled_time: string;
   venue: string;
-  thesis_title: string;
-  registration_number: string;
-  candidate_name: string;
-  programme_name: string;
-  status: string;
+  status?: string;
+  viva_status?: string;
+  outcome: VivaOutcome | null;
+  outcome_notes: string | null;
+  issued_at: string | null;
+  // Optionally embedded by the API
+  examiners?: ExaminerRecord[];
+  evaluations?: SubmittedEvaluation[];
 }
 
-interface ExaminerInfo {
+interface ExaminerRecord {
   examiner_id: number;
-  role: ExaminerRole;
+  user_id?: number;
   examiner_name: string;
+  examiner_email: string;
+  role: ExaminerRole;
+  confirmed: boolean;
+  evaluation_submitted: boolean;
+  evaluation_id: number | null;
+}
+
+interface SubmittedEvaluation {
+  id?: number;
+  evaluation_id?: number;
+  examiner_id: number;
+  examiner_name: string;
+  examiner_role?: string;
+  // Scores out of 25 each
+  originality_score: number | null;
+  methodology_score: number | null;
+  presentation_score: number | null;
+  literature_score: number | null;
+  // Qualitative
+  strengths: string | null;
+  weaknesses: string | null;
+  recommended_corrections: string | null;
+  general_comments: string | null;
+  is_submitted: boolean;
+  submitted_at?: string;
 }
 
 interface EvaluationDraft {
@@ -49,179 +93,286 @@ const EMPTY_DRAFT: EvaluationDraft = {
   is_submitted: false,
 };
 
-export default function ExaminerEvaluationPage() {
+// 'my_evaluation' tab only appears when the current user is an assigned examiner
+type Tab = 'my_evaluation' | 'all_evaluations' | 'examiners' | 'outcome';
+
+// ─── Sub-components ───────────────────────────────────────────────────────────
+
+function ScoreBar({ score, max = 25 }: { score: number | null; max?: number }) {
+  if (score === null || score === undefined) {
+    return <span className="text-xs text-gray-400 dark:text-gray-500">—</span>;
+  }
+  const pct = (score / max) * 100;
+  const color = pct >= 70 ? 'bg-emerald-500' : pct >= 50 ? 'bg-yellow-500' : 'bg-red-500';
+  return (
+    <div className="flex items-center gap-2">
+      <div className="h-2 flex-1 rounded-full bg-gray-100 dark:bg-gray-700">
+        <div className={`h-2 rounded-full ${color} transition-all`} style={{ width: `${pct}%` }} />
+      </div>
+      <span className="w-12 text-right text-xs font-semibold text-gray-700 dark:text-gray-300">
+        {score}/{max}
+      </span>
+    </div>
+  );
+}
+
+function Field({
+  label, required = false, error, children,
+}: {
+  label: string; required?: boolean; error?: string; children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+        {label}{required && <span className="ml-1 text-red-500">*</span>}
+      </label>
+      {children}
+      {error && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{error}</p>}
+    </div>
+  );
+}
+
+const VIVA_STATUS_STYLES: Record<string, string> = {
+  scheduled: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
+  completed:  'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200',
+  postponed:  'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
+  cancelled:  'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+};
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
+
+export default function VivaEvaluationsPage() {
   const router = useRouter();
   const params = useParams();
   const vivaId = params.vivaId as string;
 
+  // ── Core state ──────────────────────────────────────────────────────────────
   const [viva, setViva] = useState<VivaInfo | null>(null);
-  const [myRole, setMyRole] = useState<ExaminerRole | null>(null);
-  const [draft, setDraft] = useState<EvaluationDraft>(EMPTY_DRAFT);
+  const [examiners, setExaminers] = useState<ExaminerRecord[]>([]);
+  const [evaluations, setEvaluations] = useState<SubmittedEvaluation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<Tab>('all_evaluations');
+
+  // Current user
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+  const [myExaminerRecord, setMyExaminerRecord] = useState<ExaminerRecord | null>(null);
+
+  // ── My evaluation (examiner self-service) ───────────────────────────────────
+  const [draft, setDraft] = useState<EvaluationDraft>(EMPTY_DRAFT);
   const [saving, setSaving] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [saveMsg, setSaveMsg] = useState('');
-  const [error, setError] = useState('');
-  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+  const [draftError, setDraftError] = useState('');
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const [meRes, vivaRes] = await Promise.all([
-          fetch('/api/auth/me'),
-          fetch(`/api/phd/schedules/${vivaId}`),
-        ]);
-        if (meRes.status === 401 || vivaRes.status === 401) {
-          router.push('/auth/login'); return;
-        }
+  // ── Admin: issue outcome ────────────────────────────────────────────────────
+  const [showOutcomeModal, setShowOutcomeModal] = useState(false);
+  const [outcomeForm, setOutcomeForm] = useState<{ outcome: VivaOutcome | ''; notes: string }>({
+    outcome: '', notes: '',
+  });
+  const [outcomeError, setOutcomeError] = useState('');
+  const [outcomeLoading, setOutcomeLoading] = useState(false);
 
+  // ── Fetch ────────────────────────────────────────────────────────────────────
+
+  useEffect(() => { fetchAll(); }, [vivaId]);
+
+  const fetchAll = async () => {
+    setLoading(true);
+    try {
+      const [meRes, vivaRes] = await Promise.all([
+        fetch('/api/auth/me'),
+        fetch(`/api/phd/schedules/${vivaId}`),
+      ]);
+      if (meRes.status === 401 || vivaRes.status === 401) {
+        router.push('/auth/login'); return;
+      }
+
+      let uid: number | null = null;
+      if (meRes.ok) {
         const meData = await meRes.json();
-        const uid: number = meData.user?.id;
+        uid = meData.user?.id ?? null;
         setCurrentUserId(uid);
+      }
 
-        if (vivaRes.ok) {
-          const vivaData = await vivaRes.json();
-          const v = vivaData.viva;
-          setViva(v);
+      if (vivaRes.ok) {
+        const vivaData = await vivaRes.json();
+        const v: VivaInfo = vivaData.schedule ?? vivaData.viva ?? vivaData;
+        setViva(v);
+        if (v.examiners) setExaminers(v.examiners);
+        if (v.evaluations) setEvaluations(v.evaluations);
 
-          // Determine my examiner role
-          const me: ExaminerInfo | undefined = v.examiners?.find(
-            (ex: ExaminerInfo) => ex.examiner_id === uid
-          );
-          if (me) setMyRole(me.role);
-
-          // Pre-fill draft if it exists
-          const myEval = v.evaluations?.find(
-            (ev: { examiner_id: number }) => ev.examiner_id === uid
-          );
-          if (myEval) {
-            setDraft({
-              id: myEval.id,
-              originality_score: myEval.originality_score?.toString() ?? '',
-              methodology_score: myEval.methodology_score?.toString() ?? '',
-              presentation_score: myEval.presentation_score?.toString() ?? '',
-              literature_score: myEval.literature_score?.toString() ?? '',
-              strengths: myEval.strengths ?? '',
-              weaknesses: myEval.weaknesses ?? '',
-              recommended_corrections: myEval.recommended_corrections ?? '',
-              general_comments: myEval.general_comments ?? '',
-              is_submitted: myEval.is_submitted ?? false,
-            });
+        if (uid && v.examiners) {
+          const me = v.examiners.find((ex) => ex.examiner_id === uid || ex.user_id === uid);
+          if (me) {
+            setMyExaminerRecord(me);
+            setActiveTab('my_evaluation');
+            const myEval = v.evaluations?.find((ev) => ev.examiner_id === uid);
+            if (myEval) prefillDraft(myEval);
           }
         }
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
       }
-    })();
-  }, [vivaId, router]);
 
-  const totalScore = () => {
-    const o = parseInt(draft.originality_score) || 0;
-    const m = parseInt(draft.methodology_score) || 0;
-    const p = parseInt(draft.presentation_score) || 0;
-    const l = parseInt(draft.literature_score) || 0;
-    return o + m + p + l;
-  };
-
-  const isValid = (val: string) => {
-    const n = parseInt(val);
-    return !isNaN(n) && n >= 0 && n <= 25;
-  };
-
-  const allScoresFilled =
-    isValid(draft.originality_score) &&
-    isValid(draft.methodology_score) &&
-    isValid(draft.presentation_score) &&
-    isValid(draft.literature_score);
-
-  const handleSaveDraft = async () => {
-    setSaving(true); setSaveMsg(''); setError('');
-    try {
-      const res = await fetch('/api/phd/evaluations', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          viva_id: parseInt(vivaId),
-          examiner_id: currentUserId,
-          originality_score: parseInt(draft.originality_score) || null,
-          methodology_score: parseInt(draft.methodology_score) || null,
-          presentation_score: parseInt(draft.presentation_score) || null,
-          literature_score: parseInt(draft.literature_score) || null,
-          strengths: draft.strengths || null,
-          weaknesses: draft.weaknesses || null,
-          recommended_corrections: draft.recommended_corrections || null,
-          general_comments: draft.general_comments || null,
-        }),
-      });
-      if (res.ok) { setSaveMsg('Draft saved ✓'); }
-      else { const d = await res.json(); setError(d.error || 'Save failed'); }
-    } catch { setError('Network error'); }
-    finally { setSaving(false); }
-  };
-
-  const handleSubmit = async () => {
-    if (!allScoresFilled) { setError('All four score fields are required before submitting.'); return; }
-    if (!confirm('Submit your evaluation? This cannot be undone.')) return;
-
-    setSubmitting(true); setError('');
-    try {
-      // Save draft scores first
-      await fetch('/api/phd/evaluations', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          viva_id: parseInt(vivaId),
-          examiner_id: currentUserId,
-          originality_score: parseInt(draft.originality_score),
-          methodology_score: parseInt(draft.methodology_score),
-          presentation_score: parseInt(draft.presentation_score),
-          literature_score: parseInt(draft.literature_score),
-          strengths: draft.strengths || null,
-          weaknesses: draft.weaknesses || null,
-          recommended_corrections: draft.recommended_corrections || null,
-          general_comments: draft.general_comments || null,
-        }),
-      });
-
-      // Then submit — need evaluationId from existing draft
-      // Re-fetch to get the id
-      const checkRes = await fetch(`/api/phd/schedules/${vivaId}/evaluations`);
-      if (checkRes.ok) {
-        const checkData = await checkRes.json();
-        const myEv = checkData.evaluations?.find(
-          (ev: { examiner_id: number }) => ev.examiner_id === currentUserId
-        );
-        if (myEv) {
-          const subRes = await fetch(`/api/phd/evaluations/${myEv.id}/submit`, { method: 'POST' });
-          if (subRes.ok) {
-            setDraft((p) => ({ ...p, is_submitted: true }));
-            return;
-          }
-          const d = await subRes.json();
-          setError(d.error || 'Submit failed');
+      // Also fetch from dedicated endpoints (may override embedded data)
+      const [examRes, evalRes] = await Promise.all([
+        fetch(`/api/phd/schedules/${vivaId}/examiners`),
+        fetch(`/api/phd/schedules/${vivaId}/evaluations`),
+      ]);
+      if (examRes.ok) {
+        const d = await examRes.json();
+        const list: ExaminerRecord[] = d.examiners ?? [];
+        setExaminers(list);
+        if (uid) {
+          const me = list.find((ex) => ex.examiner_id === uid || ex.user_id === uid);
+          if (me) { setMyExaminerRecord(me); setActiveTab('my_evaluation'); }
         }
       }
-    } catch { setError('Network error'); }
-    finally { setSubmitting(false); }
+      if (evalRes.ok) {
+        const d = await evalRes.json();
+        const list: SubmittedEvaluation[] = d.evaluations ?? [];
+        setEvaluations(list);
+        if (uid) {
+          const myEval = list.find((ev) => ev.examiner_id === uid);
+          if (myEval) prefillDraft(myEval);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch viva evaluation data:', err);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const prefillDraft = (ev: SubmittedEvaluation) => {
+    setDraft({
+      id: ev.id ?? ev.evaluation_id,
+      originality_score: ev.originality_score?.toString() ?? '',
+      methodology_score: ev.methodology_score?.toString() ?? '',
+      presentation_score: ev.presentation_score?.toString() ?? '',
+      literature_score: ev.literature_score?.toString() ?? '',
+      strengths: ev.strengths ?? '',
+      weaknesses: ev.weaknesses ?? '',
+      recommended_corrections: ev.recommended_corrections ?? '',
+      general_comments: ev.general_comments ?? '',
+      is_submitted: ev.is_submitted ?? false,
+    });
+  };
+
+  // ── My evaluation handlers ───────────────────────────────────────────────────
 
   const setScore = (field: keyof EvaluationDraft, val: string) => {
     const n = parseInt(val);
-    if (val === '' || (n >= 0 && n <= 25)) {
+    if (val === '' || (!isNaN(n) && n >= 0 && n <= 25)) {
       setDraft((p) => ({ ...p, [field]: val }));
     }
   };
 
-  const fmt = (d: string) =>
-    new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  const isValidScore = (val: string) => { const n = parseInt(val); return !isNaN(n) && n >= 0 && n <= 25; };
+
+  const allScoresFilled =
+    isValidScore(draft.originality_score) &&
+    isValidScore(draft.methodology_score) &&
+    isValidScore(draft.presentation_score) &&
+    isValidScore(draft.literature_score);
+
+  const totalScore = () =>
+    (parseInt(draft.originality_score) || 0) +
+    (parseInt(draft.methodology_score) || 0) +
+    (parseInt(draft.presentation_score) || 0) +
+    (parseInt(draft.literature_score) || 0);
+
+  const buildEvalPayload = () => ({
+    viva_id: parseInt(vivaId),
+    examiner_id: currentUserId,
+    originality_score: parseInt(draft.originality_score) || null,
+    methodology_score: parseInt(draft.methodology_score) || null,
+    presentation_score: parseInt(draft.presentation_score) || null,
+    literature_score: parseInt(draft.literature_score) || null,
+    strengths: draft.strengths || null,
+    weaknesses: draft.weaknesses || null,
+    recommended_corrections: draft.recommended_corrections || null,
+    general_comments: draft.general_comments || null,
+  });
+
+  const handleSaveDraft = async () => {
+    setSaving(true); setSaveMsg(''); setDraftError('');
+    try {
+      const res = await fetch('/api/phd/evaluations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(buildEvalPayload()),
+      });
+      if (res.ok) { setSaveMsg('Draft saved ✓'); }
+      else { const d = await res.json(); setDraftError(d.error || 'Save failed.'); }
+    } catch { setDraftError('Network error.'); }
+    finally { setSaving(false); }
+  };
+
+  const handleSubmitEvaluation = async () => {
+    if (!allScoresFilled) { setDraftError('All four score fields are required before submitting.'); return; }
+    if (!confirm('Submit your evaluation? This cannot be undone.')) return;
+    setSubmitting(true); setDraftError('');
+    try {
+      await fetch('/api/phd/evaluations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(buildEvalPayload()),
+      });
+      const checkRes = await fetch(`/api/phd/schedules/${vivaId}/evaluations`);
+      if (checkRes.ok) {
+        const checkData = await checkRes.json();
+        const myEv = checkData.evaluations?.find(
+          (ev: SubmittedEvaluation) => ev.examiner_id === currentUserId,
+        );
+        if (myEv) {
+          const evalId = myEv.id ?? myEv.evaluation_id;
+          const subRes = await fetch(`/api/phd/evaluations/${evalId}/submit`, { method: 'POST' });
+          if (subRes.ok) { setDraft((p) => ({ ...p, is_submitted: true })); fetchAll(); return; }
+          const d = await subRes.json();
+          setDraftError(d.error || 'Submit failed.');
+        }
+      }
+    } catch { setDraftError('Network error.'); }
+    finally { setSubmitting(false); }
+  };
+
+  // ── Admin: issue outcome ─────────────────────────────────────────────────────
+
+  const handleIssueOutcome = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!outcomeForm.outcome) { setOutcomeError('Please select an outcome.'); return; }
+    setOutcomeLoading(true); setOutcomeError('');
+    try {
+      const res = await fetch(`/api/phd/schedules/${vivaId}/outcome`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ outcome: outcomeForm.outcome, notes: outcomeForm.notes || null }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setOutcomeError(data.error || 'Failed to issue outcome.'); return; }
+      setShowOutcomeModal(false);
+      fetchAll();
+    } catch { setOutcomeError('Network error.'); }
+    finally { setOutcomeLoading(false); }
+  };
+
+  // ── Formatting ───────────────────────────────────────────────────────────────
+
+  const fmt = (s: string) =>
+    new Date(s).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 
   const fmtTime = (t: string) => {
     const [h, m] = t.split(':');
     const hour = parseInt(h);
     return `${hour % 12 || 12}:${m} ${hour >= 12 ? 'PM' : 'AM'}`;
   };
+
+  const submitted = evaluations.filter((ev) => ev.is_submitted);
+  const pendingExaminers = examiners.filter((e) => !e.evaluation_submitted);
+  const allEvaluationsIn = examiners.length > 0 && pendingExaminers.length === 0;
+  const vivaStatus = viva?.viva_status ?? viva?.status ?? '';
+  const locked = draft.is_submitted;
+
+  // ─── Loading / not found ─────────────────────────────────────────────────────
 
   if (loading) {
     return (
@@ -231,13 +382,11 @@ export default function ExaminerEvaluationPage() {
     );
   }
 
-  if (!viva || !myRole) {
+  if (!viva) {
     return (
       <div className="lg:pl-64 py-16 text-center space-y-3">
-        <div className="text-5xl">🚫</div>
-        <p className="font-medium text-gray-800 dark:text-white">
-          {!viva ? 'Viva not found.' : 'You are not assigned as an examiner for this viva.'}
-        </p>
+        <div className="text-5xl">🔍</div>
+        <p className="font-medium text-gray-800 dark:text-white">Viva not found.</p>
         <Link href="/phd/schedules" className="inline-block text-emerald-600 hover:underline">
           ← Back to Schedules
         </Link>
@@ -245,7 +394,16 @@ export default function ExaminerEvaluationPage() {
     );
   }
 
-  const locked = draft.is_submitted;
+  const tabs: { key: Tab; label: string }[] = [
+    ...(myExaminerRecord
+      ? [{ key: 'my_evaluation' as Tab, label: `📝 My Evaluation${locked ? ' ✅' : ''}` }]
+      : []),
+    { key: 'all_evaluations', label: `📊 All Evaluations (${submitted.length}/${examiners.length})` },
+    { key: 'examiners',       label: `👥 Examiners (${examiners.length})` },
+    { key: 'outcome',         label: '🏆 Outcome' },
+  ];
+
+  // ─── Render ──────────────────────────────────────────────────────────────────
 
   return (
     <div className="space-y-6 lg:pl-64">
@@ -253,157 +411,474 @@ export default function ExaminerEvaluationPage() {
         ← Back to Viva Detail
       </Link>
 
-      {/* Header */}
+      {/* ── Viva header card ─────────────────────────────────────────────────── */}
       <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
         <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-              📝 Evaluation Form
-            </h1>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              {viva.candidate_name} · {viva.registration_number}
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{viva.candidate_name}</h1>
+              {vivaStatus && (
+                <span className={`rounded-full px-3 py-1 text-xs font-medium ${VIVA_STATUS_STYLES[vivaStatus] ?? ''}`}>
+                  {vivaStatus.replace('_', ' ').toUpperCase()}
+                </span>
+              )}
+              {viva.outcome && (
+                <span className={`rounded-full px-3 py-1 text-xs font-medium ${OUTCOME_COLORS[viva.outcome]}`}>
+                  {OUTCOME_LABELS[viva.outcome]}
+                </span>
+              )}
+            </div>
+            <p className="mt-1 font-mono text-sm text-gray-500 dark:text-gray-400">
+              {viva.registration_number} · {viva.programme_code}
             </p>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              {fmt(viva.scheduled_date)} at {fmtTime(viva.scheduled_time)} — {viva.venue}
-            </p>
-            <p className="mt-2 text-sm italic text-gray-500 dark:text-gray-400">
+            <p className="mt-2 max-w-2xl text-sm italic text-gray-500 dark:text-gray-400">
               &ldquo;{viva.thesis_title}&rdquo;
             </p>
           </div>
-          <div className="flex flex-col items-end gap-2">
-            <span className="rounded-full bg-indigo-100 px-3 py-1 text-sm font-medium text-indigo-700 dark:bg-indigo-900 dark:text-indigo-200">
-              Your Role: {EXAMINER_ROLE_LABELS[myRole]}
-            </span>
-            {locked && (
-              <span className="rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-700 dark:bg-green-900 dark:text-green-200">
-                ✅ Evaluation Submitted
+
+          <div className="flex flex-col items-end gap-2 flex-shrink-0 text-sm text-gray-600 dark:text-gray-400">
+            <p>📅 {fmt(viva.scheduled_date)}</p>
+            <p>⏰ {fmtTime(viva.scheduled_time)}</p>
+            <p>📍 {viva.venue}</p>
+            {myExaminerRecord && (
+              <span className="rounded-full bg-indigo-100 px-3 py-1 text-xs font-medium text-indigo-700 dark:bg-indigo-900 dark:text-indigo-200">
+                Your Role: {EXAMINER_ROLE_LABELS[myExaminerRecord.role]}
               </span>
             )}
           </div>
         </div>
+
+        {/* Tabs */}
+        <div className="mt-6 border-b border-gray-200 dark:border-gray-700">
+          <nav className="-mb-px flex gap-6 overflow-x-auto">
+            {tabs.map((t) => (
+              <button
+                key={t.key}
+                onClick={() => setActiveTab(t.key)}
+                className={`whitespace-nowrap pb-3 text-sm font-medium transition-colors border-b-2 ${
+                  activeTab === t.key
+                    ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </nav>
+        </div>
       </div>
 
-      {locked && (
-        <div className="rounded-xl border border-green-200 bg-green-50 p-5 dark:border-green-700 dark:bg-green-900/20">
-          <p className="font-medium text-green-800 dark:text-green-200">
-            Your evaluation has been submitted and is now locked. No further edits are possible.
-          </p>
+      {/* ── Tab: My Evaluation ───────────────────────────────────────────────── */}
+      {activeTab === 'my_evaluation' && myExaminerRecord && (
+        <div className="space-y-5">
+          {locked && (
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-5 dark:border-emerald-700 dark:bg-emerald-900/20">
+              <p className="font-medium text-emerald-800 dark:text-emerald-200">
+                ✅ Your evaluation has been submitted and is now locked. No further edits are possible.
+              </p>
+            </div>
+          )}
+
+          {/* Scoring */}
+          <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
+            <h2 className="mb-5 font-semibold text-gray-900 dark:text-white">
+              Scoring{' '}
+              <span className="text-sm font-normal text-gray-500 dark:text-gray-400">(each criterion out of 25)</span>
+            </h2>
+
+            <div className="space-y-5">
+              {[
+                { key: 'originality_score'   as keyof EvaluationDraft, label: 'Originality',       desc: 'Novel contribution to the field' },
+                { key: 'methodology_score'   as keyof EvaluationDraft, label: 'Methodology',       desc: 'Research design and approach' },
+                { key: 'presentation_score'  as keyof EvaluationDraft, label: 'Presentation',      desc: 'Clarity of writing and structure' },
+                { key: 'literature_score'    as keyof EvaluationDraft, label: 'Literature Review', desc: 'Coverage and analysis of existing work' },
+              ].map(({ key, label, desc }) => (
+                <div key={key} className="flex items-center gap-4">
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{label}</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500">{desc}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min={0}
+                      max={25}
+                      value={draft[key] as string}
+                      onChange={(e) => setScore(key, e.target.value)}
+                      disabled={locked}
+                      placeholder="0"
+                      className={`w-20 rounded-lg border px-3 py-2 text-center text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500/20 ${
+                        locked
+                          ? 'cursor-not-allowed border-gray-200 bg-gray-50 text-gray-500 dark:border-gray-700 dark:bg-gray-700 dark:text-gray-400'
+                          : 'border-gray-300 bg-white focus:border-emerald-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white'
+                      }`}
+                    />
+                    <span className="text-sm text-gray-400">/25</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Live total */}
+            <div className="mt-6 flex items-center justify-between rounded-xl bg-emerald-50 px-5 py-4 dark:bg-emerald-900/20">
+              <span className="font-semibold text-gray-700 dark:text-gray-300">Total Score</span>
+              <div className="text-right">
+                <span className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">
+                  {allScoresFilled ? totalScore() : '—'}
+                </span>
+                <span className="text-gray-500 dark:text-gray-400"> /100</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Qualitative feedback */}
+          <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
+            <h2 className="mb-5 font-semibold text-gray-900 dark:text-white">Qualitative Feedback</h2>
+            <div className="space-y-5">
+              {[
+                { key: 'strengths'               as keyof EvaluationDraft, label: '💪 Strengths',                placeholder: 'Key strengths of the thesis...' },
+                { key: 'weaknesses'              as keyof EvaluationDraft, label: '⚠️ Weaknesses',               placeholder: 'Areas needing improvement...' },
+                { key: 'recommended_corrections' as keyof EvaluationDraft, label: '🔧 Recommended Corrections', placeholder: 'Specific corrections required...' },
+                { key: 'general_comments'        as keyof EvaluationDraft, label: '💬 General Comments',        placeholder: 'Any other observations...' },
+              ].map(({ key, label, placeholder }) => (
+                <div key={key}>
+                  <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">{label}</label>
+                  <textarea
+                    value={draft[key] as string}
+                    onChange={(e) => setDraft((p) => ({ ...p, [key]: e.target.value }))}
+                    rows={3}
+                    disabled={locked}
+                    placeholder={locked ? '' : placeholder}
+                    className={`w-full rounded-lg border px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 ${
+                      locked
+                        ? 'cursor-not-allowed border-gray-200 bg-gray-50 text-gray-600 dark:border-gray-700 dark:bg-gray-700 dark:text-gray-400'
+                        : 'border-gray-300 bg-white focus:border-emerald-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white'
+                    }`}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Action buttons */}
+          {!locked && (
+            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
+              {draftError && (
+                <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600 dark:bg-red-900/30 dark:text-red-400">
+                  {draftError}
+                </div>
+              )}
+              {saveMsg && (
+                <div className="mb-4 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+                  {saveMsg}
+                </div>
+              )}
+              <div className="flex flex-wrap gap-3">
+                <button
+                  onClick={handleSaveDraft}
+                  disabled={saving}
+                  className="rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+                >
+                  {saving ? 'Saving...' : '💾 Save Draft'}
+                </button>
+                <button
+                  onClick={handleSubmitEvaluation}
+                  disabled={submitting || !allScoresFilled}
+                  className="rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {submitting ? 'Submitting...' : '✅ Submit Evaluation'}
+                </button>
+              </div>
+              <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
+                ⚠️ Once submitted, your evaluation is locked and cannot be edited. Save as draft to preserve progress.
+              </p>
+            </div>
+          )}
         </div>
       )}
 
-      {/* Scoring */}
-      <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
-        <h2 className="mb-5 font-semibold text-gray-900 dark:text-white">
-          Scoring <span className="text-sm font-normal text-gray-500">(each criterion out of 25)</span>
-        </h2>
-
+      {/* ── Tab: All Evaluations ─────────────────────────────────────────────── */}
+      {activeTab === 'all_evaluations' && (
         <div className="space-y-4">
-          {[
-            { key: 'originality_score' as keyof EvaluationDraft, label: 'Originality', desc: 'Novel contribution to the field' },
-            { key: 'methodology_score' as keyof EvaluationDraft, label: 'Methodology', desc: 'Research design and approach' },
-            { key: 'presentation_score' as keyof EvaluationDraft, label: 'Presentation', desc: 'Clarity of writing and structure' },
-            { key: 'literature_score' as keyof EvaluationDraft, label: 'Literature Review', desc: 'Coverage and analysis of existing work' },
-          ].map(({ key, label, desc }) => (
-            <div key={key} className="flex items-center gap-4">
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{label}</p>
-                <p className="text-xs text-gray-400">{desc}</p>
+          {pendingExaminers.length > 0 && (
+            <div className="flex items-start gap-3 rounded-xl border border-orange-200 bg-orange-50 p-4 dark:border-orange-800 dark:bg-orange-900/20">
+              <span className="text-xl">⚠️</span>
+              <div>
+                <p className="font-medium text-orange-800 dark:text-orange-300">
+                  {pendingExaminers.length} evaluation{pendingExaminers.length > 1 ? 's' : ''} outstanding
+                </p>
+                <p className="mt-0.5 text-sm text-orange-700 dark:text-orange-400">
+                  Pending from: {pendingExaminers.map((e) => e.examiner_name).join(', ')}
+                </p>
               </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="number"
-                  min={0}
-                  max={25}
-                  value={draft[key] as string}
-                  onChange={(e) => setScore(key, e.target.value)}
-                  disabled={locked}
-                  placeholder="0"
-                  className={`w-20 rounded-lg border px-3 py-2 text-center text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500/20 ${
-                    locked
-                      ? 'cursor-not-allowed border-gray-200 bg-gray-50 text-gray-500 dark:border-gray-700 dark:bg-gray-700 dark:text-gray-400'
-                      : 'border-gray-300 bg-white focus:border-emerald-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white'
-                  }`}
+            </div>
+          )}
+
+          {submitted.length === 0 ? (
+            <div className="rounded-xl border border-gray-200 bg-white py-14 text-center shadow-md dark:border-gray-700 dark:bg-gray-800">
+              <div className="text-5xl">📝</div>
+              <p className="mt-3 font-medium text-gray-700 dark:text-gray-300">No evaluations submitted yet.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {submitted.map((ev) => {
+                const evalId = ev.id ?? ev.evaluation_id;
+                const total =
+                  (ev.originality_score ?? 0) +
+                  (ev.methodology_score ?? 0) +
+                  (ev.presentation_score ?? 0) +
+                  (ev.literature_score ?? 0);
+                const hasScores = ev.originality_score !== null;
+                return (
+                  <div key={evalId} className="rounded-xl border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <p className="font-semibold text-gray-900 dark:text-white">{ev.examiner_name}</p>
+                        {ev.examiner_role && (
+                          <p className="text-xs capitalize text-gray-500 dark:text-gray-400">
+                            {ev.examiner_role.replace('_', ' ')}
+                            {ev.submitted_at && ` · Submitted ${fmt(ev.submitted_at)}`}
+                          </p>
+                        )}
+                      </div>
+                      {hasScores && (
+                        <div className="rounded-lg bg-emerald-50 px-3 py-1.5 text-right dark:bg-emerald-900/30">
+                          <span className="text-xl font-bold text-emerald-600 dark:text-emerald-400">{total}</span>
+                          <span className="text-sm text-gray-500 dark:text-gray-400">/100</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {hasScores && (
+                      <div className="mt-4 space-y-3">
+                        {[
+                          { label: 'Originality',       score: ev.originality_score },
+                          { label: 'Methodology',       score: ev.methodology_score },
+                          { label: 'Presentation',      score: ev.presentation_score },
+                          { label: 'Literature Review', score: ev.literature_score },
+                        ].map((row) => (
+                          <div key={row.label} className="grid grid-cols-[150px_1fr] items-center gap-3">
+                            <span className="text-xs text-gray-500 dark:text-gray-400">{row.label}</span>
+                            <ScoreBar score={row.score} max={25} />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {(ev.strengths || ev.weaknesses || ev.recommended_corrections || ev.general_comments) && (
+                      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                        {[
+                          { label: '💪 Strengths',     val: ev.strengths },
+                          { label: '⚠️ Weaknesses',     val: ev.weaknesses },
+                          { label: '🔧 Corrections',   val: ev.recommended_corrections },
+                          { label: '💬 Comments',      val: ev.general_comments },
+                        ].filter((r) => r.val).map((r) => (
+                          <div key={r.label} className="rounded-lg bg-gray-50 p-3 dark:bg-gray-700/40">
+                            <p className="mb-1 text-xs font-medium text-gray-500 dark:text-gray-400">{r.label}</p>
+                            <p className="whitespace-pre-wrap text-sm text-gray-700 dark:text-gray-300">{r.val}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Tab: Examiners ───────────────────────────────────────────────────── */}
+      {activeTab === 'examiners' && (
+        <div className="rounded-xl border border-gray-200 bg-white shadow-md dark:border-gray-700 dark:bg-gray-800 overflow-hidden">
+          {examiners.length === 0 ? (
+            <div className="py-14 text-center">
+              <div className="text-5xl">👥</div>
+              <p className="mt-3 text-gray-600 dark:text-gray-400">No examiners assigned.</p>
+            </div>
+          ) : (
+            <table className="w-full">
+              <thead className="border-b border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Examiner</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Role</th>
+                  <th className="px-6 py-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Confirmed</th>
+                  <th className="px-6 py-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Evaluation</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                {examiners.map((ex) => (
+                  <tr key={ex.examiner_id} className="transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                    <td className="px-6 py-4">
+                      <p className="font-medium text-gray-900 dark:text-white">{ex.examiner_name}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{ex.examiner_email}</p>
+                    </td>
+                    <td className="px-6 py-4 text-sm capitalize text-gray-700 dark:text-gray-300">
+                      {EXAMINER_ROLE_LABELS[ex.role] ?? ex.role.replace('_', ' ')}
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      {ex.confirmed
+                        ? <span className="text-emerald-600 dark:text-emerald-400">✅ Yes</span>
+                        : <span className="text-orange-500">⏳ Pending</span>}
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      {ex.evaluation_submitted ? (
+                        <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
+                          ✅ Submitted
+                        </span>
+                      ) : (
+                        <span className="rounded-full bg-orange-100 px-2.5 py-1 text-xs font-medium text-orange-700 dark:bg-orange-900/40 dark:text-orange-300">
+                          ⚠️ Outstanding
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
+
+      {/* ── Tab: Outcome ─────────────────────────────────────────────────────── */}
+      {activeTab === 'outcome' && (
+        <div className="space-y-4">
+          {viva.outcome ? (
+            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
+              <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Official Outcome</h2>
+              <div className="flex flex-wrap items-center gap-4">
+                <span className={`rounded-full px-4 py-2 text-sm font-semibold ${OUTCOME_COLORS[viva.outcome]}`}>
+                  {OUTCOME_LABELS[viva.outcome]}
+                </span>
+                {viva.issued_at && (
+                  <span className="text-sm text-gray-500 dark:text-gray-400">Issued {fmt(viva.issued_at)}</span>
+                )}
+              </div>
+              {viva.outcome_notes && (
+                <div className="mt-4 rounded-lg bg-gray-50 p-4 text-sm dark:bg-gray-700/40">
+                  <p className="mb-1 text-xs font-medium text-gray-500 dark:text-gray-400">Notes</p>
+                  <p className="whitespace-pre-wrap text-gray-700 dark:text-gray-300">{viva.outcome_notes}</p>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
+              <h2 className="mb-1 text-lg font-semibold text-gray-900 dark:text-white">Issue Official Outcome</h2>
+              <p className="mb-5 text-sm text-gray-500 dark:text-gray-400">
+                {allEvaluationsIn
+                  ? 'All evaluations are in. You can now issue the official outcome.'
+                  : `${pendingExaminers.length} evaluation${pendingExaminers.length !== 1 ? 's' : ''} still outstanding.`}
+              </p>
+              {!allEvaluationsIn && (
+                <div className="mb-5 flex items-start gap-3 rounded-xl border border-orange-200 bg-orange-50 p-4 dark:border-orange-800 dark:bg-orange-900/20">
+                  <span>⚠️</span>
+                  <p className="text-sm text-orange-700 dark:text-orange-400">
+                    Pending from: {pendingExaminers.map((e) => e.examiner_name).join(', ')}
+                  </p>
+                </div>
+              )}
+              <button
+                onClick={() => { setOutcomeForm({ outcome: '', notes: '' }); setOutcomeError(''); setShowOutcomeModal(true); }}
+                className="rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-emerald-700"
+              >
+                🏆 Issue Outcome
+              </button>
+            </div>
+          )}
+
+          {/* Score summary across all examiners */}
+          {submitted.length > 0 && (
+            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
+              <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                Examiner Score Summary
+              </h3>
+              <div className="space-y-3">
+                {submitted.map((ev) => {
+                  const total =
+                    (ev.originality_score ?? 0) +
+                    (ev.methodology_score ?? 0) +
+                    (ev.presentation_score ?? 0) +
+                    (ev.literature_score ?? 0);
+                  return (
+                    <div key={ev.id ?? ev.evaluation_id} className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">{ev.examiner_name}</p>
+                        {ev.examiner_role && (
+                          <p className="text-xs capitalize text-gray-500 dark:text-gray-400">
+                            {ev.examiner_role.replace('_', ' ')}
+                          </p>
+                        )}
+                      </div>
+                      <span className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                        total >= 70 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' :
+                        total >= 50 ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300' :
+                        'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
+                      }`}>
+                        {total}/100
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Issue Outcome Modal ───────────────────────────────────────────────── */}
+      {showOutcomeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl dark:bg-gray-800">
+            <h3 className="mb-1 text-lg font-bold text-gray-900 dark:text-white">🏆 Issue Official Outcome</h3>
+            <p className="mb-5 text-sm text-gray-500 dark:text-gray-400">
+              Final outcome for{' '}
+              <span className="font-medium text-gray-700 dark:text-gray-300">{viva.candidate_name}</span>.
+            </p>
+            {outcomeError && (
+              <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600 dark:bg-red-900/30 dark:text-red-400">
+                {outcomeError}
+              </div>
+            )}
+            <form onSubmit={handleIssueOutcome} className="space-y-4">
+              <Field label="Official Outcome" required>
+                <select
+                  value={outcomeForm.outcome}
+                  onChange={(e) => setOutcomeForm((p) => ({ ...p, outcome: e.target.value as VivaOutcome }))}
+                  className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                >
+                  <option value="">Select outcome…</option>
+                  {(Object.entries(OUTCOME_LABELS) as [VivaOutcome, string][]).map(([v, l]) => (
+                    <option key={v} value={v}>{l}</option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Notes (optional)">
+                <textarea
+                  value={outcomeForm.notes}
+                  onChange={(e) => setOutcomeForm((p) => ({ ...p, notes: e.target.value }))}
+                  rows={3}
+                  placeholder="Any additional notes or conditions…"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                 />
-                <span className="text-sm text-gray-400">/25</span>
+              </Field>
+              <div className="flex gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setShowOutcomeModal(false)}
+                  className="flex-1 rounded-lg border border-gray-300 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={outcomeLoading}
+                  className="flex-1 rounded-lg bg-emerald-600 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+                >
+                  {outcomeLoading ? 'Issuing…' : 'Confirm & Issue'}
+                </button>
               </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Live total */}
-        <div className="mt-6 flex items-center justify-between rounded-xl bg-emerald-50 px-5 py-4 dark:bg-emerald-900/20">
-          <span className="font-semibold text-gray-700 dark:text-gray-300">Total Score</span>
-          <div className="text-right">
-            <span className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">
-              {allScoresFilled ? totalScore() : '—'}
-            </span>
-            <span className="text-gray-500 dark:text-gray-400"> /100</span>
+            </form>
           </div>
-        </div>
-      </div>
-
-      {/* Qualitative Feedback */}
-      <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
-        <h2 className="mb-5 font-semibold text-gray-900 dark:text-white">Qualitative Feedback</h2>
-        <div className="space-y-5">
-          {[
-            { key: 'strengths' as keyof EvaluationDraft, label: '💪 Strengths', placeholder: 'Key strengths of the thesis...' },
-            { key: 'weaknesses' as keyof EvaluationDraft, label: '⚠️ Weaknesses', placeholder: 'Areas needing improvement...' },
-            { key: 'recommended_corrections' as keyof EvaluationDraft, label: '🔧 Recommended Corrections', placeholder: 'Specific corrections required...' },
-            { key: 'general_comments' as keyof EvaluationDraft, label: '💬 General Comments', placeholder: 'Any other observations...' },
-          ].map(({ key, label, placeholder }) => (
-            <div key={key}>
-              <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">{label}</label>
-              <textarea
-                value={draft[key] as string}
-                onChange={(e) => setDraft((p) => ({ ...p, [key]: e.target.value }))}
-                rows={3}
-                disabled={locked}
-                placeholder={locked ? '' : placeholder}
-                className={`w-full rounded-lg border px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 ${
-                  locked
-                    ? 'cursor-not-allowed border-gray-200 bg-gray-50 text-gray-600 dark:border-gray-700 dark:bg-gray-700 dark:text-gray-400'
-                    : 'border-gray-300 bg-white focus:border-emerald-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white'
-                }`}
-              />
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Action Buttons */}
-      {!locked && (
-        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
-          {error && (
-            <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600 dark:bg-red-900/30 dark:text-red-400">
-              {error}
-            </div>
-          )}
-          {saveMsg && (
-            <div className="mb-4 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
-              {saveMsg}
-            </div>
-          )}
-          <div className="flex flex-wrap gap-3">
-            <button
-              onClick={handleSaveDraft}
-              disabled={saving}
-              className="rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
-            >
-              {saving ? 'Saving...' : '💾 Save Draft'}
-            </button>
-            <button
-              onClick={handleSubmit}
-              disabled={submitting || !allScoresFilled}
-              className="rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {submitting ? 'Submitting...' : '✅ Submit Evaluation'}
-            </button>
-          </div>
-          <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
-            ⚠️ Once submitted, your evaluation is locked and cannot be edited.
-            Save as draft to preserve your progress.
-          </p>
         </div>
       )}
     </div>
