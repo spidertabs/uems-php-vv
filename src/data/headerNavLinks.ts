@@ -108,6 +108,13 @@ const headerNavLinks: NavLink[] = [
     roles: ['admin', 'dean', 'hod'],
   },
 
+  // PhD Management
+  {
+    title: '🎓 PhD Candidates',
+    href: '/phd/my-candidates',
+    roles: ['lecturer'],
+  },
+
   // Bottom Section
   {
     title: '⚙️ Settings',

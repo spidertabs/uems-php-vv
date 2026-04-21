@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAuth } from '@/lib/auth';
+import { hasPermission } from '@/lib/rbac';
 import { query } from '@/lib/db';
 
 export async function GET(
@@ -9,7 +10,7 @@ export async function GET(
 ) {
   try {
     const user = await verifyAuth(req);
-    if (!user || !['viva_coordinator', 'admin', 'hod'].includes(user.role)) {
+    if (!user || !['viva_coordinator', 'admin', 'hod', 'lecturer'].includes(user.role)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
@@ -47,6 +48,22 @@ export async function GET(
     }
 
     const row = rows[0];
+
+    // Permission check for lecturers: only allow viewing assigned candidates
+    if (user.role === 'lecturer') {
+      if (!hasPermission(user, 'view_candidate_details')) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
+
+      // Verify lecturer is supervisor or co-supervisor
+      if (row.supervisor_id !== user.id && row.co_supervisor_id !== user.id) {
+        return NextResponse.json(
+          { error: 'You are not authorized to view this candidate' },
+          { status: 403 }
+        );
+      }
+    }
+
     const candidate = {
       ...row,
       co_supervisor_name:
