@@ -59,7 +59,6 @@ export default function RegisterPage() {
 
       const data = await res.json();
       if (res.ok && data.success) {
-        // Redirect to dashboard after successful registration and auto-login
         router.push('/');
       } else {
         setErrors({ general: data.error || 'Registration failed' });
@@ -72,27 +71,27 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="mx-auto max-w-md px-6 py-6">
-      <div className="mb-6 text-center">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Create Account</h2>
-        <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">Sign up to get started — access exam papers, question bank, and PhD Viva Voce</p>
+    <div className="mx-auto max-w-md px-6 py-2">
+      {/* ← Back to login */}
+      <div className="mb-2">
+        <Link href="/auth/login" className="text-sm text-blue-600 hover:underline dark:text-blue-400">
+          ← Back to Sign In
+        </Link>
       </div>
 
       {errors.general && (
-        <Alert variant="destructive" className="mb-4">
+        <Alert variant="destructive" className="mb-3">
           <AlertDescription>{errors.general}</AlertDescription>
         </Alert>
       )}
 
       <Card className="border-white/30 bg-white/60 backdrop-blur-md dark:border-gray-600/30 dark:bg-gray-800/60">
-        <CardContent className="space-y-5 p-6">
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="grid grid-cols-2 gap-4">
+        <CardContent className="space-y-3 p-4">
+          <form onSubmit={handleSubmit} className="space-y-3">
+
+            <div className="grid grid-cols-2 gap-3">
               <div>
-                <label 
-                  htmlFor="first_name" 
-                  className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
-                >
+                <label htmlFor="first_name" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
                   First Name
                 </label>
                 <Input
@@ -110,10 +109,7 @@ export default function RegisterPage() {
               </div>
 
               <div>
-                <label 
-                  htmlFor="last_name" 
-                  className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
-                >
+                <label htmlFor="last_name" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Last Name
                 </label>
                 <Input
@@ -132,10 +128,7 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label 
-                htmlFor="email" 
-                className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
-              >
+              <label htmlFor="email" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Email Address
               </label>
               <Input
@@ -154,10 +147,23 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label 
-                htmlFor="password" 
-                className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
-              >
+              <label htmlFor="phone" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Phone <span className="text-gray-400 font-normal">(optional)</span>
+              </label>
+              <Input
+                id="phone"
+                name="phone"
+                type="tel"
+                placeholder="+256 700 000000"
+                value={formData.phone}
+                onChange={handleChange}
+                disabled={isLoading}
+                className="bg-white dark:bg-gray-900 dark:text-white dark:border-gray-600"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="password" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Password
               </label>
               <div className="relative">
@@ -185,10 +191,7 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label 
-                htmlFor="confirmPassword" 
-                className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
-              >
+              <label htmlFor="confirmPassword" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Confirm Password
               </label>
               <div className="relative">
@@ -215,16 +218,16 @@ export default function RegisterPage() {
               )}
             </div>
 
-            <Button 
-              type="submit" 
-              disabled={isLoading} 
-              className="w-full bg-gray-900 text-white hover:bg-gray-800 dark:bg-gray-800 dark:hover:bg-gray-700"
+            <Button
+              type="submit"
+              disabled={isLoading}
+              className="w-full bg-green-600 text-white hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800"
             >
               {isLoading ? 'Creating account...' : 'Create Account'}
             </Button>
           </form>
 
-          <p className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
+          <p className="text-center text-sm text-gray-600 dark:text-gray-400">
             Already have an account?{' '}
             <Link href="/auth/login" className="text-blue-600 hover:underline dark:text-blue-400">
               Sign in here
