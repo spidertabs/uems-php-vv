@@ -40,18 +40,37 @@ export default function CandidateDetailPage() {
 
   // Upload modal state
   const [showUpload, setShowUpload] = useState(false);
-  const [uploadForm, setUploadForm] = useState({ file_name: '', file_path: '', file_size_kb: '', submission_notes: '' });
+  const [uploadForm, setUploadForm] = useState({
+    file_name: '',
+    file_path: '',
+    file_size_kb: '',
+    submission_notes: '',
+  });
   const [uploadLoading, setUploadLoading] = useState(false);
   const [uploadError, setUploadError] = useState('');
 
   // Edit state
-  const [editForm, setEditForm] = useState<Partial<CandidateWithDetails & { status: CandidateStatus }>>({});
+  const [editForm, setEditForm] = useState<{
+    thesis_title?: string;
+    status?: CandidateStatus;
+    programme_id?: number | null;
+    supervisor_id?: number | null;
+    co_supervisor_id?: number | null;
+  }>({});
   const [editLoading, setEditLoading] = useState(false);
   const [editError, setEditError] = useState('');
   const [editSuccess, setEditSuccess] = useState('');
 
+  // Dropdown options
+  const [programmes, setProgrammes] = useState<Array<{ id: number; code: string; name: string }>>([]);
+  const [supervisors, setSupervisors] = useState<Array<{ id: number; name: string }>>([]);
+  const [programmeLoading, setProgrammeLoading] = useState(false);
+  const [supervisorLoading, setSupervisorLoading] = useState(false);
+
   useEffect(() => {
     fetchAll();
+    fetchProgrammes();
+    fetchSupervisors();
   }, [candidateId]);
 
   const fetchAll = async () => {
@@ -65,7 +84,13 @@ export default function CandidateDetailPage() {
       if (cRes.ok) {
         const d = await cRes.json();
         setCandidate(d.candidate);
-        setEditForm({ thesis_title: d.candidate.thesis_title, status: d.candidate.status });
+        setEditForm({
+          thesis_title: d.candidate.thesis_title,
+          status: d.candidate.status,
+          programme_id: d.candidate.programme_id,
+          supervisor_id: d.candidate.supervisor_id,
+          co_supervisor_id: d.candidate.co_supervisor_id,
+        });
       }
       if (tRes.ok) { const d = await tRes.json(); setTheses(d.submissions || []); }
       if (vRes.ok) { const d = await vRes.json(); setVivas(d.schedules || []); }
@@ -73,6 +98,47 @@ export default function CandidateDetailPage() {
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchProgrammes = async () => {
+    try {
+      setProgrammeLoading(true);
+      const res = await fetch('/api/phd/programmes');
+      if (res.ok) {
+        const d = await res.json();
+        setProgrammes(d.programmes || []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch programmes:', err);
+    } finally {
+      setProgrammeLoading(false);
+    }
+  };
+
+  const fetchSupervisors = async () => {
+    try {
+      setSupervisorLoading(true);
+      const res = await fetch('/api/users?role=lecturer&limit=999');
+      if (res.ok) {
+        const d = await res.json();
+        const raw = d.users || d.data || [];
+        setSupervisors(
+          raw.map((u: {
+            id: number;
+            name?: string;
+            first_name?: string;
+            last_name?: string;
+          }) => ({
+            id: u.id,
+            name: u.name ?? `${u.first_name ?? ''} ${u.last_name ?? ''}`.trim(),
+          }))
+        );
+      }
+    } catch (err) {
+      console.error('Failed to fetch supervisors:', err);
+    } finally {
+      setSupervisorLoading(false);
     }
   };
 
@@ -84,7 +150,10 @@ export default function CandidateDetailPage() {
       const res = await fetch(`/api/phd/candidates/${candidateId}/thesis`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...uploadForm, file_size_kb: parseInt(uploadForm.file_size_kb) || null }),
+        body: JSON.stringify({
+          ...uploadForm,
+          file_size_kb: parseInt(uploadForm.file_size_kb) || null,
+        }),
       });
       const data = await res.json();
       if (!res.ok) { setUploadError(data.error || 'Upload failed'); return; }
@@ -100,7 +169,8 @@ export default function CandidateDetailPage() {
 
   const handleEdit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setEditError(''); setEditSuccess('');
+    setEditError('');
+    setEditSuccess('');
     setEditLoading(true);
     try {
       const res = await fetch(`/api/phd/candidates/${candidateId}`, {
@@ -119,8 +189,25 @@ export default function CandidateDetailPage() {
     }
   };
 
+  const resetEditForm = () => {
+    if (!candidate) return;
+    setEditForm({
+      thesis_title: candidate.thesis_title,
+      status: candidate.status,
+      programme_id: candidate.programme_id,
+      supervisor_id: candidate.supervisor_id,
+      co_supervisor_id: candidate.co_supervisor_id,
+    });
+    setEditError('');
+    setEditSuccess('');
+  };
+
   const formatDate = (dateStr: string) =>
-    new Date(dateStr).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    new Date(dateStr).toLocaleDateString('en-GB', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
 
   const formatFileSize = (kb: number | null) => {
     if (!kb) return '—';
@@ -131,7 +218,7 @@ export default function CandidateDetailPage() {
   if (loading) {
     return (
       <div className="flex h-96 items-center justify-center">
-        <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-emerald-600"></div>
+        <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-emerald-600" />
       </div>
     );
   }
@@ -141,7 +228,9 @@ export default function CandidateDetailPage() {
       <div className="lg:pl-64 py-12 text-center">
         <div className="text-5xl">🔍</div>
         <p className="mt-4 text-gray-600 dark:text-gray-400">Candidate not found.</p>
-        <Link href="/phd/candidates" className="mt-3 inline-block text-emerald-600 hover:underline">← Back to Candidates</Link>
+        <Link href="/phd/candidates" className="mt-3 inline-block text-emerald-600 hover:underline">
+          ← Back to Candidates
+        </Link>
       </div>
     );
   }
@@ -154,6 +243,7 @@ export default function CandidateDetailPage() {
 
   return (
     <div className="space-y-6 lg:pl-64">
+
       {/* Back */}
       <Link href="/phd/candidates" className="text-sm text-emerald-600 hover:underline dark:text-emerald-400">
         ← Back to Candidates
@@ -164,7 +254,9 @@ export default function CandidateDetailPage() {
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{candidate.candidate_name}</h1>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                {candidate.candidate_name}
+              </h1>
               <span className={`rounded-full px-3 py-1 text-xs font-medium ${CANDIDATE_STATUS_COLORS[candidate.status]}`}>
                 {CANDIDATE_STATUS_LABELS[candidate.status]}
               </span>
@@ -179,7 +271,7 @@ export default function CandidateDetailPage() {
               &ldquo;{candidate.thesis_title}&rdquo;
             </p>
           </div>
-          <div className="text-right text-sm text-gray-600 dark:text-gray-400 space-y-1">
+          <div className="space-y-1 text-right text-sm text-gray-600 dark:text-gray-400">
             {candidate.supervisor_name && (
               <p>👤 <span className="font-medium">Supervisor:</span> {candidate.supervisor_name}</p>
             )}
@@ -199,7 +291,7 @@ export default function CandidateDetailPage() {
               <button
                 key={t.key}
                 onClick={() => setActiveTab(t.key)}
-                className={`pb-3 text-sm font-medium transition-colors border-b-2 ${
+                className={`border-b-2 pb-3 text-sm font-medium transition-colors ${
                   activeTab === t.key
                     ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400'
                     : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
@@ -212,7 +304,7 @@ export default function CandidateDetailPage() {
         </div>
       </div>
 
-      {/* Tab: Thesis */}
+      {/* ── Tab: Thesis ── */}
       {activeTab === 'thesis' && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
@@ -231,7 +323,7 @@ export default function CandidateDetailPage() {
               <p className="mt-3 text-gray-600 dark:text-gray-400">No thesis submitted yet.</p>
             </div>
           ) : (
-            <div className="rounded-xl border border-gray-200 bg-white shadow-md dark:border-gray-700 dark:bg-gray-800 overflow-hidden">
+            <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-md dark:border-gray-700 dark:bg-gray-800">
               {theses
                 .slice()
                 .sort((a, b) => b.version - a.version)
@@ -255,13 +347,15 @@ export default function CandidateDetailPage() {
                         </p>
                         <p className="text-sm text-gray-500 dark:text-gray-400">{t.file_name}</p>
                         {t.submission_notes && (
-                          <p className="mt-1 text-xs italic text-gray-400 dark:text-gray-500">{t.submission_notes}</p>
+                          <p className="mt-1 text-xs italic text-gray-400 dark:text-gray-500">
+                            {t.submission_notes}
+                          </p>
                         )}
                       </div>
                     </div>
                     <div className="flex-shrink-0 text-right text-sm">
                       <p className="text-gray-600 dark:text-gray-400">{formatDate(t.submitted_at)}</p>
-                      <p className="text-gray-500 dark:text-gray-500">{formatFileSize(t.file_size_kb)}</p>
+                      <p className="text-gray-500">{formatFileSize(t.file_size_kb)}</p>
                     </div>
                   </div>
                 ))}
@@ -272,7 +366,9 @@ export default function CandidateDetailPage() {
           {showUpload && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
               <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl dark:bg-gray-800">
-                <h3 className="mb-4 text-lg font-bold text-gray-900 dark:text-white">Upload Thesis Version</h3>
+                <h3 className="mb-4 text-lg font-bold text-gray-900 dark:text-white">
+                  Upload Thesis Version
+                </h3>
                 {uploadError && (
                   <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600 dark:bg-red-900/30 dark:text-red-400">
                     {uploadError}
@@ -285,7 +381,9 @@ export default function CandidateDetailPage() {
                     { name: 'file_size_kb', label: 'File Size (KB)', placeholder: '4820', required: false },
                   ].map((f) => (
                     <div key={f.name}>
-                      <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{f.label}</label>
+                      <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        {f.label}
+                      </label>
                       <input
                         type="text"
                         value={(uploadForm as Record<string, string>)[f.name]}
@@ -297,7 +395,9 @@ export default function CandidateDetailPage() {
                     </div>
                   ))}
                   <div>
-                    <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Submission Notes</label>
+                    <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Submission Notes
+                    </label>
                     <textarea
                       value={uploadForm.submission_notes}
                       onChange={(e) => setUploadForm((p) => ({ ...p, submission_notes: e.target.value }))}
@@ -328,7 +428,7 @@ export default function CandidateDetailPage() {
         </div>
       )}
 
-      {/* Tab: Viva History */}
+      {/* ── Tab: Viva History ── */}
       {activeTab === 'viva' && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
@@ -382,10 +482,13 @@ export default function CandidateDetailPage() {
         </div>
       )}
 
-      {/* Tab: Edit */}
+      {/* ── Tab: Edit ── */}
       {activeTab === 'edit' && (
         <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
-          <h2 className="mb-5 text-lg font-semibold text-gray-900 dark:text-white">Edit Candidate Details</h2>
+          <h2 className="mb-5 text-lg font-semibold text-gray-900 dark:text-white">
+            Edit Candidate Details
+          </h2>
+
           {editError && (
             <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600 dark:bg-red-900/30 dark:text-red-400">
               {editError}
@@ -393,12 +496,17 @@ export default function CandidateDetailPage() {
           )}
           {editSuccess && (
             <div className="mb-4 rounded-lg bg-green-50 p-3 text-sm text-green-700 dark:bg-green-900/30 dark:text-green-400">
-              {editSuccess}
+              ✅ {editSuccess}
             </div>
           )}
-          <form onSubmit={handleEdit} className="space-y-5 max-w-lg">
+
+          <form onSubmit={handleEdit} className="max-w-lg space-y-5">
+
+            {/* Thesis Title */}
             <div>
-              <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Thesis Title</label>
+              <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Thesis Title
+              </label>
               <textarea
                 value={editForm.thesis_title || ''}
                 onChange={(e) => setEditForm((p) => ({ ...p, thesis_title: e.target.value }))}
@@ -406,28 +514,132 @@ export default function CandidateDetailPage() {
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
               />
             </div>
+
+            {/* PhD Programme */}
             <div>
-              <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
+              <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                PhD Programme <span className="text-red-500">*</span>
+              </label>
               <select
-                value={editForm.status || ''}
-                onChange={(e) => setEditForm((p) => ({ ...p, status: e.target.value as CandidateStatus }))}
+                value={editForm.programme_id || ''}
+                onChange={(e) =>
+                  setEditForm((p) => ({ ...p, programme_id: parseInt(e.target.value) || undefined }))
+                }
+                required
                 className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
               >
-                {(Object.entries(CANDIDATE_STATUS_LABELS) as [CandidateStatus, string][]).map(([v, l]) => (
-                  <option key={v} value={v}>{l}</option>
-                ))}
+                <option value="">— Select Programme —</option>
+                {programmeLoading ? (
+                  <option disabled>Loading programmes...</option>
+                ) : (
+                  programmes.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.code} — {p.name}
+                    </option>
+                  ))
+                )}
               </select>
             </div>
-            <button
-              type="submit"
-              disabled={editLoading}
-              className="rounded-lg bg-emerald-600 px-6 py-2 text-sm text-white hover:bg-emerald-700 disabled:opacity-50"
-            >
-              {editLoading ? 'Saving...' : 'Save Changes'}
-            </button>
+
+            {/* Primary Supervisor */}
+            <div>
+              <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Primary Supervisor <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={editForm.supervisor_id || ''}
+                onChange={(e) =>
+                  setEditForm((p) => ({ ...p, supervisor_id: parseInt(e.target.value) || undefined }))
+                }
+                required
+                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+              >
+                <option value="">— Select Supervisor —</option>
+                {supervisorLoading ? (
+                  <option disabled>Loading supervisors...</option>
+                ) : (
+                  supervisors.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
+                  ))
+                )}
+              </select>
+            </div>
+
+            {/* Co-Supervisor */}
+            <div>
+              <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Co-Supervisor{' '}
+                <span className="font-normal text-gray-400">(optional)</span>
+              </label>
+              <select
+                value={editForm.co_supervisor_id || ''}
+                onChange={(e) =>
+                  setEditForm((p) => ({
+                    ...p,
+                    co_supervisor_id: e.target.value ? parseInt(e.target.value) : null,
+                  }))
+                }
+                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+              >
+                <option value="">— No Co-Supervisor —</option>
+                {supervisorLoading ? (
+                  <option disabled>Loading supervisors...</option>
+                ) : (
+                  supervisors
+                    .filter((s) => s.id !== editForm.supervisor_id)
+                    .map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                      </option>
+                    ))
+                )}
+              </select>
+            </div>
+
+            {/* Status */}
+            <div>
+              <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Candidate Status
+              </label>
+              <select
+                value={editForm.status || ''}
+                onChange={(e) =>
+                  setEditForm((p) => ({ ...p, status: e.target.value as CandidateStatus }))
+                }
+                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+              >
+                {(Object.entries(CANDIDATE_STATUS_LABELS) as [CandidateStatus, string][]).map(
+                  ([v, l]) => (
+                    <option key={v} value={v}>{l}</option>
+                  )
+                )}
+              </select>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3 pt-2">
+              <button
+                type="button"
+                onClick={resetEditForm}
+                className="flex-1 rounded-lg border border-gray-300 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+              >
+                Reset
+              </button>
+              <button
+                type="submit"
+                disabled={editLoading}
+                className="flex-1 rounded-lg bg-emerald-600 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+              >
+                {editLoading ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+
           </form>
         </div>
       )}
+
     </div>
   );
 }

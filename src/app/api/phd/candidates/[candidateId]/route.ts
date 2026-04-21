@@ -100,8 +100,9 @@ export async function PUT(
     const allowedFields = [
       'thesis_title',
       'status',
-      'co_supervisor_id',
-      'supervisor_id'
+      'programme_id',
+      'supervisor_id',
+      'co_supervisor_id'
     ];
 
     const updates: string[] = [];
