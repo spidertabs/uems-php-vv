@@ -12,7 +12,8 @@ import {
 } from '@/types/phd';
 
 interface Candidate {
-  candidate_id: number;
+  id: number;
+  candidate_id?: number;
   candidate_name: string;
   registration_number: string;
   programme_code: string;
@@ -244,7 +245,7 @@ export default function CandidatesPage() {
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                   {candidates.map((c) => (
                     <tr
-                      key={c.candidate_id}
+                      key={c.candidate_id ?? c.id}
                       className="transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50"
                     >
                       <td className="px-6 py-4">
@@ -300,7 +301,7 @@ export default function CandidatesPage() {
                       </td>
                       <td className="px-6 py-4 text-right">
                         <Link
-                          href={`/phd/candidates/${c.candidate_id}`}
+                          href={`/phd/candidates/${c.candidate_id ?? c.id}`}
                           className="rounded-lg bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700 transition-colors hover:bg-emerald-100 dark:bg-emerald-900/40 dark:text-emerald-300 dark:hover:bg-emerald-900/60"
                         >
                           View →
