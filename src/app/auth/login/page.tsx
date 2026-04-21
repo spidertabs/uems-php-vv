@@ -52,30 +52,25 @@ export default function LoginPage() {
   };
 
   return (
-    // ↓ Reduced py-6 → py-3, added min-h handling via flex centering
-    <div className="mx-auto max-w-md px-6 py-3">
-      {/* ↓ mb-6 → mb-3, tighter header */}
-      <div className="mb-3 text-center">
+    <div className="mx-auto max-w-md px-6 py-2">
+      <div className="mb-4 text-center">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Sign In</h2>
-        <p className="mt-0.5 text-sm text-gray-600 dark:text-gray-400">
+        <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
           Access your account — supports exam papers, question bank, and PhD Viva Voce
         </p>
       </div>
 
       {error && (
-        // ↓ mb-4 → mb-2
-        <Alert variant="destructive" className="mb-2">
+        <Alert variant="destructive" className="mb-4">
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
 
       <Card className="border-white/30 bg-white/60 backdrop-blur-md dark:border-gray-600/30 dark:bg-gray-800/60">
-        {/* ↓ p-6 → p-4, space-y-5 → space-y-3 */}
-        <CardContent className="space-y-3 p-4">
-          <form onSubmit={handleSubmit} className="space-y-3">
+        <CardContent className="space-y-5 p-6">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              {/* ↓ mb-2 → mb-1 on all labels */}
-              <label htmlFor="email" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label htmlFor="email" className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Email Address
               </label>
               <Input
@@ -92,7 +87,7 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label htmlFor="password" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label htmlFor="password" className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Password
               </label>
               <div className="relative">
