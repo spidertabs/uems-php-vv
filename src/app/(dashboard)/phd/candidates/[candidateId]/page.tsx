@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 // src/app/(dashboard)/phd/candidates/[candidateId]/page.tsx
 'use client';
 

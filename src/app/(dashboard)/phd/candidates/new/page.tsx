@@ -8,15 +8,28 @@ import { useRouter } from 'next/navigation';
 interface UserOption { id: number; first_name: string; last_name: string; email: string; role: string; }
 interface ProgrammeOption { id: number; code: string; name: string; }
 
-const Field = ({ name, label, required = false, children }: { name: string; label: string; required?: boolean; children: React.ReactNode }) => (
-  <div>
-    <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-      {label}{required && <span className="ml-1 text-red-500">*</span>}
-    </label>
-    {children}
-    {errors[name] && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errors[name]}</p>}
-  </div>
-);
+// ✅ Field is defined OUTSIDE the page component so it doesn't get
+//    recreated on every render — that was causing inputs to lose focus
+//    after each keystroke.
+function Field({
+  name, label, required = false, children, errors,
+}: {
+  name: string;
+  label: string;
+  required?: boolean;
+  children: React.ReactNode;
+  errors: Record<string, string>;
+}) {
+  return (
+    <div>
+      <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+        {label}{required && <span className="ml-1 text-red-500">*</span>}
+      </label>
+      {children}
+      {errors[name] && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errors[name]}</p>}
+    </div>
+  );
+}
 
 export default function RegisterCandidatePage() {
   const router = useRouter();
@@ -98,16 +111,6 @@ export default function RegisterCandidatePage() {
     }
   };
 
-  const Field = ({ name, label, required = false, children }: { name: string; label: string; required?: boolean; children: React.ReactNode }) => (
-    <div>
-      <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-        {label}{required && <span className="ml-1 text-red-500">*</span>}
-      </label>
-      {children}
-      {errors[name] && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errors[name]}</p>}
-    </div>
-  );
-
   if (dataLoading) {
     return <div className="flex h-96 items-center justify-center"><div className="h-12 w-12 animate-spin rounded-full border-b-2 border-emerald-600"></div></div>;
   }
@@ -131,7 +134,7 @@ export default function RegisterCandidatePage() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          <Field name="user_id" label="Candidate (User Account)" required>
+          <Field name="user_id" label="Candidate (User Account)" required errors={errors}>
             <select
               value={form.user_id}
               onChange={(e) => setForm((p) => ({ ...p, user_id: e.target.value }))}
@@ -146,7 +149,7 @@ export default function RegisterCandidatePage() {
             </select>
           </Field>
 
-          <Field name="registration_number" label="Registration Number" required>
+          <Field name="registration_number" label="Registration Number" required errors={errors}>
             <input
               type="text"
               value={form.registration_number}
@@ -156,7 +159,7 @@ export default function RegisterCandidatePage() {
             />
           </Field>
 
-          <Field name="thesis_title" label="Thesis Title" required>
+          <Field name="thesis_title" label="Thesis Title" required errors={errors}>
             <textarea
               value={form.thesis_title}
               onChange={(e) => setForm((p) => ({ ...p, thesis_title: e.target.value }))}
@@ -166,7 +169,7 @@ export default function RegisterCandidatePage() {
             />
           </Field>
 
-          <Field name="programme_id" label="PhD Programme" required>
+          <Field name="programme_id" label="PhD Programme" required errors={errors}>
             <select
               value={form.programme_id}
               onChange={(e) => setForm((p) => ({ ...p, programme_id: e.target.value }))}
@@ -180,7 +183,7 @@ export default function RegisterCandidatePage() {
           </Field>
 
           <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-            <Field name="supervisor_id" label="Primary Supervisor">
+            <Field name="supervisor_id" label="Primary Supervisor" errors={errors}>
               <select
                 value={form.supervisor_id}
                 onChange={(e) => setForm((p) => ({ ...p, supervisor_id: e.target.value }))}
@@ -193,7 +196,7 @@ export default function RegisterCandidatePage() {
               </select>
             </Field>
 
-            <Field name="co_supervisor_id" label="Co-Supervisor (optional)">
+            <Field name="co_supervisor_id" label="Co-Supervisor (optional)" errors={errors}>
               <select
                 value={form.co_supervisor_id}
                 onChange={(e) => setForm((p) => ({ ...p, co_supervisor_id: e.target.value }))}
@@ -209,7 +212,7 @@ export default function RegisterCandidatePage() {
             </Field>
           </div>
 
-          <Field name="enrolment_year" label="Enrolment Year" required>
+          <Field name="enrolment_year" label="Enrolment Year" required errors={errors}>
             <input
               type="number"
               value={form.enrolment_year}

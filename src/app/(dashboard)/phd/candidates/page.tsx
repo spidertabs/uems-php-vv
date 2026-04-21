@@ -1,245 +1,410 @@
-// src/app/(dashboard)/phd/candidates/new/page.tsx
+/* eslint-disable react-hooks/exhaustive-deps */
+// src/app/(dashboard)/phd/candidates/page.tsx
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import {
+  CANDIDATE_STATUS_LABELS,
+  CANDIDATE_STATUS_COLORS,
+  type CandidateStatus,
+} from '@/types/phd';
 
-interface UserOption { id: number; first_name: string; last_name: string; email: string; role: string; }
-interface ProgrammeOption { id: number; code: string; name: string; }
-
-// ✅ Field is defined OUTSIDE the page component so it doesn't get
-//    recreated on every render — that was causing inputs to lose focus
-//    after each keystroke.
-function Field({
-  name, label, required = false, children, errors,
-}: {
-  name: string;
-  label: string;
-  required?: boolean;
-  children: React.ReactNode;
-  errors: Record<string, string>;
-}) {
-  return (
-    <div>
-      <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-        {label}{required && <span className="ml-1 text-red-500">*</span>}
-      </label>
-      {children}
-      {errors[name] && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errors[name]}</p>}
-    </div>
-  );
+interface Candidate {
+  candidate_id: number;
+  candidate_name: string;
+  registration_number: string;
+  programme_code: string;
+  programme_name: string;
+  thesis_title: string;
+  status: CandidateStatus;
+  supervisor_name: string | null;
+  co_supervisor_name: string | null;
+  enrolment_year: number | null;
+  thesis_count: number;
+  viva_count: number;
 }
 
-export default function RegisterCandidatePage() {
-  const router = useRouter();
-  const [users, setUsers] = useState<UserOption[]>([]);
-  const [programmes, setProgrammes] = useState<ProgrammeOption[]>([]);
-  const [supervisors, setSupervisors] = useState<UserOption[]>([]);
-  const [form, setForm] = useState({
-    user_id: '',
-    registration_number: '',
-    thesis_title: '',
-    programme_id: '',
-    supervisor_id: '',
-    co_supervisor_id: '',
-    enrolment_year: new Date().getFullYear().toString(),
-  });
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [loading, setLoading] = useState(false);
-  const [dataLoading, setDataLoading] = useState(true);
+interface PaginationMeta {
+  total: number;
+  page: number;
+  limit: number;
+  total_pages: number;
+}
 
+interface ProgrammeOption {
+  id: number;
+  code: string;
+  name: string;
+}
+
+const ALL_STATUSES = Object.keys(CANDIDATE_STATUS_LABELS) as CandidateStatus[];
+
+export default function CandidatesPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const [candidates, setCandidates] = useState<Candidate[]>([]);
+  const [pagination, setPagination] = useState<PaginationMeta>({
+    total: 0,
+    page: 1,
+    limit: 20,
+    total_pages: 1,
+  });
+  const [programmes, setProgrammes] = useState<ProgrammeOption[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Filters
+  const [search, setSearch] = useState(searchParams.get('search') ?? '');
+  const [statusFilter, setStatusFilter] = useState<CandidateStatus | ''>(
+    (searchParams.get('status') as CandidateStatus) ?? '',
+  );
+  const [programmeFilter, setProgrammeFilter] = useState(searchParams.get('programme_id') ?? '');
+  const [page, setPage] = useState(Number(searchParams.get('page') ?? 1));
+
+  // Fetch programmes once for the filter dropdown
   useEffect(() => {
-    const fetchOptions = async () => {
-      try {
-        const [uRes, pRes] = await Promise.all([
-          fetch('/api/users?role=lecturer&role=hod'),
-          fetch('/api/phd/programmes'),
-        ]);
-        if (uRes.ok) {
-          const d = await uRes.json();
-          const all: UserOption[] = d.data || d.users || [];
-          setUsers(all);
-          setSupervisors(all.filter((u) => ['hod', 'lecturer'].includes(u.role)));
-        }
-        if (pRes.ok) {
-          const d = await pRes.json();
-          setProgrammes(d.programmes || []);
-        }
-      } finally {
-        setDataLoading(false);
-      }
-    };
-    fetchOptions();
+    fetch('/api/phd/programmes')
+      .then((r) => r.json())
+      .then((d) => setProgrammes(d.programmes ?? []))
+      .catch(() => {});
   }, []);
 
-  const validate = () => {
-    const e: Record<string, string> = {};
-    if (!form.user_id) e.user_id = 'Please select a candidate user.';
-    if (!form.registration_number.trim()) e.registration_number = 'Registration number is required.';
-    if (!form.thesis_title.trim()) e.thesis_title = 'Thesis title is required.';
-    if (!form.programme_id) e.programme_id = 'Please select a programme.';
-    if (!form.enrolment_year || isNaN(parseInt(form.enrolment_year))) e.enrolment_year = 'Valid year required.';
-    setErrors(e);
-    return Object.keys(e).length === 0;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validate()) return;
+  const fetchCandidates = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/phd/candidates', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...form,
-          user_id: parseInt(form.user_id),
-          programme_id: parseInt(form.programme_id),
-          supervisor_id: form.supervisor_id ? parseInt(form.supervisor_id) : null,
-          co_supervisor_id: form.co_supervisor_id ? parseInt(form.co_supervisor_id) : null,
-          enrolment_year: parseInt(form.enrolment_year),
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) { setErrors({ general: data.error || 'Registration failed.' }); return; }
-      router.push(`/phd/candidates/${data.candidate_id}`);
-    } catch {
-      setErrors({ general: 'Network error. Please try again.' });
+      const params = new URLSearchParams();
+      if (search.trim()) params.set('search', search.trim());
+      if (statusFilter) params.set('status', statusFilter);
+      if (programmeFilter) params.set('programme_id', programmeFilter);
+      params.set('page', String(page));
+      params.set('limit', '20');
+
+      const res = await fetch(`/api/phd/candidates?${params.toString()}`);
+      if (res.status === 401) { router.push('/auth/login'); return; }
+      if (res.ok) {
+        const d = await res.json();
+        setCandidates(d.candidates ?? []);
+        setPagination(d.pagination ?? { total: 0, page: 1, limit: 20, total_pages: 1 });
+      }
+    } catch (err) {
+      console.error('Failed to fetch candidates:', err);
     } finally {
       setLoading(false);
     }
+  }, [search, statusFilter, programmeFilter, page]);
+
+  // Re-fetch whenever filters/page change
+  useEffect(() => {
+    fetchCandidates();
+  }, [fetchCandidates]);
+
+  // Reset to page 1 when filters change
+  const handleSearchChange = (value: string) => { setSearch(value); setPage(1); };
+  const handleStatusChange = (value: CandidateStatus | '') => { setStatusFilter(value); setPage(1); };
+  const handleProgrammeChange = (value: string) => { setProgrammeFilter(value); setPage(1); };
+
+  const clearFilters = () => {
+    setSearch('');
+    setStatusFilter('');
+    setProgrammeFilter('');
+    setPage(1);
   };
 
-  if (dataLoading) {
-    return <div className="flex h-96 items-center justify-center"><div className="h-12 w-12 animate-spin rounded-full border-b-2 border-emerald-600"></div></div>;
-  }
+  const hasActiveFilters = search || statusFilter || programmeFilter;
 
   return (
-    <div className="space-y-6 lg:pl-64 max-w-2xl">
-      <Link href="/phd/candidates" className="text-sm text-emerald-600 hover:underline dark:text-emerald-400">
-        ← Back to Candidates
-      </Link>
-
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">👨‍🎓 Register PhD Candidate</h1>
-        <p className="mt-1 text-gray-600 dark:text-gray-400">Create a new PhD candidate record in the system.</p>
+    <div className="space-y-6 lg:pl-64">
+      {/* Header */}
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">👨‍🎓 PhD Candidates</h1>
+          <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+            {loading ? 'Loading…' : `${pagination.total} candidate${pagination.total !== 1 ? 's' : ''} registered`}
+          </p>
+        </div>
+        <Link
+          href="/phd/candidates/new"
+          className="rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-emerald-700"
+        >
+          + Register Candidate
+        </Link>
       </div>
 
-      <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
-        {errors.general && (
-          <div className="mb-5 rounded-lg bg-red-50 p-3 text-sm text-red-600 dark:bg-red-900/30 dark:text-red-400">
-            {errors.general}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <Field name="user_id" label="Candidate (User Account)" required errors={errors}>
-            <select
-              value={form.user_id}
-              onChange={(e) => setForm((p) => ({ ...p, user_id: e.target.value }))}
-              className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900 focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-            >
-              <option value="">Select user...</option>
-              {users.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.first_name} {u.last_name} — {u.email}
-                </option>
-              ))}
-            </select>
-          </Field>
-
-          <Field name="registration_number" label="Registration Number" required errors={errors}>
+      {/* Filters */}
+      <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+        <div className="flex flex-wrap gap-3">
+          {/* Search */}
+          <div className="relative min-w-[220px] flex-1">
+            <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-gray-400">
+              🔍
+            </span>
             <input
               type="text"
-              value={form.registration_number}
-              onChange={(e) => setForm((p) => ({ ...p, registration_number: e.target.value }))}
-              placeholder="KIU/PHD/CS/2024/001"
-              className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-mono focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+              value={search}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              placeholder="Search name, reg. number, thesis…"
+              className="w-full rounded-lg border border-gray-300 bg-white py-2 pl-9 pr-4 text-sm text-gray-900 focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
             />
-          </Field>
-
-          <Field name="thesis_title" label="Thesis Title" required errors={errors}>
-            <textarea
-              value={form.thesis_title}
-              onChange={(e) => setForm((p) => ({ ...p, thesis_title: e.target.value }))}
-              rows={3}
-              placeholder="Full thesis title as submitted..."
-              className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-            />
-          </Field>
-
-          <Field name="programme_id" label="PhD Programme" required errors={errors}>
-            <select
-              value={form.programme_id}
-              onChange={(e) => setForm((p) => ({ ...p, programme_id: e.target.value }))}
-              className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-            >
-              <option value="">Select programme...</option>
-              {programmes.map((p) => (
-                <option key={p.id} value={p.id}>{p.code} — {p.name}</option>
-              ))}
-            </select>
-          </Field>
-
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-            <Field name="supervisor_id" label="Primary Supervisor" errors={errors}>
-              <select
-                value={form.supervisor_id}
-                onChange={(e) => setForm((p) => ({ ...p, supervisor_id: e.target.value }))}
-                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-              >
-                <option value="">Select supervisor...</option>
-                {supervisors.map((u) => (
-                  <option key={u.id} value={u.id}>{u.first_name} {u.last_name} ({u.role})</option>
-                ))}
-              </select>
-            </Field>
-
-            <Field name="co_supervisor_id" label="Co-Supervisor (optional)" errors={errors}>
-              <select
-                value={form.co_supervisor_id}
-                onChange={(e) => setForm((p) => ({ ...p, co_supervisor_id: e.target.value }))}
-                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-              >
-                <option value="">None</option>
-                {supervisors
-                  .filter((u) => u.id.toString() !== form.supervisor_id)
-                  .map((u) => (
-                    <option key={u.id} value={u.id}>{u.first_name} {u.last_name} ({u.role})</option>
-                  ))}
-              </select>
-            </Field>
           </div>
 
-          <Field name="enrolment_year" label="Enrolment Year" required errors={errors}>
-            <input
-              type="number"
-              value={form.enrolment_year}
-              onChange={(e) => setForm((p) => ({ ...p, enrolment_year: e.target.value }))}
-              min={2000}
-              max={new Date().getFullYear()}
-              className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-            />
-          </Field>
+          {/* Status filter */}
+          <select
+            value={statusFilter}
+            onChange={(e) => handleStatusChange(e.target.value as CandidateStatus | '')}
+            className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+          >
+            <option value="">All Statuses</option>
+            {ALL_STATUSES.map((s) => (
+              <option key={s} value={s}>{CANDIDATE_STATUS_LABELS[s]}</option>
+            ))}
+          </select>
 
-          <div className="flex gap-3 pt-2">
-            <Link
-              href="/phd/candidates"
-              className="flex-1 rounded-lg border border-gray-300 py-2 text-center text-sm text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300"
-            >
-              Cancel
-            </Link>
+          {/* Programme filter */}
+          <select
+            value={programmeFilter}
+            onChange={(e) => handleProgrammeChange(e.target.value)}
+            className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+          >
+            <option value="">All Programmes</option>
+            {programmes.map((p) => (
+              <option key={p.id} value={p.id}>{p.code} — {p.name}</option>
+            ))}
+          </select>
+
+          {/* Clear filters */}
+          {hasActiveFilters && (
             <button
-              type="submit"
-              disabled={loading}
-              className="flex-1 rounded-lg bg-emerald-600 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+              onClick={clearFilters}
+              className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-700"
             >
-              {loading ? 'Registering...' : 'Register Candidate'}
+              ✕ Clear
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Table */}
+      <div className="rounded-xl border border-gray-200 bg-white shadow-md dark:border-gray-700 dark:bg-gray-800 overflow-hidden">
+        {loading ? (
+          <div className="flex h-64 items-center justify-center">
+            <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-emerald-600" />
+          </div>
+        ) : candidates.length === 0 ? (
+          <div className="py-16 text-center">
+            <div className="text-5xl">🎓</div>
+            <p className="mt-4 font-medium text-gray-700 dark:text-gray-300">
+              {hasActiveFilters ? 'No candidates match your filters.' : 'No candidates registered yet.'}
+            </p>
+            {hasActiveFilters ? (
+              <button
+                onClick={clearFilters}
+                className="mt-3 text-sm text-emerald-600 hover:underline dark:text-emerald-400"
+              >
+                Clear filters
+              </button>
+            ) : (
+              <Link
+                href="/phd/candidates/new"
+                className="mt-3 inline-block text-sm text-emerald-600 hover:underline dark:text-emerald-400"
+              >
+                Register the first candidate →
+              </Link>
+            )}
+          </div>
+        ) : (
+          <>
+            {/* Desktop table */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full">
+                <thead className="border-b border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                      Candidate
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                      Programme
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                      Supervisor
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                      Status
+                    </th>
+                    <th className="px-6 py-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                      Thesis
+                    </th>
+                    <th className="px-6 py-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                      Vivás
+                    </th>
+                    <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400" />
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                  {candidates.map((c) => (
+                    <tr
+                      key={c.candidate_id}
+                      className="transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                    >
+                      <td className="px-6 py-4">
+                        <p className="font-semibold text-gray-900 dark:text-white">{c.candidate_name}</p>
+                        <p className="mt-0.5 font-mono text-xs text-gray-500 dark:text-gray-400">
+                          {c.registration_number}
+                        </p>
+                        <p className="mt-1 max-w-xs truncate text-xs italic text-gray-400 dark:text-gray-500">
+                          {c.thesis_title}
+                        </p>
+                      </td>
+                      <td className="px-6 py-4">
+                        <p className="text-sm font-medium text-gray-800 dark:text-gray-200">{c.programme_code}</p>
+                        <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400 max-w-[160px] truncate">
+                          {c.programme_name}
+                        </p>
+                      </td>
+                      <td className="px-6 py-4">
+                        {c.supervisor_name ? (
+                          <>
+                            <p className="text-sm text-gray-700 dark:text-gray-300">{c.supervisor_name}</p>
+                            {c.co_supervisor_name && (
+                              <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">
+                                + {c.co_supervisor_name}
+                              </p>
+                            )}
+                          </>
+                        ) : (
+                          <span className="text-xs text-gray-400 dark:text-gray-500">—</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span
+                          className={`rounded-full px-3 py-1 text-xs font-medium ${CANDIDATE_STATUS_COLORS[c.status]}`}
+                        >
+                          {CANDIDATE_STATUS_LABELS[c.status]}
+                        </span>
+                        {c.enrolment_year && (
+                          <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
+                            Enrolled {c.enrolment_year}
+                          </p>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <span className={`text-sm font-semibold ${c.thesis_count > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-400'}`}>
+                          {c.thesis_count}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <span className={`text-sm font-semibold ${c.viva_count > 0 ? 'text-yellow-600 dark:text-yellow-400' : 'text-gray-400'}`}>
+                          {c.viva_count}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <Link
+                          href={`/phd/candidates/${c.candidate_id}`}
+                          className="rounded-lg bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700 transition-colors hover:bg-emerald-100 dark:bg-emerald-900/40 dark:text-emerald-300 dark:hover:bg-emerald-900/60"
+                        >
+                          View →
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile cards */}
+            <div className="divide-y divide-gray-200 md:hidden dark:divide-gray-700">
+              {candidates.map((c) => (
+                <Link
+                  key={c.candidate_id}
+                  href={`/phd/candidates/${c.candidate_id}`}
+                  className="block p-4 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-semibold text-gray-900 dark:text-white">{c.candidate_name}</p>
+                      <p className="mt-0.5 font-mono text-xs text-gray-500 dark:text-gray-400">
+                        {c.registration_number}
+                      </p>
+                      <p className="mt-1 truncate text-xs italic text-gray-400 dark:text-gray-500">
+                        {c.thesis_title}
+                      </p>
+                      <p className="mt-1 text-xs text-gray-600 dark:text-gray-400">
+                        {c.programme_code} · {c.supervisor_name ?? 'No supervisor'}
+                      </p>
+                    </div>
+                    <span
+                      className={`flex-shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${CANDIDATE_STATUS_COLORS[c.status]}`}
+                    >
+                      {CANDIDATE_STATUS_LABELS[c.status]}
+                    </span>
+                  </div>
+                  <div className="mt-2 flex gap-4 text-xs text-gray-500 dark:text-gray-400">
+                    <span>📄 {c.thesis_count} thesis version{c.thesis_count !== 1 ? 's' : ''}</span>
+                    <span>📅 {c.viva_count} viva{c.viva_count !== 1 ? 's' : ''}</span>
+                    {c.enrolment_year && <span>🎓 Enrolled {c.enrolment_year}</span>}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Pagination */}
+      {!loading && pagination.total_pages > 1 && (
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Showing {(pagination.page - 1) * pagination.limit + 1}–
+            {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total}
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page <= 1}
+              className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+            >
+              ← Prev
+            </button>
+
+            {/* Page number pills */}
+            <div className="flex gap-1">
+              {Array.from({ length: pagination.total_pages }, (_, i) => i + 1)
+                .filter((p) => p === 1 || p === pagination.total_pages || Math.abs(p - page) <= 1)
+                .reduce<(number | 'ellipsis')[]>((acc, p, idx, arr) => {
+                  if (idx > 0 && p - (arr[idx - 1] as number) > 1) acc.push('ellipsis');
+                  acc.push(p);
+                  return acc;
+                }, [])
+                .map((item, idx) =>
+                  item === 'ellipsis' ? (
+                    <span key={`ellipsis-${idx}`} className="px-1 py-1.5 text-sm text-gray-400">…</span>
+                  ) : (
+                    <button
+                      key={item}
+                      onClick={() => setPage(item as number)}
+                      className={`min-w-[32px] rounded-lg px-2 py-1.5 text-sm font-medium transition-colors ${
+                        page === item
+                          ? 'bg-emerald-600 text-white'
+                          : 'border border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700'
+                      }`}
+                    >
+                      {item}
+                    </button>
+                  ),
+                )}
+            </div>
+
+            <button
+              onClick={() => setPage((p) => Math.min(pagination.total_pages, p + 1))}
+              disabled={page >= pagination.total_pages}
+              className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+            >
+              Next →
             </button>
           </div>
-        </form>
-      </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -166,32 +166,15 @@ VALUES
  'Comprehensive thesis with full experimental data appendix.',
  '2024-02-28 09:30:00'),
 
-(7, 'KIU_PHD_PH_2021_001_v1.pdf',
- '/uploads/theses/2021/ph/KIU_PHD_PH_2021_001_v1.pdf', 5920,
- 'Initial submission with full field data from Northern Uganda.',
- '2023-09-10 10:00:00'),
-(7, 'KIU_PHD_PH_2021_001_v2.pdf',
- '/uploads/theses/2021/ph/KIU_PHD_PH_2021_001_v2.pdf', 6050,
- 'Corrections: expanded discussion section; refined statistical models.',
- '2024-04-05 13:00:00'),
-
-(8, 'KIU_PHD_PH_2022_002_v1.pdf',
- '/uploads/theses/2022/ph/KIU_PHD_PH_2022_002_v1.pdf', 5100,
- 'Submitted following 3-year data collection phase.',
- '2024-07-22 11:00:00'),
-
-(9, 'KIU_PHD_EA_2021_001_v1.pdf',
- '/uploads/theses/2021/ea/KIU_PHD_EA_2021_001_v1.pdf', 4630,
- 'Thesis encompasses 12 case-study schools across 4 districts.',
- '2024-03-18 09:00:00'),
+(7, 'KIU_PHD_PH_2021_001_v1.pdf', '/uploads/theses/2021/ph/KIU_PHD_PH_2021_001_v1.pdf', 5920, 'Initial submission with full field data from Northern Uganda.', '2023-09-10 10:00:00'),
+(7, 'KIU_PHD_PH_2021_001_v2.pdf', '/uploads/theses/2021/ph/KIU_PHD_PH_2021_001_v2.pdf', 6050, 'Corrections: expanded discussion section; refined statistical models.', '2024-04-05 13:00:00'),
+(8, 'KIU_PHD_PH_2022_002_v1.pdf', '/uploads/theses/2022/ph/KIU_PHD_PH_2022_002_v1.pdf', 5100, 'Submitted following 3-year data collection phase.', '2024-07-22 11:00:00'),
+(9, 'KIU_PHD_EA_2021_001_v1.pdf', '/uploads/theses/2021/ea/KIU_PHD_EA_2021_001_v1.pdf', 4630, 'Thesis encompasses 12 case-study schools across 4 districts.', '2024-03-18 09:00:00'),
 
 -- Candidate 10 has no submission yet (enrolled only)
 
 -- Candidate 1 post-viva corrected version
-(1, 'KIU_PHD_CS_2021_001_v2.pdf',
- '/uploads/theses/2021/cs/KIU_PHD_CS_2021_001_v2.pdf', 4890,
- 'Post-viva corrections: minor typographic fixes and bibliography update.',
- '2024-06-01 10:00:00');
+(1, 'KIU_PHD_CS_2021_001_v2.pdf', '/uploads/theses/2021/cs/KIU_PHD_CS_2021_001_v2.pdf', 4890, 'Post-viva corrections: minor typographic fixes and bibliography update.', '2024-06-01 10:00:00');
 
 
 -- ============================================================
