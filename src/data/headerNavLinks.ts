@@ -112,7 +112,7 @@ const headerNavLinks: NavLink[] = [
   {
     title: '🎓 PhD Candidates',
     href: '/phd/my-candidates',
-    roles: ['lecturer'],
+    roles: ['lecturer', 'hod'],
   },
 
   // Bottom Section

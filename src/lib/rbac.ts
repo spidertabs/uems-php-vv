@@ -190,6 +190,14 @@ export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
     'view_colleges',
     'view_programmes',
     
+    // PhD Management
+    'view_assigned_candidates',
+    'view_candidate_details',
+    'add_candidate_evaluations',
+    'edit_own_evaluations',
+    'view_candidate_evaluations',
+    'submit_viva_recommendations',
+    
     // Notifications
     'view_notifications',
   ],

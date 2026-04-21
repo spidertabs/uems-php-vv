@@ -69,7 +69,7 @@ export default function MyCandidatesPage() {
       // is supervisor or co-supervisor (resolved server-side via session)
       params.set('my_candidates', 'true');
 
-      const res = await fetch(`/api/phd/candidates?${params.toString()}`);
+      const res = await fetch(`/api/phd/my-candidates?${params.toString()}`);
       if (res.status === 401) { router.push('/auth/login'); return; }
       if (res.ok) {
         const d = await res.json();
