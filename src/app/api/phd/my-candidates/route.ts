@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
         pc.status,
         pc.created_at,
         pc.updated_at,
-        u.name as candidate_name,
+        CONCAT(u.first_name, ' ', u.last_name) as candidate_name,
         u.email as candidate_email,
         p.name as programme_name,
         COALESCE(COUNT(DISTINCT vs.id), 0) as upcoming_vivas,

@@ -18,6 +18,7 @@ interface DashboardStats {
   totalUsers?: number;
   departmentCourses?: number;
   collegePapers?: number;
+  myCandidates?: number;
 }
 
 interface User {
@@ -312,6 +313,13 @@ export default function DashboardPage() {
           href: '/question-bank',
           color: 'bg-teal-500',
         },
+        {
+          title: 'PhD Candidates',
+          value: stats.myCandidates || 0,
+          icon: '🎓',
+          href: '/phd/my-candidates',
+          color: 'bg-indigo-600',
+        },
       ],
       lecturer: [
         {
@@ -341,6 +349,13 @@ export default function DashboardPage() {
           icon: '📬',
           href: '/notifications/inbox',
           color: 'bg-purple-500',
+        },
+        {
+          title: 'PhD Candidates',
+          value: stats.myCandidates || 0,
+          icon: '🎓',
+          href: '/phd/my-candidates',
+          color: 'bg-indigo-600',
         },
       ],
     };
