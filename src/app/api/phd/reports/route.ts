@@ -7,23 +7,34 @@ import { query } from '@/lib/db';
 export async function GET(req: NextRequest) {
   try {
     const user = await verifyAuth(req);
-    if (!user || !['viva_coordinator', 'admin', 'dean'].includes(user.role)) {
+    if (!user || !['viva_coordinator', 'admin', 'dean', 'hod'].includes(user.role)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
+    const isHOD = user.role === 'hod';
+    const deptId = user.department_id;
+
     // ── Total candidates
     const totalResult = await query<any[]>(
-      `SELECT COUNT(*) as count FROM phd_candidates WHERE deleted_at IS NULL`
+      `SELECT COUNT(pc.id) as count 
+       FROM phd_candidates pc
+       JOIN programmes p ON pc.programme_id = p.id
+       WHERE pc.deleted_at IS NULL
+       ${isHOD ? 'AND p.department_id = ?' : ''}`,
+      isHOD ? [deptId] : []
     );
     const total_candidates = parseInt(totalResult[0]?.count ?? '0', 10);
 
     // ── Status breakdown
     const statusResult = await query<any[]>(
-      `SELECT status, COUNT(*) as count
-       FROM phd_candidates
-       WHERE deleted_at IS NULL
-       GROUP BY status
-       ORDER BY count DESC`
+      `SELECT pc.status, COUNT(pc.id) as count
+       FROM phd_candidates pc
+       JOIN programmes p ON pc.programme_id = p.id
+       WHERE pc.deleted_at IS NULL
+       ${isHOD ? 'AND p.department_id = ?' : ''}
+       GROUP BY pc.status
+       ORDER BY count DESC`,
+      isHOD ? [deptId] : []
     );
     const status_breakdown = statusResult.map(row => ({
       status: row.status,
@@ -31,16 +42,18 @@ export async function GET(req: NextRequest) {
     }));
 
     // ── Outcome breakdown
-    // outcome lives in viva_recommendations, not viva_schedules
     const outcomeResult = await query<any[]>(
-      `SELECT vr.outcome, COUNT(*) as count
+      `SELECT vr.outcome, COUNT(pc.id) as count
        FROM viva_recommendations vr
        JOIN viva_schedules vs   ON vr.viva_id = vs.id
        JOIN phd_candidates pc   ON vs.candidate_id = pc.id
+       JOIN programmes p      ON pc.programme_id = p.id
        WHERE pc.deleted_at IS NULL
          AND vr.outcome IS NOT NULL
+         ${isHOD ? 'AND p.department_id = ?' : ''}
        GROUP BY vr.outcome
-       ORDER BY count DESC`
+       ORDER BY count DESC`,
+      isHOD ? [deptId] : []
     );
     const outcome_breakdown = outcomeResult.map(row => ({
       outcome: row.outcome,
@@ -48,7 +61,6 @@ export async function GET(req: NextRequest) {
     }));
 
     // ── Programme breakdown
-    // outcome from viva_recommendations via LEFT JOINs
     const programmeResult = await query<any[]>(
       `SELECT
          p.code  AS programme_code,
@@ -68,9 +80,12 @@ export async function GET(req: NextRequest) {
          ON pc.id = vs.candidate_id
        LEFT JOIN viva_recommendations vr
          ON vs.id = vr.viva_id
+       WHERE 1=1
+       ${isHOD ? 'AND p.department_id = ?' : ''}
        GROUP BY p.id, p.code, p.name
        HAVING COUNT(DISTINCT pc.id) > 0
-       ORDER BY total DESC`
+       ORDER BY total DESC`,
+      isHOD ? [deptId] : []
     );
     const programme_breakdown = programmeResult.map(row => ({
       programme_code: row.programme_code,
@@ -103,8 +118,10 @@ export async function GET(req: NextRequest) {
        WHERE pc.deleted_at IS NULL
          AND vs.status = 'scheduled'
          AND vs.scheduled_date BETWEEN CURRENT_DATE AND (CURRENT_DATE + INTERVAL '30 days')
+         ${isHOD ? 'AND p.department_id = ?' : ''}
        ORDER BY vs.scheduled_date ASC
-       LIMIT 10`
+       LIMIT 10`,
+      isHOD ? [deptId] : []
     );
     const upcoming_vivas = upcomingResult.map(row => ({
       viva_id:               row.viva_id,
@@ -138,6 +155,7 @@ export async function GET(req: NextRequest) {
        FROM viva_schedules vs
        JOIN phd_candidates pc  ON vs.candidate_id = pc.id
        JOIN users u            ON pc.user_id       = u.id
+       JOIN programmes p      ON pc.programme_id  = p.id
        LEFT JOIN viva_recommendations vr ON vs.id = vr.viva_id
        WHERE pc.deleted_at IS NULL
          AND vs.status = 'completed'
@@ -148,8 +166,10 @@ export async function GET(req: NextRequest) {
              'pass_with_major_corrections'
            )
          )
+         ${isHOD ? 'AND p.department_id = ?' : ''}
        ORDER BY since ASC
-       LIMIT 20`
+       LIMIT 20`,
+      isHOD ? [deptId] : []
     );
     const pending_actions = pendingResult.map(row => ({
       viva_id:             row.viva_id,

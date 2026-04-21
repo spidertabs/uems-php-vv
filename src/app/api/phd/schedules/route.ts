@@ -45,6 +45,12 @@ export async function GET(req: NextRequest) {
 
     const params: (string | number)[] = [];
 
+    // Filter by department for HODs
+    if (user.role === 'hod' && user.department_id) {
+      sql += ' AND p.department_id = ?';
+      params.push(user.department_id);
+    }
+
     if (status) {
       sql += ' AND vs.status = ?::text::viva_status';
       params.push(status);

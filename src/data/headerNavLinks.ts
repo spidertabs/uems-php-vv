@@ -68,22 +68,22 @@ const headerNavLinks: NavLink[] = [
   {
     title: '🎓 PhD Dashboard',
     href: '/phd',
-    roles: ['viva_coordinator', 'admin', 'dean'],
+    roles: ['viva_coordinator', 'admin', 'dean', 'hod'],
   },
   {
-    title: '👨‍🎓 Candidates',
+    title: '👨‍🎓 PhD Candidates',
     href: '/phd/candidates',
     roles: ['viva_coordinator', 'admin', 'dean', 'hod'],
   },
   {
     title: '📅 Viva Schedules',
     href: '/phd/schedules',
-    roles: ['viva_coordinator', 'admin'],
+    roles: ['viva_coordinator', 'admin', 'dean', 'hod'],
   },
   {
     title: '📋 PhD Reports',
     href: '/phd/reports',
-    roles: ['viva_coordinator', 'admin', 'dean'],
+    roles: ['viva_coordinator', 'admin', 'dean', 'hod'],
   },
 
   // Management & Reports
@@ -112,7 +112,7 @@ const headerNavLinks: NavLink[] = [
   {
     title: '🎓 PhD Candidates',
     href: '/phd/my-candidates',
-    roles: ['lecturer', 'hod'],
+    roles: ['lecturer'],
   },
 
   // Bottom Section
