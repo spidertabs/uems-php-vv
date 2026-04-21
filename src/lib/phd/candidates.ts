@@ -137,6 +137,40 @@ export async function updateCandidateStatus(id: number, status: CandidateStatus)
   );
 }
 
+export async function getEligibleSupervisors(deptId?: number): Promise<any[]> {
+  let sql = `
+    SELECT u.id, u.first_name, u.last_name, u.email, u.role,
+           d.name AS department_name
+    FROM users u
+    LEFT JOIN departments d ON u.department_id = d.id
+    LEFT JOIN phd_candidates pc ON u.id = pc.user_id
+    WHERE u.role NOT IN ('hod', 'exam_master') 
+      AND u.is_active = TRUE 
+      AND pc.id IS NULL
+      AND u.deleted_at IS NULL
+  `;
+  const params: number[] = [];
+  if (deptId) {
+    sql += ' AND u.department_id = ?';
+    params.push(deptId);
+  }
+  sql += ' ORDER BY u.first_name, u.last_name';
+  return query<any[]>(sql, params);
+}
+
+export async function getUsersForCandidateRegistration(): Promise<any[]> {
+  return query<any[]>(
+    `SELECT u.id, u.first_name, u.last_name, u.email, u.role
+     FROM users u
+     LEFT JOIN phd_candidates pc ON u.id = pc.user_id
+     WHERE pc.id IS NULL 
+       AND u.is_active = TRUE 
+       AND u.deleted_at IS NULL
+     ORDER BY u.first_name, u.last_name`,
+    []
+  );
+}
+
 // ── helpers ───────────────────────────────────────────────────────────────────
 
 function mapCandidate(row: any): CandidateWithDetails {

@@ -317,7 +317,7 @@ export default function DashboardPage() {
           title: 'PhD Candidates',
           value: stats.myCandidates || 0,
           icon: '🎓',
-          href: '/phd/my-candidates',
+          href: '/phd/candidates',
           color: 'bg-indigo-600',
         },
       ],

@@ -37,6 +37,12 @@ export async function GET(req: NextRequest) {
 
     const params: (string | number)[] = [];
 
+    // Filter by department for HODs
+    if (user.role === 'hod' && user.department_id) {
+      sql += ' AND p.department_id = ?';
+      params.push(user.department_id);
+    }
+
     const statuses = searchParams.getAll('status');
     if (statuses.length > 1) {
       const placeholders = statuses.map(() => '?::candidate_status').join(', ');
@@ -98,6 +104,25 @@ export async function POST(req: NextRequest) {
 
     if (!user_id || !registration_number || !thesis_title || !programme_id || !supervisor_id || !enrolment_year) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    }
+
+    // Validate Supervisor eligibility (Must not be HOD or existing candidate)
+    const sups = [supervisor_id];
+    if (co_supervisor_id) sups.push(co_supervisor_id);
+
+    const ineligible = await query<any[]>(
+      `SELECT u.id FROM users u 
+       LEFT JOIN phd_candidates pc ON u.id = pc.user_id
+       WHERE u.id IN (${sups.map(() => '?').join(',')}) 
+         AND (u.role = 'hod' OR pc.id IS NULL IS FALSE)`,
+      sups
+    );
+
+    if (ineligible.length > 0) {
+      return NextResponse.json(
+        { error: 'One or more selected supervisors are ineligible (HODs and PhD candidates cannot supervise)' },
+        { status: 400 }
+      );
     }
 
     const existing = await query<any[]>(

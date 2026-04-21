@@ -119,19 +119,18 @@ export default function CandidateDetailPage() {
   const fetchSupervisors = async () => {
     try {
       setSupervisorLoading(true);
-      const res = await fetch('/api/users?role=lecturer&limit=999');
+      const res = await fetch('/api/phd/eligible-supervisors');
       if (res.ok) {
         const d = await res.json();
-        const raw = d.users || d.data || [];
+        const raw = d.users || [];
         setSupervisors(
           raw.map((u: {
             id: number;
-            name?: string;
-            first_name?: string;
-            last_name?: string;
+            first_name: string;
+            last_name: string;
           }) => ({
             id: u.id,
-            name: u.name ?? `${u.first_name ?? ''} ${u.last_name ?? ''}`.trim(),
+            name: `${u.first_name} ${u.last_name}`.trim(),
           }))
         );
       }

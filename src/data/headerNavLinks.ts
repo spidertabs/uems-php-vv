@@ -73,7 +73,7 @@ const headerNavLinks: NavLink[] = [
   {
     title: '👨‍🎓 Candidates',
     href: '/phd/candidates',
-    roles: ['viva_coordinator', 'admin'],
+    roles: ['viva_coordinator', 'admin', 'dean', 'hod'],
   },
   {
     title: '📅 Viva Schedules',

@@ -52,15 +52,18 @@ export default function RegisterCandidatePage() {
   useEffect(() => {
     const fetchOptions = async () => {
       try {
-        const [uRes, pRes] = await Promise.all([
-          fetch('/api/users?role=lecturer&role=hod'),
+        const [uRes, sRes, pRes] = await Promise.all([
+          fetch('/api/phd/available-users'),
+          fetch('/api/phd/eligible-supervisors'),
           fetch('/api/phd/programmes'),
         ]);
         if (uRes.ok) {
           const d = await uRes.json();
-          const all: UserOption[] = d.data || d.users || [];
-          setUsers(all);
-          setSupervisors(all.filter((u) => ['hod', 'lecturer'].includes(u.role)));
+          setUsers(d.users || []);
+        }
+        if (sRes.ok) {
+          const d = await sRes.json();
+          setSupervisors(d.users || []);
         }
         if (pRes.ok) {
           const d = await pRes.json();

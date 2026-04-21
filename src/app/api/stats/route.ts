@@ -210,15 +210,17 @@ async function getHODStats(userId: number, stats: Record<string, number>) {
   );
   stats.lecturersWithPermissions = lecturersWithPermissions[0]?.count || 0;
 
-  // PhD Candidates assigned to this HOD (as supervisor, co-supervisor, or examiner)
+  // PhD Candidates in HOD's department (or where they are supervisor/examiner)
   const phdCount = await query<any[]>(
     `SELECT COUNT(DISTINCT pc.id) as count 
      FROM phd_candidates pc
+     JOIN programmes p ON pc.programme_id = p.id
+     JOIN users u ON u.id = ?
      LEFT JOIN viva_schedules vs ON pc.id = vs.candidate_id
      LEFT JOIN viva_examiners ve ON vs.id = ve.viva_id
-     WHERE (pc.supervisor_id = ? OR pc.co_supervisor_id = ? OR ve.examiner_id = ?)
+     WHERE (pc.supervisor_id = ? OR pc.co_supervisor_id = ? OR ve.examiner_id = ? OR p.department_id = u.department_id)
        AND pc.deleted_at IS NULL`,
-    [userId, userId, userId]
+    [userId, userId, userId, userId]
   );
   stats.myCandidates = phdCount[0]?.count || 0;
 }

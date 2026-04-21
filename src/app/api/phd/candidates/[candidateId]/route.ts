@@ -126,6 +126,28 @@ export async function PUT(
       );
     }
 
+    // Validate Supervisor eligibility if they are being updated
+    const supsToValidate: number[] = [];
+    if (body.supervisor_id) supsToValidate.push(body.supervisor_id);
+    if (body.co_supervisor_id) supsToValidate.push(body.co_supervisor_id);
+
+    if (supsToValidate.length > 0) {
+      const ineligible = await query<any[]>(
+        `SELECT u.id FROM users u 
+         LEFT JOIN phd_candidates pc ON u.id = pc.user_id
+         WHERE u.id IN (${supsToValidate.map(() => '?').join(',')}) 
+           AND (u.role = 'hod' OR pc.id IS NULL IS FALSE)`,
+        supsToValidate
+      );
+
+      if (ineligible.length > 0) {
+        return NextResponse.json(
+          { error: 'One or more selected supervisors are ineligible' },
+          { status: 400 }
+        );
+      }
+    }
+
     updates.push('updated_at = NOW()');
     values.push(candidateId);
 

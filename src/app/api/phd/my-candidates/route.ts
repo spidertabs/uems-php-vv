@@ -27,7 +27,20 @@ export async function GET(req: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '50', 10);
     const offset = parseInt(searchParams.get('offset') || '0', 10);
 
-    // Build query to get candidates where lecturer is supervisor/co-supervisor
+    let whereClause = `(pc.supervisor_id = ? OR pc.co_supervisor_id = ? OR pc.id IN (
+      SELECT vs_sub.candidate_id FROM viva_schedules vs_sub 
+      JOIN viva_examiners ve_sub ON vs_sub.id = ve_sub.viva_id 
+      WHERE ve_sub.examiner_id = ?
+    ))`;
+    const params: any[] = [user.id, user.id, user.id];
+
+    // If HOD, also include all candidates in their department
+    if (user.role === 'hod' && user.department_id) {
+      whereClause = `(${whereClause} OR p.department_id = ?)`;
+      params.push(user.department_id);
+    }
+
+    // Build query
     let sql = `
       SELECT DISTINCT
         pc.id,
@@ -54,11 +67,11 @@ export async function GET(req: NextRequest) {
       LEFT JOIN viva_evaluations ve ON vs.id = ve.viva_id 
         AND ve.examiner_id = ? 
         AND ve.originality_score IS NULL
-      WHERE (pc.supervisor_id = ? OR pc.co_supervisor_id = ?)
-        AND pc.deleted_at IS NULL
+      WHERE ${whereClause} AND pc.deleted_at IS NULL
     `;
 
-    const params: any[] = [user.id, user.id, user.id];
+    // Add examiner_id for the JOIN
+    params.unshift(user.id);
 
     // Add status filter if provided
     if (status) {
@@ -75,13 +88,18 @@ export async function GET(req: NextRequest) {
     const candidates = await query<any[]>(sql, params);
 
     // Get total count
+    const countParams: any[] = [user.id, user.id, user.id];
+    if (user.role === 'hod' && user.department_id) {
+      countParams.push(user.department_id);
+    }
+
     let countSql = `
       SELECT COUNT(DISTINCT pc.id) as total
       FROM phd_candidates pc
-      WHERE (pc.supervisor_id = ? OR pc.co_supervisor_id = ?)
+      JOIN programmes p ON pc.programme_id = p.id
+      WHERE ${whereClause}
         AND pc.deleted_at IS NULL
     `;
-    const countParams: any[] = [user.id, user.id];
 
     if (status) {
       countSql += ` AND pc.status = ?`;

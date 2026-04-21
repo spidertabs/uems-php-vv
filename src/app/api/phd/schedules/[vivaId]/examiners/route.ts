@@ -83,16 +83,17 @@ export async function POST(
       );
     }
 
-    // Check examiner exists
-    const examiner = await query<any[]>(
-      'SELECT id FROM users WHERE id = ?',
+    // Check examiner exists and is eligible (not HOD or candidate)
+    const eligibleExaminer = await query<any[]>(
+      `SELECT u.id FROM users u 
+       LEFT JOIN phd_candidates pc ON u.id = pc.user_id
+       WHERE u.id = ? AND u.role != 'hod' AND pc.id IS NULL AND u.deleted_at IS NULL`,
       [examiner_id]
     );
-
-    if (!examiner || examiner.length === 0) {
+    if (!eligibleExaminer || eligibleExaminer.length === 0) {
       return NextResponse.json(
-        { error: 'Examiner not found' },
-        { status: 404 }
+        { error: 'Selected user is ineligible to be an examiner (HODs and PhD candidates are excluded)' },
+        { status: 400 }
       );
     }
 
