@@ -19,7 +19,7 @@ export default function LoginPage() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-    if (error) setError(''); // Clear error when user starts typing
+    if (error) setError('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -36,13 +36,11 @@ export default function LoginPage() {
 
       const data = await res.json();
 
-      // ✅ Instead of throwing an error, handle invalid credentials gracefully
       if (!res.ok || !data.success) {
         setError(data.error || 'Invalid email or password');
         return;
       }
 
-      // Redirect to dashboard/root on successful login
       router.push('/');
       router.refresh();
     } catch (err) {
@@ -54,23 +52,30 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="mx-auto max-w-md px-6 py-6">
-      <div className="mb-6 text-center">
+    // ↓ Reduced py-6 → py-3, added min-h handling via flex centering
+    <div className="mx-auto max-w-md px-6 py-3">
+      {/* ↓ mb-6 → mb-3, tighter header */}
+      <div className="mb-3 text-center">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Sign In</h2>
-        <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">Access your account — supports exam papers, question bank, and PhD Viva Voce</p>
+        <p className="mt-0.5 text-sm text-gray-600 dark:text-gray-400">
+          Access your account — supports exam papers, question bank, and PhD Viva Voce
+        </p>
       </div>
 
       {error && (
-        <Alert variant="destructive" className="mb-4">
+        // ↓ mb-4 → mb-2
+        <Alert variant="destructive" className="mb-2">
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
 
       <Card className="border-white/30 bg-white/60 backdrop-blur-md dark:border-gray-600/30 dark:bg-gray-800/60">
-        <CardContent className="space-y-5 p-6">
-          <form onSubmit={handleSubmit} className="space-y-5">
+        {/* ↓ p-6 → p-4, space-y-5 → space-y-3 */}
+        <CardContent className="space-y-3 p-4">
+          <form onSubmit={handleSubmit} className="space-y-3">
             <div>
-              <label htmlFor="email" className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+              {/* ↓ mb-2 → mb-1 on all labels */}
+              <label htmlFor="email" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Email Address
               </label>
               <Input
@@ -87,7 +92,7 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label htmlFor="password" className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label htmlFor="password" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Password
               </label>
               <div className="relative">
