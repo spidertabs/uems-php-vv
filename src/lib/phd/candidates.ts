@@ -139,7 +139,7 @@ export async function updateCandidateStatus(id: number, status: CandidateStatus)
 
 export async function getEligibleSupervisors(deptId?: number): Promise<any[]> {
   let sql = `
-    SELECT u.id, u.first_name, u.last_name, u.email, u.role,
+    SELECT DISTINCT u.id, u.first_name, u.last_name, u.email, u.role,
            d.name AS department_name
     FROM users u
     LEFT JOIN departments d ON u.department_id = d.id
@@ -160,7 +160,7 @@ export async function getEligibleSupervisors(deptId?: number): Promise<any[]> {
 
 export async function getUsersForCandidateRegistration(): Promise<any[]> {
   return query<any[]>(
-    `SELECT u.id, u.first_name, u.last_name, u.email, u.role
+    `SELECT DISTINCT u.id, u.first_name, u.last_name, u.email, u.role
      FROM users u
      LEFT JOIN phd_candidates pc ON u.id = pc.user_id
      WHERE pc.id IS NULL 

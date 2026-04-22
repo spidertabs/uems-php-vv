@@ -47,7 +47,7 @@ export async function removeExaminer(vivaId: number, examinerId: number): Promis
 
 export async function getEligibleExaminers(deptId?: number): Promise<any[]> {
   let sql = `
-    SELECT u.id, u.first_name, u.last_name, u.email, u.role,
+    SELECT DISTINCT u.id, u.first_name, u.last_name, u.email, u.role,
            d.name AS department_name
     FROM users u
     LEFT JOIN departments d ON u.department_id = d.id
