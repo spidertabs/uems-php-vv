@@ -48,6 +48,7 @@ CREATE TYPE candidate_status     AS ENUM (
 CREATE TYPE viva_status          AS ENUM ('scheduled','postponed','cancelled','in_progress','completed');
 CREATE TYPE examiner_role        AS ENUM ('chairperson','internal_examiner','external_examiner');
 CREATE TYPE viva_outcome         AS ENUM ('pass','pass_with_minor_corrections','pass_with_major_corrections','fail');
+CREATE TYPE supervisor_role      AS ENUM ('main', 'co_supervisor', 'advisor');
 
 
 -- ============================================================
@@ -193,12 +194,12 @@ CREATE INDEX idx_students_college        ON students (college_id);
 CREATE INDEX idx_students_department     ON students (department_id);
 CREATE INDEX idx_students_deleted        ON students (deleted_at);
 
--- Add FK for student_id (function already exists now ✓)
+-- Add FK for student_id
 ALTER TABLE sessions
     ADD CONSTRAINT fk_sessions_student
     FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE;
 
--- Trigger (function already exists now ✓)
+-- Trigger
 CREATE TRIGGER trg_students_updated_at
     BEFORE UPDATE ON students
     FOR EACH ROW EXECUTE FUNCTION fn_set_updated_at();
@@ -585,6 +586,7 @@ CREATE TABLE viva_examiners (
 );
 CREATE INDEX idx_ve_viva     ON viva_examiners (viva_id);
 CREATE INDEX idx_ve_examiner ON viva_examiners (examiner_id);
+CREATE INDEX idx_ve_role     ON viva_examiners (role);
 
 
 CREATE TABLE viva_evaluations (
@@ -612,6 +614,7 @@ CREATE TABLE viva_evaluations (
 CREATE INDEX idx_veval_viva      ON viva_evaluations (viva_id);
 CREATE INDEX idx_veval_examiner  ON viva_evaluations (examiner_id);
 CREATE INDEX idx_veval_submitted ON viva_evaluations (is_submitted);
+CREATE INDEX idx_veval_overall   ON viva_evaluations (overall_score);
 
 
 CREATE TABLE viva_recommendations (
@@ -628,8 +631,153 @@ CREATE INDEX idx_vrec_outcome ON viva_recommendations (outcome);
 
 
 -- ============================================================
+--  SECTION 12B — PhD CANDIDATE SUPERVISORS
+--  Junction table replacing flat supervisor_id / co_supervisor_id
+--  Supports multiple supervisors, role tracking & history
+-- ============================================================
+
+CREATE TABLE phd_candidate_supervisors (
+    id             SERIAL           PRIMARY KEY,
+    candidate_id   INT              NOT NULL REFERENCES phd_candidates(id) ON DELETE CASCADE,
+    supervisor_id  INT              NOT NULL REFERENCES users(id)          ON DELETE RESTRICT,
+    role           supervisor_role  NOT NULL DEFAULT 'main',
+    is_active      BOOLEAN          NOT NULL DEFAULT TRUE,
+    assigned_at    TIMESTAMPTZ      NOT NULL DEFAULT NOW(),
+    ended_at       TIMESTAMPTZ,
+    notes          TEXT,
+    created_at     TIMESTAMPTZ      NOT NULL DEFAULT NOW(),
+    updated_at     TIMESTAMPTZ      NOT NULL DEFAULT NOW(),
+    UNIQUE (candidate_id, supervisor_id)
+);
+
+CREATE INDEX idx_pcs_candidate   ON phd_candidate_supervisors (candidate_id);
+CREATE INDEX idx_pcs_supervisor  ON phd_candidate_supervisors (supervisor_id);
+CREATE INDEX idx_pcs_role        ON phd_candidate_supervisors (role);
+CREATE INDEX idx_pcs_active      ON phd_candidate_supervisors (is_active);
+
+
+-- ============================================================
 --  SECTION 13 — VIEWS
 -- ============================================================
+
+-- Supervisor overview per candidate
+CREATE VIEW vw_candidate_supervisors AS
+SELECT
+    pc.id                                           AS candidate_id,
+    pc.registration_number,
+    pc.thesis_title,
+    pc.status                                       AS candidate_status,
+    s.first_name  || ' ' || s.last_name             AS candidate_name,
+    p.name                                          AS programme_name,
+    u.id                                            AS supervisor_id,
+    u.first_name  || ' ' || u.last_name             AS supervisor_name,
+    u.email                                         AS supervisor_email,
+    pcs.role                                        AS supervisor_role,
+    pcs.is_active,
+    pcs.assigned_at,
+    pcs.ended_at,
+    pcs.notes
+FROM phd_candidate_supervisors pcs
+JOIN phd_candidates pc ON pcs.candidate_id   = pc.id
+JOIN users          u  ON pcs.supervisor_id  = u.id
+JOIN students       s  ON pc.registration_number = s.registration_number
+JOIN programmes     p  ON pc.programme_id    = p.id
+WHERE pc.deleted_at IS NULL
+ORDER BY pc.registration_number, pcs.role;
+
+
+-- Examiner evaluations view - links examiners to their evaluations for candidates
+CREATE VIEW vw_examiner_evaluations AS
+SELECT
+    ve.id                                           AS evaluation_id,
+    vs.id                                           AS viva_id,
+    vs.scheduled_date,
+    vs.scheduled_time,
+    vs.venue,
+    vs.status                                       AS viva_status,
+    pc.id                                           AS candidate_id,
+    pc.registration_number,
+    pc.thesis_title,
+    pc.status                                       AS candidate_status,
+    s.first_name || ' ' || s.last_name              AS candidate_name,
+    s.email                                         AS candidate_email,
+    p.name                                          AS programme_name,
+    u.id                                            AS examiner_id,
+    u.first_name || ' ' || u.last_name              AS examiner_name,
+    u.email                                         AS examiner_email,
+    vxe.role                                        AS examiner_role,
+    vxe.confirmed                                   AS examiner_confirmed,
+    ve.originality_score,
+    ve.methodology_score,
+    ve.presentation_score,
+    ve.literature_score,
+    ve.overall_score,
+    ve.strengths,
+    ve.weaknesses,
+    ve.recommended_corrections,
+    ve.general_comments,
+    ve.submitted_at,
+    ve.is_submitted,
+    vr.outcome,
+    vr.correction_deadline,
+    vr.final_comments
+FROM viva_evaluations ve
+JOIN viva_schedules    vs  ON ve.viva_id      = vs.id
+JOIN viva_examiners    vxe ON ve.viva_id = vxe.viva_id AND ve.examiner_id = vxe.examiner_id
+JOIN phd_candidates    pc  ON vs.candidate_id = pc.id
+JOIN students          s   ON pc.registration_number = s.registration_number
+JOIN programmes        p   ON pc.programme_id = p.id
+JOIN users             u   ON ve.examiner_id  = u.id
+LEFT JOIN viva_recommendations vr ON vs.id = vr.viva_id
+ORDER BY vs.scheduled_date, pc.registration_number, vxe.role;
+
+
+-- Examiners and their assigned candidates (for examiner dashboard)
+CREATE VIEW vw_examiner_candidates AS
+SELECT
+    vxe.id                                         AS assignment_id,
+    vs.id                                          AS viva_id,
+    vs.scheduled_date,
+    vs.scheduled_time,
+    vs.venue,
+    vs.status                                      AS viva_status,
+    vs.duration_minutes,
+    pc.id                                          AS candidate_id,
+    pc.registration_number,
+    pc.thesis_title,
+    pc.status                                      AS candidate_status,
+    s.first_name || ' ' || s.last_name             AS candidate_name,
+    s.email                                        AS candidate_email,
+    s.phone                                        AS candidate_phone,
+    p.name                                         AS programme_name,
+    col.name                                       AS college_name,
+    d.name                                         AS department_name,
+    u.id                                           AS examiner_id,
+    u.first_name || ' ' || u.last_name             AS examiner_name,
+    u.email                                        AS examiner_email,
+    vxe.role                                       AS examiner_role,
+    vxe.confirmed                                  AS examiner_confirmed,
+    vxe.confirmed_at,
+    vxe.notified_at,
+    ve.id                                          AS evaluation_id,
+    ve.is_submitted                                AS evaluation_submitted,
+    ve.overall_score,
+    vr.outcome                                     AS viva_outcome,
+    ts.file_path                                   AS thesis_file_path,
+    ts.version                                     AS thesis_version
+FROM viva_examiners vxe
+JOIN viva_schedules     vs  ON vxe.viva_id      = vs.id
+JOIN phd_candidates     pc  ON vs.candidate_id   = pc.id
+JOIN students           s   ON pc.registration_number = s.registration_number
+JOIN programmes         p   ON pc.programme_id   = p.id
+LEFT JOIN departments   d   ON p.department_id   = d.id
+LEFT JOIN colleges      col ON d.college_id      = col.id
+JOIN users              u   ON vxe.examiner_id   = u.id
+LEFT JOIN viva_evaluations      ve ON vxe.viva_id = ve.viva_id AND vxe.examiner_id = ve.examiner_id
+LEFT JOIN viva_recommendations  vr ON vs.id = vr.viva_id
+LEFT JOIN thesis_submissions    ts ON vs.thesis_id = ts.id
+ORDER BY vs.scheduled_date, vxe.role;
+
 
 CREATE VIEW hod_pending_approvals AS
 SELECT
@@ -767,7 +915,6 @@ WHERE lp.is_active  = TRUE
 
 -- ============================================================
 --  SECTION 14 — TRIGGERS
---  (fn_set_updated_at already defined at the top of this file)
 -- ============================================================
 
 -- Batch-create updated_at triggers for remaining tables
@@ -777,7 +924,8 @@ BEGIN
     FOREACH tbl IN ARRAY ARRAY[
         'colleges','departments','programmes','users','courses',
         'study_units','exam_papers','exam_paper_questions',
-        'paper_comments','phd_candidates','viva_schedules'
+        'paper_comments','phd_candidates','viva_schedules',
+        'phd_candidate_supervisors','viva_evaluations'
     ] LOOP
         EXECUTE format(
             'CREATE TRIGGER trg_%I_updated_at
@@ -1076,6 +1224,128 @@ LANGUAGE plpgsql AS $$ BEGIN
     JOIN users u           ON ve.examiner_id = u.id
     WHERE ve.viva_id = p_viva_id
     ORDER BY vi.role;
+END;
+ $$;
+
+
+-- Get examiner's assigned candidates with evaluation status
+CREATE OR REPLACE FUNCTION sp_get_examiner_candidates(p_examiner_id INT)
+RETURNS TABLE (
+    viva_id             INT,
+    scheduled_date      DATE,
+    scheduled_time      TIME,
+    venue               VARCHAR,
+    viva_status         viva_status,
+    candidate_id        INT,
+    registration_number VARCHAR,
+    thesis_title        VARCHAR,
+    candidate_status    candidate_status,
+    candidate_name      TEXT,
+    candidate_email     VARCHAR,
+    programme_name      VARCHAR,
+    examiner_role       examiner_role,
+    examiner_confirmed  BOOLEAN,
+    evaluation_id       INT,
+    evaluation_submitted BOOLEAN,
+    overall_score       SMALLINT,
+    thesis_file_path    VARCHAR,
+    thesis_version      INT
+)
+LANGUAGE plpgsql AS $$ BEGIN
+    RETURN QUERY
+    SELECT
+        vs.id,
+        vs.scheduled_date,
+        vs.scheduled_time,
+        vs.venue,
+        vs.status,
+        pc.id,
+        pc.registration_number,
+        pc.thesis_title,
+        pc.status,
+        s.first_name || ' ' || s.last_name,
+        s.email,
+        p.name,
+        vxe.role,
+        vxe.confirmed,
+        ve.id,
+        ve.is_submitted,
+        ve.overall_score,
+        ts.file_path,
+        ts.version
+    FROM viva_examiners vxe
+    JOIN viva_schedules      vs ON vxe.viva_id      = vs.id
+    JOIN phd_candidates      pc ON vs.candidate_id   = pc.id
+    JOIN students            s  ON pc.registration_number = s.registration_number
+    JOIN programmes          p  ON pc.programme_id   = p.id
+    LEFT JOIN viva_evaluations ve ON vxe.viva_id = ve.viva_id AND vxe.examiner_id = ve.examiner_id
+    LEFT JOIN thesis_submissions ts ON vs.thesis_id = ts.id
+    WHERE vxe.examiner_id = p_examiner_id
+    ORDER BY vs.scheduled_date DESC;
+END;
+ $$;
+
+
+-- Submit or update an evaluation for a viva
+CREATE OR REPLACE FUNCTION sp_submit_evaluation(
+    p_viva_id             INT,
+    p_examiner_id         INT,
+    p_originality_score   SMALLINT,
+    p_methodology_score   SMALLINT,
+    p_presentation_score  SMALLINT,
+    p_literature_score    SMALLINT,
+    p_strengths           TEXT,
+    p_weaknesses          TEXT,
+    p_recommended_corrections TEXT,
+    p_general_comments    TEXT
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+AS $$ 
+DECLARE
+    v_evaluation_id INT;
+    v_result JSONB;
+BEGIN
+    -- Verify examiner is assigned to this viva
+    IF NOT EXISTS (
+        SELECT 1 FROM viva_examiners 
+        WHERE viva_id = p_viva_id AND examiner_id = p_examiner_id
+    ) THEN
+        RAISE EXCEPTION 'Examiner is not assigned to this viva session';
+    END IF;
+    
+    -- Upsert the evaluation
+    INSERT INTO viva_evaluations (
+        viva_id, examiner_id,
+        originality_score, methodology_score, presentation_score, literature_score,
+        strengths, weaknesses, recommended_corrections, general_comments,
+        submitted_at, is_submitted
+    ) VALUES (
+        p_viva_id, p_examiner_id,
+        p_originality_score, p_methodology_score, p_presentation_score, p_literature_score,
+        p_strengths, p_weaknesses, p_recommended_corrections, p_general_comments,
+        NOW(), TRUE
+    )
+    ON CONFLICT (viva_id, examiner_id) DO UPDATE SET
+        originality_score = EXCLUDED.originality_score,
+        methodology_score = EXCLUDED.methodology_score,
+        presentation_score = EXCLUDED.presentation_score,
+        literature_score = EXCLUDED.literature_score,
+        strengths = EXCLUDED.strengths,
+        weaknesses = EXCLUDED.weaknesses,
+        recommended_corrections = EXCLUDED.recommended_corrections,
+        general_comments = EXCLUDED.general_comments,
+        submitted_at = NOW(),
+        is_submitted = TRUE
+    RETURNING id INTO v_evaluation_id;
+    
+    SELECT jsonb_build_object(
+        'success', TRUE,
+        'evaluation_id', v_evaluation_id,
+        'message', 'Evaluation submitted successfully'
+    ) INTO v_result;
+    
+    RETURN v_result;
 END;
  $$;
 

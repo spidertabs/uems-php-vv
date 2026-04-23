@@ -1,9 +1,8 @@
--- ============================================================   viva.sql
+-- ============================================================
 --  PhD SEED DATA — regenerated to match actual programmes
 -- ============================================================
 
-DO $$
-DECLARE
+DO $$ DECLARE
     missing TEXT := '';
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM programmes WHERE code IN ('PHD-COMPSCI','PHDCOMPSCI')) THEN missing := missing || ' PHD-COMPSCI'; END IF;
@@ -247,7 +246,38 @@ VALUES
 
 
 -- ============================================================
---  SECTION 2: THESIS SUBMISSIONS
+--  SECTION 2: PHD CANDIDATE SUPERVISORS
+--  Mirrors supervisor_id / co_supervisor_id from phd_candidates.
+-- ============================================================
+
+INSERT INTO phd_candidate_supervisors
+    (candidate_id, supervisor_id, role, is_active, assigned_at)
+
+-- Main supervisors
+SELECT
+    id,
+    supervisor_id,
+    'main'::supervisor_role,
+    TRUE,
+    created_at
+FROM phd_candidates
+WHERE supervisor_id IS NOT NULL
+
+UNION ALL
+
+-- Co-supervisors
+SELECT
+    id,
+    co_supervisor_id,
+    'co_supervisor'::supervisor_role,
+    TRUE,
+    created_at
+FROM phd_candidates
+WHERE co_supervisor_id IS NOT NULL;
+
+
+-- ============================================================
+--  SECTION 3: THESIS SUBMISSIONS
 -- ============================================================
 
 INSERT INTO thesis_submissions (
@@ -362,7 +392,7 @@ VALUES
 
 
 -- ============================================================
---  SECTION 3: VIVA SCHEDULES
+--  SECTION 4: VIVA SCHEDULES
 -- ============================================================
 
 INSERT INTO viva_schedules (
@@ -457,13 +487,16 @@ VALUES
 
 
 -- ============================================================
---  SECTION 4: VIVA EXAMINERS
+--  SECTION 5: VIVA EXAMINERS
+--  Assigns examiners to viva sessions via the viva_examiners table.
+--  This is the CORRECT table for examiner assignments (not supervisors table).
 --  Note: lect.math1 and lect.epid1 are used as stand-ins for
 --  external examiners (no dedicated external accounts in seed).
 -- ============================================================
 
 INSERT INTO viva_examiners (viva_id, examiner_id, role, confirmed, confirmed_at, notified_at)
 
+-- CS candidates: KIU/2020/1001, KIU/2020/1002, KIU/2019/P001
 SELECT vs.id, u.id, ex.role, ex.confirmed,
        CASE WHEN ex.confirmed THEN NOW() - INTERVAL '3 days' ELSE NULL END,
        NOW() - INTERVAL '5 days'
@@ -479,6 +512,7 @@ WHERE pc.registration_number IN ('KIU/2020/1001','KIU/2020/1002','KIU/2019/P001'
 
 UNION ALL
 
+-- PH candidates: KIU/2019/2001, KIU/2019/2002, KIU/2019/P004
 SELECT vs.id, u.id, ex.role, ex.confirmed,
        CASE WHEN ex.confirmed THEN NOW() - INTERVAL '3 days' ELSE NULL END,
        NOW() - INTERVAL '5 days'
@@ -494,6 +528,7 @@ WHERE pc.registration_number IN ('KIU/2019/2001','KIU/2019/2002','KIU/2019/P004'
 
 UNION ALL
 
+-- LAW candidates: KIU/2021/3001, KIU/2021/P008
 SELECT vs.id, u.id, ex.role, ex.confirmed,
        CASE WHEN ex.confirmed THEN NOW() - INTERVAL '3 days' ELSE NULL END,
        NOW() - INTERVAL '5 days'
@@ -509,6 +544,7 @@ WHERE pc.registration_number IN ('KIU/2021/3001','KIU/2021/P008')
 
 UNION ALL
 
+-- BA candidates: KIU/2020/4001, KIU/2020/P011
 SELECT vs.id, u.id, ex.role, ex.confirmed,
        CASE WHEN ex.confirmed THEN NOW() - INTERVAL '3 days' ELSE NULL END,
        NOW() - INTERVAL '5 days'
@@ -524,6 +560,7 @@ WHERE pc.registration_number IN ('KIU/2020/4001','KIU/2020/P011')
 
 UNION ALL
 
+-- MSEA candidates: KIU/2021/5001, KIU/2021/P016
 SELECT vs.id, u.id, ex.role, ex.confirmed,
        CASE WHEN ex.confirmed THEN NOW() - INTERVAL '3 days' ELSE NULL END,
        NOW() - INTERVAL '5 days'
@@ -539,6 +576,7 @@ WHERE pc.registration_number IN ('KIU/2021/5001','KIU/2021/P016')
 
 UNION ALL
 
+-- ENG candidates: KIU/2020/P019, KIU/2021/P021
 SELECT vs.id, u.id, ex.role, ex.confirmed,
        CASE WHEN ex.confirmed THEN NOW() - INTERVAL '3 days' ELSE NULL END,
        NOW() - INTERVAL '5 days'
@@ -554,7 +592,8 @@ WHERE pc.registration_number IN ('KIU/2020/P019','KIU/2021/P021');
 
 
 -- ============================================================
---  SECTION 5: VIVA EVALUATIONS (for all completed vivas)
+--  SECTION 6: VIVA EVALUATIONS (for all completed vivas)
+--  Each examiner provides their individual evaluation via viva_evaluations
 -- ============================================================
 
 INSERT INTO viva_evaluations (
@@ -564,7 +603,7 @@ INSERT INTO viva_evaluations (
     submitted_at, is_submitted
 )
 
--- PHD-COMPSCI: Sekitto Adam
+-- PHD-COMPSCI: Sekitto Adam (KIU/2019/P001)
 SELECT vs.id,
        unnest(ARRAY[
            (SELECT id FROM users WHERE email = 'lect.cs1@uems.ac.ug'),
@@ -602,7 +641,7 @@ WHERE pc.registration_number = 'KIU/2019/P001'
 
 UNION ALL
 
--- PHD-PH: Oryem Nicholas
+-- PHD-PH: Oryem Nicholas (KIU/2019/P004)
 SELECT vs.id,
        unnest(ARRAY[
            (SELECT id FROM users WHERE email = 'lect.ph1@uems.ac.ug'),
@@ -640,7 +679,7 @@ WHERE pc.registration_number = 'KIU/2019/P004'
 
 UNION ALL
 
--- PHD-LAW: Mugabi Richard
+-- PHD-LAW: Mugabi Richard (KIU/2021/P008)
 SELECT vs.id,
        unnest(ARRAY[
            (SELECT id FROM users WHERE email = 'lect.law1@uems.ac.ug'),
@@ -678,7 +717,7 @@ WHERE pc.registration_number = 'KIU/2021/P008'
 
 UNION ALL
 
--- PHD-BA: Barigye Felix
+-- PHD-BA: Barigye Felix (KIU/2020/P011)
 SELECT vs.id,
        unnest(ARRAY[
            (SELECT id FROM users WHERE email = 'lect.bus1@uems.ac.ug'),
@@ -716,7 +755,7 @@ WHERE pc.registration_number = 'KIU/2020/P011'
 
 UNION ALL
 
--- PHD-MSEA: Kirunda Andrew
+-- PHD-MSEA: Kirunda Andrew (KIU/2021/P016)
 SELECT vs.id,
        unnest(ARRAY[
            (SELECT id FROM users WHERE email = 'lect.edu1@uems.ac.ug'),
@@ -754,7 +793,7 @@ WHERE pc.registration_number = 'KIU/2021/P016'
 
 UNION ALL
 
--- PHD-ENG: Tumusiime Caroline
+-- PHD-ENG: Tumusiime Caroline (KIU/2021/P021)
 SELECT vs.id,
        unnest(ARRAY[
            (SELECT id FROM users WHERE email = 'lect.civ1@uems.ac.ug'),
@@ -792,7 +831,7 @@ WHERE pc.registration_number = 'KIU/2021/P021';
 
 
 -- ============================================================
---  SECTION 6: VIVA RECOMMENDATIONS
+--  SECTION 7: VIVA RECOMMENDATIONS
 -- ============================================================
 
 INSERT INTO viva_recommendations (
