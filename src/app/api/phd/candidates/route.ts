@@ -7,7 +7,7 @@ import { query } from '@/lib/db';
 export async function GET(req: NextRequest) {
   try {
     const user = await verifyAuth(req);
-    if (!user || !['viva_coordinator', 'admin', 'hod'].includes(user.role)) {
+    if (!user || !['viva_coordinator', 'admin', 'hod', 'dean'].includes(user.role)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
@@ -20,18 +20,18 @@ export async function GET(req: NextRequest) {
 
     let sql = `
       SELECT 
-        pc.id, pc.user_id, pc.registration_number, 
+        pc.id, pc.registration_number, 
         pc.thesis_title, pc.programme_id, pc.supervisor_id, 
         pc.co_supervisor_id, pc.status, pc.enrolment_year,
         pc.created_at, pc.updated_at,
-        u.email, u.first_name, u.last_name, CONCAT(u.first_name, ' ', u.last_name) AS candidate_name,
+        s.email, s.first_name, s.last_name, CONCAT(s.first_name, ' ', s.last_name) AS candidate_name,
         p.name AS programme_name,
-        s.first_name AS supervisor_first_name, 
-        s.last_name AS supervisor_last_name
+        sup.first_name AS supervisor_first_name, 
+        sup.last_name AS supervisor_last_name
       FROM phd_candidates pc
-      JOIN users u ON pc.user_id = u.id
+      JOIN students s ON pc.registration_number = s.registration_number
       JOIN programmes p ON pc.programme_id = p.id
-      LEFT JOIN users s ON pc.supervisor_id = s.id
+      LEFT JOIN users sup ON pc.supervisor_id = sup.id
       WHERE pc.deleted_at IS NULL
     `;
 
@@ -61,7 +61,7 @@ export async function GET(req: NextRequest) {
       params.push(parseInt(supervisorId));
     }
     if (search) {
-      sql += ' AND (u.first_name LIKE ? OR u.last_name LIKE ? OR pc.registration_number LIKE ?)';
+      sql += ' AND (s.first_name LIKE ? OR s.last_name LIKE ? OR pc.registration_number LIKE ?)';
       const searchTerm = `%${search}%`;
       params.push(searchTerm, searchTerm, searchTerm);
     }
@@ -93,7 +93,6 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
     const {
-      user_id,
       registration_number,
       thesis_title,
       programme_id,
@@ -102,25 +101,24 @@ export async function POST(req: NextRequest) {
       enrolment_year,
     } = body;
 
-    if (!user_id || !registration_number || !thesis_title || !programme_id || !supervisor_id || !enrolment_year) {
+    if (!registration_number || !thesis_title || !programme_id || !supervisor_id || !enrolment_year) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    // Validate Supervisor eligibility (Must not be HOD or existing candidate)
+    // Validate Supervisor eligibility (Must not be HOD)
     const sups = [supervisor_id];
     if (co_supervisor_id) sups.push(co_supervisor_id);
 
     const ineligible = await query<any[]>(
       `SELECT u.id FROM users u 
-       LEFT JOIN phd_candidates pc ON u.id = pc.user_id
        WHERE u.id IN (${sups.map(() => '?').join(',')}) 
-         AND (u.role = 'hod' OR pc.id IS NULL IS FALSE)`,
+         AND u.role = 'hod'`,
       sups
     );
 
     if (ineligible.length > 0) {
       return NextResponse.json(
-        { error: 'One or more selected supervisors are ineligible (HODs and PhD candidates cannot supervise)' },
+        { error: 'One or more selected supervisors are ineligible (HODs cannot supervise)' },
         { status: 400 }
       );
     }
@@ -143,13 +141,13 @@ export async function POST(req: NextRequest) {
 
     const result = await query<any>(
       `INSERT INTO phd_candidates 
-       (user_id, registration_number, thesis_title, programme_id, supervisor_id, 
+       (registration_number, thesis_title, programme_id, supervisor_id, 
         co_supervisor_id, status, enrolment_year, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, 'enrolled', ?, NOW(), NOW())`,
-      [user_id, registration_number, thesis_title, programme_id, supervisor_id, co_supervisor_id || null, enrolment_year]
+       VALUES (?, ?, ?, ?, ?, 'enrolled', ?, NOW(), NOW())`,
+      [registration_number, thesis_title, programme_id, supervisor_id, co_supervisor_id || null, enrolment_year]
     );
 
-    // Audit log - use correct column names: entity_type, entity_id, new_values
+    // Audit log
     await query(
       `INSERT INTO audit_logs (user_id, action, entity_type, entity_id, new_values, created_at) VALUES (?, ?, ?, ?, CAST(? AS jsonb), NOW())`,
       [user.id, 'CREATE', 'phd_candidates', result.insertId, JSON.stringify(body)]

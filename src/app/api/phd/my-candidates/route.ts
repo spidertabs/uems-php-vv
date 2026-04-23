@@ -44,7 +44,6 @@ export async function GET(req: NextRequest) {
     let sql = `
       SELECT DISTINCT
         pc.id,
-        pc.user_id,
         pc.registration_number,
         pc.thesis_title,
         pc.programme_id,
@@ -54,13 +53,13 @@ export async function GET(req: NextRequest) {
         pc.status,
         pc.created_at,
         pc.updated_at,
-        CONCAT(u.first_name, ' ', u.last_name) as candidate_name,
-        u.email as candidate_email,
+        CONCAT(st.first_name, ' ', st.last_name) as candidate_name,
+        st.email as candidate_email,
         p.name as programme_name,
         COALESCE(COUNT(DISTINCT vs.id), 0) as upcoming_vivas,
         COALESCE(COUNT(DISTINCT ve.id), 0) as pending_evaluations
       FROM phd_candidates pc
-      LEFT JOIN users u ON pc.user_id = u.id
+      JOIN students st ON pc.registration_number = st.registration_number
       LEFT JOIN programmes p ON pc.programme_id = p.id
       LEFT JOIN viva_schedules vs ON pc.id = vs.candidate_id 
         AND vs.status IN ('scheduled', 'in_progress')

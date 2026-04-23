@@ -19,12 +19,12 @@ export async function GET(
 
     const rows = await query<any[]>(
       `SELECT 
-        pc.id, pc.user_id, pc.registration_number, 
+        pc.id, pc.registration_number, 
         pc.thesis_title, pc.programme_id, pc.supervisor_id, 
         pc.co_supervisor_id, pc.status, pc.enrolment_year,
         pc.created_at, pc.updated_at,
-        CONCAT(u.first_name, ' ', u.last_name) AS candidate_name,
-        u.email AS candidate_email,
+        CONCAT(st.first_name, ' ', st.last_name) AS candidate_name,
+        st.email AS candidate_email,
         p.name AS programme_name,
         p.code AS programme_code,
         CONCAT(s.first_name, ' ', s.last_name) AS supervisor_name,
@@ -32,7 +32,7 @@ export async function GET(
         cs.first_name AS co_sup_first,
         cs.last_name AS co_sup_last
       FROM phd_candidates pc
-      JOIN users u ON pc.user_id = u.id
+      JOIN students st ON pc.registration_number = st.registration_number
       JOIN programmes p ON pc.programme_id = p.id
       LEFT JOIN users s ON pc.supervisor_id = s.id
       LEFT JOIN users cs ON pc.co_supervisor_id = cs.id
@@ -134,9 +134,8 @@ export async function PUT(
     if (supsToValidate.length > 0) {
       const ineligible = await query<any[]>(
         `SELECT u.id FROM users u 
-         LEFT JOIN phd_candidates pc ON u.id = pc.user_id
          WHERE u.id IN (${supsToValidate.map(() => '?').join(',')}) 
-           AND (u.role = 'hod' OR pc.id IS NULL IS FALSE)`,
+           AND u.role = 'hod'`,
         supsToValidate
       );
 

@@ -48,7 +48,11 @@ export async function POST(
 
     // Create notification to candidate
     const candidate = await query<any[]>(
-      `SELECT pc.user_id FROM phd_candidates pc WHERE pc.id = ?`,
+      `SELECT u.id AS user_id 
+       FROM phd_candidates pc 
+       JOIN students st ON pc.registration_number = st.registration_number
+       JOIN users u ON st.email = u.email
+       WHERE pc.id = ?`,
       [schedule[0].candidate_id]
     );
 

@@ -16,24 +16,24 @@ interface CandidateFilters {
 export async function getAllCandidates(filters?: CandidateFilters): Promise<CandidateWithDetails[]> {
   let sql = `
     SELECT
-      pc.id, pc.user_id, pc.registration_number,
+      pc.id, pc.registration_number,
       pc.thesis_title, pc.programme_id, pc.supervisor_id,
       pc.co_supervisor_id, pc.status, pc.enrolment_year,
       pc.deleted_at, pc.deleted_by, pc.created_at, pc.updated_at,
-      CONCAT(u.first_name, ' ', u.last_name) AS candidate_name,
-      u.email AS candidate_email,
+      CONCAT(s.first_name, ' ', s.last_name) AS candidate_name,
+      s.email AS candidate_email,
       p.name AS programme_name,
       p.code AS programme_code,
-      CONCAT(s.first_name, ' ', s.last_name) AS supervisor_name,
-      s.email AS supervisor_email,
+      CONCAT(sup.first_name, ' ', sup.last_name) AS supervisor_name,
+      sup.email AS supervisor_email,
       cs.first_name AS co_sup_first,
       cs.last_name AS co_sup_last,
       (SELECT COUNT(*) FROM thesis_submissions ts WHERE ts.candidate_id = pc.id) AS thesis_count,
       (SELECT COUNT(*) FROM viva_schedules vs WHERE vs.candidate_id = pc.id) AS viva_count
     FROM phd_candidates pc
-    JOIN users u ON pc.user_id = u.id
+    JOIN students s ON pc.registration_number = s.registration_number
     JOIN programmes p ON pc.programme_id = p.id
-    LEFT JOIN users s ON pc.supervisor_id = s.id
+    LEFT JOIN users sup ON pc.supervisor_id = sup.id
     LEFT JOIN users cs ON pc.co_supervisor_id = cs.id
     WHERE pc.deleted_at IS NULL
   `;
@@ -52,7 +52,7 @@ export async function getAllCandidates(filters?: CandidateFilters): Promise<Cand
     params.push(filters.supervisor_id);
   }
   if (filters?.search) {
-    sql += ' AND (u.first_name LIKE ? OR u.last_name LIKE ? OR pc.registration_number LIKE ?)';
+    sql += ' AND (s.first_name LIKE ? OR s.last_name LIKE ? OR pc.registration_number LIKE ?)';
     const term = `%${filters.search}%`;
     params.push(term, term, term);
   }
@@ -65,24 +65,24 @@ export async function getAllCandidates(filters?: CandidateFilters): Promise<Cand
 export async function getCandidateById(id: number): Promise<CandidateWithDetails | null> {
   const rows = await query<any[]>(`
     SELECT
-      pc.id, pc.user_id, pc.registration_number,
+      pc.id, pc.registration_number,
       pc.thesis_title, pc.programme_id, pc.supervisor_id,
       pc.co_supervisor_id, pc.status, pc.enrolment_year,
       pc.deleted_at, pc.deleted_by, pc.created_at, pc.updated_at,
-      CONCAT(u.first_name, ' ', u.last_name) AS candidate_name,
-      u.email AS candidate_email,
+      CONCAT(s.first_name, ' ', s.last_name) AS candidate_name,
+      s.email AS candidate_email,
       p.name AS programme_name,
       p.code AS programme_code,
-      CONCAT(s.first_name, ' ', s.last_name) AS supervisor_name,
-      s.email AS supervisor_email,
+      CONCAT(sup.first_name, ' ', sup.last_name) AS supervisor_name,
+      sup.email AS supervisor_email,
       cs.first_name AS co_sup_first,
       cs.last_name AS co_sup_last,
       (SELECT COUNT(*) FROM thesis_submissions ts WHERE ts.candidate_id = pc.id) AS thesis_count,
       (SELECT COUNT(*) FROM viva_schedules vs WHERE vs.candidate_id = pc.id) AS viva_count
     FROM phd_candidates pc
-    JOIN users u ON pc.user_id = u.id
+    JOIN students s ON pc.registration_number = s.registration_number
     JOIN programmes p ON pc.programme_id = p.id
-    LEFT JOIN users s ON pc.supervisor_id = s.id
+    LEFT JOIN users sup ON pc.supervisor_id = sup.id
     LEFT JOIN users cs ON pc.co_supervisor_id = cs.id
     WHERE pc.id = ? AND pc.deleted_at IS NULL
     LIMIT 1
@@ -90,16 +90,15 @@ export async function getCandidateById(id: number): Promise<CandidateWithDetails
   return rows.length > 0 ? mapCandidate(rows[0]) : null;
 }
 
-export async function getCandidateByUserId(userId: number): Promise<PhdCandidate | null> {
+export async function getCandidateByRegNo(regNo: string): Promise<PhdCandidate | null> {
   const rows = await query<PhdCandidate[]>(
-    'SELECT * FROM phd_candidates WHERE user_id = ? AND deleted_at IS NULL LIMIT 1',
-    [userId]
+    'SELECT * FROM phd_candidates WHERE registration_number = ? AND deleted_at IS NULL LIMIT 1',
+    [regNo]
   );
   return rows.length > 0 ? rows[0] : null;
 }
 
 export async function createCandidate(data: {
-  user_id: number;
   registration_number: string;
   thesis_title: string;
   programme_id: number;
@@ -109,11 +108,11 @@ export async function createCandidate(data: {
 }): Promise<number> {
   const result = await query<any>(
     `INSERT INTO phd_candidates
-     (user_id, registration_number, thesis_title, programme_id, supervisor_id,
+     (registration_number, thesis_title, programme_id, supervisor_id,
       co_supervisor_id, status, enrolment_year, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, 'enrolled', ?, NOW(), NOW())`,
+     VALUES (?, ?, ?, ?, ?, 'enrolled', ?, NOW(), NOW())`,
     [
-      data.user_id, data.registration_number, data.thesis_title,
+      data.registration_number, data.thesis_title,
       data.programme_id, data.supervisor_id,
       data.co_supervisor_id ?? null, data.enrolment_year,
     ]
@@ -143,10 +142,8 @@ export async function getEligibleSupervisors(deptId?: number): Promise<any[]> {
            d.name AS department_name
     FROM users u
     LEFT JOIN departments d ON u.department_id = d.id
-    LEFT JOIN phd_candidates pc ON u.id = pc.user_id
-    WHERE u.role NOT IN ('hod', 'exam_master') 
+    WHERE u.role NOT IN ('exam_master') 
       AND u.is_active = TRUE 
-      AND pc.id IS NULL
       AND u.deleted_at IS NULL
   `;
   const params: number[] = [];
@@ -158,15 +155,17 @@ export async function getEligibleSupervisors(deptId?: number): Promise<any[]> {
   return query<any[]>(sql, params);
 }
 
-export async function getUsersForCandidateRegistration(): Promise<any[]> {
+export async function getStudentsForCandidateRegistration(): Promise<any[]> {
   return query<any[]>(
-    `SELECT DISTINCT u.id, u.first_name, u.last_name, u.email, u.role
-     FROM users u
-     LEFT JOIN phd_candidates pc ON u.id = pc.user_id
+    `SELECT DISTINCT s.registration_number, s.first_name, s.last_name, s.email
+     FROM students s
+     JOIN programmes p ON s.programme_id = p.id
+     LEFT JOIN phd_candidates pc ON s.registration_number = pc.registration_number
      WHERE pc.id IS NULL 
-       AND u.is_active = TRUE 
-       AND u.deleted_at IS NULL
-     ORDER BY u.first_name, u.last_name`,
+       AND p.level = 'phd'
+       AND s.is_active = TRUE 
+       AND s.deleted_at IS NULL
+     ORDER BY s.first_name, s.last_name`,
     []
   );
 }

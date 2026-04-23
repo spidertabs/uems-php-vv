@@ -51,10 +51,8 @@ export async function getEligibleExaminers(deptId?: number): Promise<any[]> {
            d.name AS department_name
     FROM users u
     LEFT JOIN departments d ON u.department_id = d.id
-    LEFT JOIN phd_candidates pc ON u.id = pc.user_id
     WHERE u.role NOT IN ('hod', 'exam_master') 
       AND u.is_active = TRUE 
-      AND pc.id IS NULL
       AND u.deleted_at IS NULL
   `;
   const params: number[] = [];

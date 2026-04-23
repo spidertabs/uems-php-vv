@@ -98,7 +98,7 @@ export async function GET(req: NextRequest) {
     const upcomingResult = await query<any[]>(
       `SELECT
          vs.id AS viva_id,
-         CONCAT(u.first_name, ' ', u.last_name) AS candidate_name,
+         CONCAT(st.first_name, ' ', st.last_name) AS candidate_name,
          pc.registration_number,
          p.name  AS programme_name,
          vs.scheduled_date,
@@ -113,7 +113,7 @@ export async function GET(req: NextRequest) {
           WHERE vex.viva_id = vs.id)     AS total_examiners
        FROM viva_schedules vs
        JOIN phd_candidates pc ON vs.candidate_id = pc.id
-       JOIN users u           ON pc.user_id       = u.id
+       JOIN students st       ON pc.registration_number = st.registration_number
        JOIN programmes p      ON pc.programme_id  = p.id
        WHERE pc.deleted_at IS NULL
          AND vs.status = 'scheduled'
@@ -140,7 +140,7 @@ export async function GET(req: NextRequest) {
     const pendingResult = await query<any[]>(
       `SELECT
          vs.id AS viva_id,
-         CONCAT(u.first_name, ' ', u.last_name) AS candidate_name,
+         CONCAT(st.first_name, ' ', st.last_name) AS candidate_name,
          pc.registration_number,
          CASE
            WHEN vr.id IS NULL
@@ -154,7 +154,7 @@ export async function GET(req: NextRequest) {
          COALESCE(vs.updated_at, vs.created_at) AS since
        FROM viva_schedules vs
        JOIN phd_candidates pc  ON vs.candidate_id = pc.id
-       JOIN users u            ON pc.user_id       = u.id
+       JOIN students st        ON pc.registration_number = st.registration_number
        JOIN programmes p      ON pc.programme_id  = p.id
        LEFT JOIN viva_recommendations vr ON vs.id = vr.viva_id
        WHERE pc.deleted_at IS NULL

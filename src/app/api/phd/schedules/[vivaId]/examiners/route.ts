@@ -86,7 +86,8 @@ export async function POST(
     // Check examiner exists and is eligible (not HOD or candidate)
     const eligibleExaminer = await query<any[]>(
       `SELECT u.id FROM users u 
-       LEFT JOIN phd_candidates pc ON u.id = pc.user_id
+       LEFT JOIN students st ON u.email = st.email
+       LEFT JOIN phd_candidates pc ON st.registration_number = pc.registration_number
        WHERE u.id = ? AND u.role != 'hod' AND pc.id IS NULL AND u.deleted_at IS NULL`,
       [examiner_id]
     );

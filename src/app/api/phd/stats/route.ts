@@ -83,7 +83,7 @@ export async function GET(req: NextRequest) {
       `SELECT 
          vr.id,
          vs.id as viva_id,
-         CONCAT(u.first_name, ' ', u.last_name) as candidate_name,
+         CONCAT(s.first_name, ' ', s.last_name) as candidate_name,
          pc.registration_number,
          p.name as programme_name,
          vr.outcome,
@@ -91,7 +91,7 @@ export async function GET(req: NextRequest) {
        FROM viva_recommendations vr
        JOIN viva_schedules vs ON vr.viva_id = vs.id
        JOIN phd_candidates pc ON vs.candidate_id = pc.id
-       JOIN users u ON pc.user_id = u.id
+       JOIN students s ON pc.registration_number = s.registration_number
        JOIN programmes p ON pc.programme_id = p.id
        WHERE pc.deleted_at IS NULL
        ${isHOD ? 'AND p.department_id = ?' : ''}

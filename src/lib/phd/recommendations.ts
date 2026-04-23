@@ -43,13 +43,13 @@ export async function getFullVivaReport(vivaId: number): Promise<VivaReportFull 
          vs.id, vs.scheduled_date, vs.scheduled_time, vs.venue,
          vs.duration_minutes, vs.status,
          pc.registration_number, pc.thesis_title,
-         CONCAT(uc.first_name, ' ', uc.last_name) AS candidate_name,
+         CONCAT(st.first_name, ' ', st.last_name) AS candidate_name,
          CONCAT(su.first_name, ' ', su.last_name) AS supervisor_name,
          p.name AS programme_name,
          vr.outcome, vr.correction_deadline, vr.final_comments
        FROM viva_schedules vs
        JOIN phd_candidates pc ON vs.candidate_id = pc.id
-       JOIN users uc ON pc.user_id = uc.id
+       JOIN students st ON pc.registration_number = st.registration_number
        LEFT JOIN users su ON pc.supervisor_id = su.id
        JOIN programmes p ON pc.programme_id = p.id
        LEFT JOIN viva_recommendations vr ON vr.viva_id = vs.id

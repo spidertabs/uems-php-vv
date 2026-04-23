@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
+interface StudentOption { registration_number: string; first_name: string; last_name: string; email: string; }
 interface UserOption { id: number; first_name: string; last_name: string; email: string; role: string; }
 interface ProgrammeOption { id: number; code: string; name: string; }
 
@@ -33,11 +34,10 @@ function Field({
 
 export default function RegisterCandidatePage() {
   const router = useRouter();
-  const [users, setUsers] = useState<UserOption[]>([]);
+  const [students, setStudents] = useState<StudentOption[]>([]);
   const [programmes, setProgrammes] = useState<ProgrammeOption[]>([]);
   const [supervisors, setSupervisors] = useState<UserOption[]>([]);
   const [form, setForm] = useState({
-    user_id: '',
     registration_number: '',
     thesis_title: '',
     programme_id: '',
@@ -59,7 +59,7 @@ export default function RegisterCandidatePage() {
         ]);
         if (uRes.ok) {
           const d = await uRes.json();
-          setUsers(d.users || []);
+          setStudents(d.users || []);
         }
         if (sRes.ok) {
           const d = await sRes.json();
@@ -78,10 +78,10 @@ export default function RegisterCandidatePage() {
 
   const validate = () => {
     const e: Record<string, string> = {};
-    if (!form.user_id) e.user_id = 'Please select a candidate user.';
-    if (!form.registration_number.trim()) e.registration_number = 'Registration number is required.';
+    if (!form.registration_number) e.registration_number = 'Please select a student.';
     if (!form.thesis_title.trim()) e.thesis_title = 'Thesis title is required.';
     if (!form.programme_id) e.programme_id = 'Please select a programme.';
+    if (!form.supervisor_id) e.supervisor_id = 'Please select a primary supervisor.';
     if (!form.enrolment_year || isNaN(parseInt(form.enrolment_year))) e.enrolment_year = 'Valid year required.';
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -97,7 +97,6 @@ export default function RegisterCandidatePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...form,
-          user_id: parseInt(form.user_id),
           programme_id: parseInt(form.programme_id),
           supervisor_id: form.supervisor_id ? parseInt(form.supervisor_id) : null,
           co_supervisor_id: form.co_supervisor_id ? parseInt(form.co_supervisor_id) : null,
@@ -126,7 +125,7 @@ export default function RegisterCandidatePage() {
 
       <div>
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">👨‍🎓 Register PhD Candidate</h1>
-        <p className="mt-1 text-gray-600 dark:text-gray-400">Create a new PhD candidate record in the system.</p>
+        <p className="mt-1 text-gray-600 dark:text-gray-400">Register an existing student as a PhD candidate.</p>
       </div>
 
       <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
@@ -137,29 +136,19 @@ export default function RegisterCandidatePage() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          <Field name="user_id" label="Candidate (User Account)" required errors={errors}>
+          <Field name="registration_number" label="Student Account" required errors={errors}>
             <select
-              value={form.user_id}
-              onChange={(e) => setForm((p) => ({ ...p, user_id: e.target.value }))}
+              value={form.registration_number}
+              onChange={(e) => setForm((p) => ({ ...p, registration_number: e.target.value }))}
               className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900 focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
             >
-              <option value="">Select user...</option>
-              {users.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.first_name} {u.last_name} — {u.email}
+              <option value="">Select student...</option>
+              {students.map((s) => (
+                <option key={s.registration_number} value={s.registration_number}>
+                  {s.first_name} {s.last_name} ({s.registration_number}) — {s.email}
                 </option>
               ))}
             </select>
-          </Field>
-
-          <Field name="registration_number" label="Registration Number" required errors={errors}>
-            <input
-              type="text"
-              value={form.registration_number}
-              onChange={(e) => setForm((p) => ({ ...p, registration_number: e.target.value }))}
-              placeholder="KIU/PHD/CS/2024/001"
-              className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-mono focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-            />
           </Field>
 
           <Field name="thesis_title" label="Thesis Title" required errors={errors}>

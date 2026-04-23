@@ -47,9 +47,9 @@ export async function notifyThesisUploaded(
 ): Promise<void> {
   const rows = await query<any[]>(
     `SELECT pc.registration_number,
-            CONCAT(u.first_name, ' ', u.last_name) AS candidate_name
+            CONCAT(st.first_name, ' ', st.last_name) AS candidate_name
      FROM phd_candidates pc
-     JOIN users u ON pc.user_id = u.id
+     JOIN students st ON pc.registration_number = st.registration_number
      WHERE pc.id = ?
      LIMIT 1`,
     [candidateId]
@@ -79,13 +79,13 @@ export async function notifyVivaScheduled(vivaId: number): Promise<void> {
     `SELECT
        vs.scheduled_date, vs.scheduled_time, vs.venue,
        pc.id AS candidate_id,
-       pc.user_id AS candidate_user_id,
-       CONCAT(uc.first_name, ' ', uc.last_name) AS candidate_name,
+       (SELECT u.id FROM users u JOIN students s ON u.email = s.email WHERE s.registration_number = pc.registration_number LIMIT 1) AS candidate_user_id,
+       CONCAT(st.first_name, ' ', st.last_name) AS candidate_name,
        pc.supervisor_id,
        ve.examiner_id
      FROM viva_schedules vs
      JOIN phd_candidates pc ON vs.candidate_id = pc.id
-     JOIN users uc ON pc.user_id = uc.id
+     JOIN students st ON pc.registration_number = st.registration_number
      LEFT JOIN viva_examiners ve ON ve.viva_id = vs.id
      WHERE vs.id = ?`,
     [vivaId]
@@ -101,7 +101,7 @@ export async function notifyVivaScheduled(vivaId: number): Promise<void> {
   const actionUrl = `/phd/schedules/${vivaId}`;
 
   const recipients = new Set<number>();
-  recipients.add(first.candidate_user_id);
+  if (first.candidate_user_id) recipients.add(first.candidate_user_id);
   if (first.supervisor_id) recipients.add(first.supervisor_id);
   rows.forEach((r) => { if (r.examiner_id) recipients.add(r.examiner_id); });
 
@@ -121,10 +121,10 @@ export async function notifyExaminerAssigned(
 ): Promise<void> {
   const rows = await query<any[]>(
     `SELECT vs.scheduled_date, vs.venue,
-            CONCAT(uc.first_name, ' ', uc.last_name) AS candidate_name
+            CONCAT(st.first_name, ' ', st.last_name) AS candidate_name
      FROM viva_schedules vs
      JOIN phd_candidates pc ON vs.candidate_id = pc.id
-     JOIN users uc ON pc.user_id = uc.id
+     JOIN students st ON pc.registration_number = st.registration_number
      WHERE vs.id = ?
      LIMIT 1`,
     [vivaId]
@@ -151,13 +151,13 @@ export async function notifyExaminerAssigned(
 export async function notifyVivaResult(vivaId: number): Promise<void> {
   const rows = await query<any[]>(
     `SELECT
-       pc.user_id AS candidate_user_id,
+       (SELECT u.id FROM users u JOIN students s ON u.email = s.email WHERE s.registration_number = pc.registration_number LIMIT 1) AS candidate_user_id,
        pc.supervisor_id,
-       CONCAT(uc.first_name, ' ', uc.last_name) AS candidate_name,
+       CONCAT(st.first_name, ' ', st.last_name) AS candidate_name,
        vr.outcome
      FROM viva_schedules vs
      JOIN phd_candidates pc ON vs.candidate_id = pc.id
-     JOIN users uc ON pc.user_id = uc.id
+     JOIN students st ON pc.registration_number = st.registration_number
      LEFT JOIN viva_recommendations vr ON vr.viva_id = vs.id
      WHERE vs.id = ?
      LIMIT 1`,
@@ -177,7 +177,8 @@ export async function notifyVivaResult(vivaId: number): Promise<void> {
   const message = `The panel recommendation for ${candidate_name}'s viva has been issued: ${label}.`;
   const actionUrl = `/phd/report/${vivaId}`;
 
-  const recipients: number[] = [candidate_user_id];
+  const recipients: number[] = [];
+  if (candidate_user_id) recipients.push(candidate_user_id);
   if (supervisor_id) recipients.push(supervisor_id);
 
   await Promise.all(
