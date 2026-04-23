@@ -10,7 +10,8 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
-    const students = await getStudentsForCandidateRegistration();
+    const deptId = user.role === 'hod' ? (user.department_id ?? undefined) : undefined;
+    const students = await getStudentsForCandidateRegistration(deptId as number | undefined);
     return NextResponse.json({ users: students });
   } catch (error) {
     console.error('Error fetching available users:', error);

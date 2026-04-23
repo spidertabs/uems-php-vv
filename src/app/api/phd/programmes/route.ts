@@ -11,12 +11,16 @@ export async function GET(req: NextRequest) {
     }
 
     // Get all PhD level programmes
-    const programmes = await query<any[]>(
-      `SELECT id, code, name
-       FROM programmes
-       WHERE level = 'phd' AND is_active = TRUE
-       ORDER BY name ASC`
-    );
+    let sql = `SELECT id, code, name FROM programmes WHERE level = 'phd' AND is_active = TRUE`;
+    const params: any[] = [];
+
+    if (user.role === 'hod' && user.department_id) {
+      sql += ' AND department_id = ?';
+      params.push(user.department_id);
+    }
+
+    sql += ' ORDER BY name ASC';
+    const programmes = await query<any[]>(sql, params);
 
     return NextResponse.json({ programmes });
   } catch (error) {
