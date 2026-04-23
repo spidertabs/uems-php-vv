@@ -24,12 +24,13 @@ export async function GET(req: NextRequest) {
         pc.thesis_title, pc.programme_id, pc.supervisor_id, 
         pc.co_supervisor_id, pc.status, pc.enrolment_year,
         pc.created_at, pc.updated_at,
-        s.email, s.first_name, s.last_name, CONCAT(s.first_name, ' ', s.last_name) AS candidate_name,
+        s.email, s.first_name, s.last_name, 
+        COALESCE(CONCAT(s.first_name, ' ', s.last_name), pc.registration_number) AS candidate_name,
         p.name AS programme_name,
         sup.first_name AS supervisor_first_name, 
         sup.last_name AS supervisor_last_name
       FROM phd_candidates pc
-      JOIN students s ON pc.registration_number = s.registration_number
+      LEFT JOIN students s ON pc.registration_number = s.registration_number
       JOIN programmes p ON pc.programme_id = p.id
       LEFT JOIN users sup ON pc.supervisor_id = sup.id
       WHERE pc.deleted_at IS NULL

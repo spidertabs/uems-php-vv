@@ -31,7 +31,7 @@ export async function getAllCandidates(filters?: CandidateFilters): Promise<Cand
       (SELECT COUNT(*) FROM thesis_submissions ts WHERE ts.candidate_id = pc.id) AS thesis_count,
       (SELECT COUNT(*) FROM viva_schedules vs WHERE vs.candidate_id = pc.id) AS viva_count
     FROM phd_candidates pc
-    JOIN students s ON pc.registration_number = s.registration_number
+    LEFT JOIN students s ON pc.registration_number = s.registration_number
     JOIN programmes p ON pc.programme_id = p.id
     LEFT JOIN users sup ON pc.supervisor_id = sup.id
     LEFT JOIN users cs ON pc.co_supervisor_id = cs.id
@@ -80,7 +80,7 @@ export async function getCandidateById(id: number): Promise<CandidateWithDetails
       (SELECT COUNT(*) FROM thesis_submissions ts WHERE ts.candidate_id = pc.id) AS thesis_count,
       (SELECT COUNT(*) FROM viva_schedules vs WHERE vs.candidate_id = pc.id) AS viva_count
     FROM phd_candidates pc
-    JOIN students s ON pc.registration_number = s.registration_number
+    LEFT JOIN students s ON pc.registration_number = s.registration_number
     JOIN programmes p ON pc.programme_id = p.id
     LEFT JOIN users sup ON pc.supervisor_id = sup.id
     LEFT JOIN users cs ON pc.co_supervisor_id = cs.id

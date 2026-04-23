@@ -23,7 +23,8 @@ export async function GET(
         pc.thesis_title, pc.programme_id, pc.supervisor_id, 
         pc.co_supervisor_id, pc.status, pc.enrolment_year,
         pc.created_at, pc.updated_at,
-        CONCAT(st.first_name, ' ', st.last_name) AS candidate_name,
+        CONCAT(st.first_name, ' ', st.last_name) AS candidate_name_full,
+        COALESCE(CONCAT(st.first_name, ' ', st.last_name), pc.registration_number) AS candidate_name,
         st.email AS candidate_email,
         p.name AS programme_name,
         p.code AS programme_code,
@@ -32,7 +33,7 @@ export async function GET(
         cs.first_name AS co_sup_first,
         cs.last_name AS co_sup_last
       FROM phd_candidates pc
-      JOIN students st ON pc.registration_number = st.registration_number
+      LEFT JOIN students st ON pc.registration_number = st.registration_number
       JOIN programmes p ON pc.programme_id = p.id
       LEFT JOIN users s ON pc.supervisor_id = s.id
       LEFT JOIN users cs ON pc.co_supervisor_id = cs.id

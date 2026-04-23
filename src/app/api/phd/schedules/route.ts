@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
              pc.registration_number, 
              pc.thesis_title,
              pc.status AS candidate_status,
-             CONCAT(st.first_name, ' ', st.last_name) AS candidate_name,
+             COALESCE(CONCAT(st.first_name, ' ', st.last_name), pc.registration_number) AS candidate_name,
              CONCAT(COALESCE(sup.first_name, ''), ' ', COALESCE(sup.last_name, '')) AS supervisor_name,
              p.name AS programme_name,
              COALESCE(vr.outcome, NULL) AS outcome,
@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
              (SELECT COUNT(*) FROM viva_evaluations WHERE viva_id = vs.id AND is_submitted = TRUE) AS evaluations_submitted
       FROM viva_schedules vs
       JOIN phd_candidates pc ON vs.candidate_id = pc.id
-      JOIN students st ON pc.registration_number = st.registration_number
+      LEFT JOIN students st ON pc.registration_number = st.registration_number
       JOIN programmes p ON pc.programme_id = p.id
       LEFT JOIN users sup ON pc.supervisor_id = sup.id
       LEFT JOIN viva_recommendations vr ON vs.id = vr.viva_id

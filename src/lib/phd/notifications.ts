@@ -51,7 +51,7 @@ export async function notifyVivaPostponed(
        CONCAT(st.first_name, ' ', st.last_name) AS candidate_name
      FROM viva_schedules vs
      JOIN phd_candidates pc ON vs.candidate_id = pc.id
-     JOIN students st ON pc.registration_number = st.registration_number
+     LEFT JOIN students st ON pc.registration_number = st.registration_number
      WHERE vs.id = ?
      LIMIT 1`,
     [vivaId]
@@ -96,7 +96,7 @@ export async function notifyThesisUploaded(
     `SELECT pc.registration_number,
             CONCAT(st.first_name, ' ', st.last_name) AS candidate_name
      FROM phd_candidates pc
-     JOIN students st ON pc.registration_number = st.registration_number
+     LEFT JOIN students st ON pc.registration_number = st.registration_number
      WHERE pc.id = ?
      LIMIT 1`,
     [candidateId]
@@ -132,7 +132,7 @@ export async function notifyVivaScheduled(vivaId: number): Promise<void> {
        ve.examiner_id
      FROM viva_schedules vs
      JOIN phd_candidates pc ON vs.candidate_id = pc.id
-     JOIN students st ON pc.registration_number = st.registration_number
+     LEFT JOIN students st ON pc.registration_number = st.registration_number
      LEFT JOIN viva_examiners ve ON ve.viva_id = vs.id
      WHERE vs.id = ?`,
     [vivaId]
@@ -171,7 +171,7 @@ export async function notifyExaminerAssigned(
             CONCAT(st.first_name, ' ', st.last_name) AS candidate_name
      FROM viva_schedules vs
      JOIN phd_candidates pc ON vs.candidate_id = pc.id
-     JOIN students st ON pc.registration_number = st.registration_number
+     LEFT JOIN students st ON pc.registration_number = st.registration_number
      WHERE vs.id = ?
      LIMIT 1`,
     [vivaId]
@@ -204,7 +204,7 @@ export async function notifyVivaResult(vivaId: number): Promise<void> {
        vr.outcome
      FROM viva_schedules vs
      JOIN phd_candidates pc ON vs.candidate_id = pc.id
-     JOIN students st ON pc.registration_number = st.registration_number
+     LEFT JOIN students st ON pc.registration_number = st.registration_number
      LEFT JOIN viva_recommendations vr ON vr.viva_id = vs.id
      WHERE vs.id = ?
      LIMIT 1`,

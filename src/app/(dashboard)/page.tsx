@@ -19,6 +19,9 @@ interface DashboardStats {
   departmentCourses?: number;
   collegePapers?: number;
   myCandidates?: number;
+  totalCandidates?: number;
+  totalPapers?: number;
+  upcomingVivas?: number;
 }
 
 interface User {
@@ -358,6 +361,36 @@ export default function DashboardPage() {
           color: 'bg-indigo-600',
         },
       ],
+      viva_coordinator: [
+        {
+          title: 'Total Candidates',
+          value: stats.totalCandidates || 0,
+          icon: '🎓',
+          href: '/phd/candidates',
+          color: 'bg-emerald-600',
+        },
+        {
+          title: 'All Papers',
+          value: stats.totalPapers || stats.myPapers,
+          icon: '📄',
+          href: '/exam-papers',
+          color: 'bg-blue-500',
+        },
+        {
+          title: 'Upcoming Vivas',
+          value: stats.upcomingVivas || 0,
+          icon: '📅',
+          href: '/phd/schedules',
+          color: 'bg-yellow-500',
+        },
+        {
+          title: 'Notifications',
+          value: stats.notifications,
+          icon: '📬',
+          href: '/notifications/inbox',
+          color: 'bg-purple-500',
+        },
+      ],
     };
 
     return cardsByRole[role || 'lecturer'] || cardsByRole.lecturer;
@@ -425,6 +458,36 @@ export default function DashboardPage() {
           icon: '📊',
           href: '/reports',
           color: 'text-green-600 dark:text-green-400',
+        },
+      ],
+      viva_coordinator: [
+        {
+          title: 'Register Candidate',
+          description: 'Add a new PhD candidate',
+          icon: '👨‍🎓',
+          href: '/phd/candidates/new',
+          color: 'text-emerald-600 dark:text-emerald-400',
+        },
+        {
+          title: 'Schedule Viva',
+          description: 'Create a new oral defence',
+          icon: '📅',
+          href: '/phd/schedules/new',
+          color: 'text-yellow-600 dark:text-yellow-400',
+        },
+        {
+          title: 'PhD Reports',
+          description: 'View candidates & outcomes',
+          icon: '📊',
+          href: '/phd/reports',
+          color: 'text-purple-600 dark:text-purple-400',
+        },
+        {
+          title: 'Exam Papers',
+          description: 'Browse all exam papers',
+          icon: '📄',
+          href: '/exam-papers',
+          color: 'text-blue-600 dark:text-blue-400',
         },
       ],
       dean: [

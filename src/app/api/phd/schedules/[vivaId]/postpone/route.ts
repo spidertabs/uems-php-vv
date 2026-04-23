@@ -1,3 +1,6 @@
+// src/app/api/phd/schedules/[vivaId]/postpone/route.ts
+import { NextRequest, NextResponse } from 'next/server';
+import { verifyAuth } from '@/lib/auth';
 import { query } from '@/lib/db';
 import { notifyVivaPostponed } from '@/lib/phd/notifications';
 

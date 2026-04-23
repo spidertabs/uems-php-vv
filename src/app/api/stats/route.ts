@@ -35,7 +35,13 @@ export async function GET(request: NextRequest) {
         await getExamMasterStats(user.id, stats);
         break;
       case 'admin':
+      case 'viva_coordinator':
         await getAdminStats(stats);
+        if (user.role === 'viva_coordinator') {
+          // Additional PhD specific summary for coordinator
+          const phdTotal = await query<any[]>('SELECT COUNT(*) as count FROM phd_candidates WHERE deleted_at IS NULL');
+          stats.totalCandidates = phdTotal[0]?.count || 0;
+        }
         break;
     }
 
