@@ -159,10 +159,9 @@ export async function getStudentsForCandidateRegistration(): Promise<any[]> {
   return query<any[]>(
     `SELECT DISTINCT s.registration_number, s.first_name, s.last_name, s.email
      FROM students s
-     JOIN programmes p ON s.programme_id = p.id
+     LEFT JOIN programmes p ON s.programme_id = p.id
      LEFT JOIN phd_candidates pc ON s.registration_number = pc.registration_number
      WHERE pc.id IS NULL 
-       AND p.level = 'phd'
        AND s.is_active = TRUE 
        AND s.deleted_at IS NULL
      ORDER BY s.first_name, s.last_name`,

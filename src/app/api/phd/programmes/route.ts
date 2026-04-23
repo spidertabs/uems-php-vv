@@ -10,13 +10,12 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
-    // Get all programmes that have PhD candidates
+    // Get all PhD level programmes
     const programmes = await query<any[]>(
-      `SELECT DISTINCT p.id, p.code, p.name
-       FROM programmes p
-       INNER JOIN phd_candidates pc ON p.id = pc.programme_id
-       WHERE pc.deleted_at IS NULL
-       ORDER BY p.name ASC`
+      `SELECT id, code, name
+       FROM programmes
+       WHERE level = 'phd' AND is_active = TRUE
+       ORDER BY name ASC`
     );
 
     return NextResponse.json({ programmes });
