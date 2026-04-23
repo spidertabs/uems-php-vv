@@ -2,7 +2,7 @@
 --  UEMS-PHD-VV — University Examination Management System
 --              & PhD Viva Voce Administration
 --
---  PostgreSQL v3.1 (FIXED)
+--  PostgreSQL v3.2 (FIXED ORDER)
 --  Kampala International University | © 2026 Spider Tabs Ltd
 -- ============================================================
 
@@ -48,6 +48,18 @@ CREATE TYPE candidate_status     AS ENUM (
 CREATE TYPE viva_status          AS ENUM ('scheduled','postponed','cancelled','in_progress','completed');
 CREATE TYPE examiner_role        AS ENUM ('chairperson','internal_examiner','external_examiner');
 CREATE TYPE viva_outcome         AS ENUM ('pass','pass_with_minor_corrections','pass_with_major_corrections','fail');
+
+
+-- ============================================================
+--  ⚠️  UTILITY FUNCTIONS — MUST exist BEFORE any trigger uses them
+-- ============================================================
+
+CREATE OR REPLACE FUNCTION fn_set_updated_at()
+RETURNS TRIGGER LANGUAGE plpgsql AS $$ BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+ $$;
 
 
 -- ============================================================
@@ -108,7 +120,7 @@ CREATE INDEX idx_programmes_deleted    ON programmes (deleted_at);
 
 
 -- ============================================================
---  SECTION 2 — USER MANAGEMENT & AUTHENTICATION
+--  SECTION 2 — USER MANAGEMENT & AUTHENTICATION (staff)
 -- ============================================================
 
 CREATE TABLE users (
@@ -137,9 +149,12 @@ CREATE INDEX idx_users_deleted    ON users (deleted_at);
 CREATE TABLE sessions (
     id         SERIAL       PRIMARY KEY,
     session_id VARCHAR(255) NOT NULL UNIQUE,
-    user_id    INT          NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    user_id    INT          REFERENCES users(id) ON DELETE CASCADE,
+    student_id INT,
     expires_at TIMESTAMPTZ  NOT NULL,
-    created_at TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+    created_at TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    CONSTRAINT chk_session_owner
+        CHECK (user_id IS NOT NULL OR student_id IS NOT NULL)
 );
 CREATE INDEX idx_sessions_session_id   ON sessions (session_id);
 CREATE INDEX idx_sessions_expires_at   ON sessions (expires_at);
@@ -147,7 +162,50 @@ CREATE INDEX idx_sessions_user_expire  ON sessions (user_id, expires_at);
 
 
 -- ============================================================
---  SECTION 3 — ACADEMIC CONTENT
+--  SECTION 3 — STUDENTS
+-- ============================================================
+
+CREATE TABLE students (
+    id                  SERIAL       PRIMARY KEY,
+    registration_number VARCHAR(50)  NOT NULL UNIQUE,
+    email               VARCHAR(255) NOT NULL UNIQUE,
+    password_hash       VARCHAR(255) NOT NULL,
+    first_name          VARCHAR(100) NOT NULL,
+    last_name           VARCHAR(100) NOT NULL,
+    phone               VARCHAR(20),
+    programme_id        INT          REFERENCES programmes(id)  ON DELETE SET NULL,
+    college_id          INT          REFERENCES colleges(id)    ON DELETE SET NULL,
+    department_id       INT          REFERENCES departments(id) ON DELETE SET NULL,
+    enrolment_year      SMALLINT,
+    study_year          SMALLINT,
+    semester            SMALLINT,
+    is_active           BOOLEAN      NOT NULL DEFAULT TRUE,
+    last_login          TIMESTAMPTZ,
+    deleted_at          TIMESTAMPTZ,
+    deleted_by          INT,
+    created_at          TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    updated_at          TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);
+CREATE INDEX idx_students_registration_number ON students (registration_number);
+CREATE INDEX idx_students_email          ON students (email);
+CREATE INDEX idx_students_programme      ON students (programme_id);
+CREATE INDEX idx_students_college        ON students (college_id);
+CREATE INDEX idx_students_department     ON students (department_id);
+CREATE INDEX idx_students_deleted        ON students (deleted_at);
+
+-- Add FK for student_id (function already exists now ✓)
+ALTER TABLE sessions
+    ADD CONSTRAINT fk_sessions_student
+    FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE;
+
+-- Trigger (function already exists now ✓)
+CREATE TRIGGER trg_students_updated_at
+    BEFORE UPDATE ON students
+    FOR EACH ROW EXECUTE FUNCTION fn_set_updated_at();
+
+
+-- ============================================================
+--  SECTION 4 — ACADEMIC CONTENT
 -- ============================================================
 
 CREATE TABLE courses (
@@ -195,7 +253,7 @@ CREATE INDEX idx_study_units_deleted     ON study_units (deleted_at);
 
 
 -- ============================================================
---  SECTION 4 — QUESTION BANK
+--  SECTION 5 — QUESTION BANK
 -- ============================================================
 
 CREATE TABLE questions (
@@ -237,7 +295,7 @@ CREATE INDEX idx_questions_fts ON questions USING GIN (to_tsvector('english', qu
 
 
 -- ============================================================
---  SECTION 5 — EXAM PAPERS
+--  SECTION 6 — EXAM PAPERS
 -- ============================================================
 
 CREATE TABLE exam_papers (
@@ -307,7 +365,7 @@ CREATE INDEX idx_epp_programme  ON exam_paper_programmes (programme_id);
 
 
 -- ============================================================
---  SECTION 6 — EXAM PAPER QUESTIONS (with Sub-Question support)
+--  SECTION 7 — EXAM PAPER QUESTIONS (with Sub-Question support)
 -- ============================================================
 
 CREATE TABLE exam_paper_questions (
@@ -332,8 +390,6 @@ CREATE TABLE exam_paper_questions (
     notes                  TEXT,
     created_at             TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     updated_at             TIMESTAMPTZ  NOT NULL DEFAULT NOW()
-    -- NOTE: Unique constraints with COALESCE expressions are created
-    -- as separate unique indexes below (PostgreSQL requirement)
 );
 CREATE INDEX idx_epq_exam_paper  ON exam_paper_questions (exam_paper_id);
 CREATE INDEX idx_epq_question    ON exam_paper_questions (question_id);
@@ -341,9 +397,6 @@ CREATE INDEX idx_epq_parent      ON exam_paper_questions (parent_question_id);
 CREATE INDEX idx_epq_section     ON exam_paper_questions (section);
 CREATE INDEX idx_epq_indentation ON exam_paper_questions (indentation_level);
 
--- Unique indexes with expressions (replaces MySQL generated-column UNIQUE constraints)
--- These ensure that NULL parent_question_id is treated as 0 for uniqueness,
--- so top-level questions are properly deduplicated alongside sub-questions.
 CREATE UNIQUE INDEX idx_epq_uniq_section_seq
     ON exam_paper_questions (exam_paper_id, section, sequence_order, COALESCE(parent_question_id, 0));
 CREATE UNIQUE INDEX idx_epq_uniq_question_parent
@@ -351,7 +404,7 @@ CREATE UNIQUE INDEX idx_epq_uniq_question_parent
 
 
 -- ============================================================
---  SECTION 7 — PERMISSIONS SYSTEM
+--  SECTION 8 — PERMISSIONS SYSTEM
 -- ============================================================
 
 CREATE TABLE lecturer_permissions (
@@ -375,7 +428,7 @@ CREATE INDEX idx_lp_active     ON lecturer_permissions (is_active);
 
 
 -- ============================================================
---  SECTION 8 — WORKFLOW & APPROVALS
+--  SECTION 9 — WORKFLOW & APPROVALS
 -- ============================================================
 
 CREATE TABLE workflow_history (
@@ -414,7 +467,7 @@ CREATE INDEX idx_pc_resolved   ON paper_comments (is_resolved);
 
 
 -- ============================================================
---  SECTION 9 — NOTIFICATIONS
+--  SECTION 10 — NOTIFICATIONS
 -- ============================================================
 
 CREATE TABLE notifications (
@@ -438,7 +491,7 @@ CREATE INDEX idx_notif_archived    ON notifications (archived_at);
 
 
 -- ============================================================
---  SECTION 10 — AUDIT LOGS
+--  SECTION 11 — AUDIT LOGS
 -- ============================================================
 
 CREATE TABLE audit_logs (
@@ -462,13 +515,12 @@ CREATE INDEX idx_al_created_at ON audit_logs (created_at);
 
 
 -- ============================================================
---  SECTION 11 — PhD VIVA VOCE ADMINISTRATION
+--  SECTION 12 — PhD VIVA VOCE ADMINISTRATION
 -- ============================================================
 
 CREATE TABLE phd_candidates (
     id                  SERIAL           PRIMARY KEY,
-    user_id             INT              NOT NULL REFERENCES users(id)      ON DELETE RESTRICT,
-    registration_number VARCHAR(50)      NOT NULL UNIQUE,
+    registration_number VARCHAR(50)      NOT NULL UNIQUE REFERENCES students(registration_number) ON DELETE RESTRICT,
     thesis_title        VARCHAR(500)     NOT NULL,
     programme_id        INT              NOT NULL REFERENCES programmes(id) ON DELETE RESTRICT,
     supervisor_id       INT              REFERENCES users(id)               ON DELETE SET NULL,
@@ -480,11 +532,11 @@ CREATE TABLE phd_candidates (
     created_at          TIMESTAMPTZ      NOT NULL DEFAULT NOW(),
     updated_at          TIMESTAMPTZ      NOT NULL DEFAULT NOW()
 );
-CREATE INDEX idx_phd_user       ON phd_candidates (user_id);
-CREATE INDEX idx_phd_programme  ON phd_candidates (programme_id);
-CREATE INDEX idx_phd_supervisor ON phd_candidates (supervisor_id);
-CREATE INDEX idx_phd_status     ON phd_candidates (status);
-CREATE INDEX idx_phd_deleted    ON phd_candidates (deleted_at);
+CREATE INDEX idx_phd_registration_number ON phd_candidates (registration_number);
+CREATE INDEX idx_phd_programme           ON phd_candidates (programme_id);
+CREATE INDEX idx_phd_supervisor          ON phd_candidates (supervisor_id);
+CREATE INDEX idx_phd_status              ON phd_candidates (status);
+CREATE INDEX idx_phd_deleted             ON phd_candidates (deleted_at);
 
 
 CREATE TABLE thesis_submissions (
@@ -576,7 +628,7 @@ CREATE INDEX idx_vrec_outcome ON viva_recommendations (outcome);
 
 
 -- ============================================================
---  SECTION 12 — VIEWS
+--  SECTION 13 — VIEWS
 -- ============================================================
 
 CREATE VIEW hod_pending_approvals AS
@@ -672,23 +724,24 @@ SELECT
     pc.registration_number,
     pc.thesis_title,
     pc.status                                       AS candidate_status,
-    cu.first_name || ' ' || cu.last_name            AS candidate_name,
+    s.first_name || ' ' || s.last_name              AS candidate_name,
+    s.email                                         AS candidate_email,
     su.first_name || ' ' || su.last_name            AS supervisor_name,
     p.name                                          AS programme_name,
     vr.outcome,
     COUNT(DISTINCT ve.id)                           AS evaluations_submitted,
     COUNT(DISTINCT vi.id)                           AS total_examiners
 FROM viva_schedules vs
-JOIN  phd_candidates pc ON vs.candidate_id  = pc.id
-JOIN  users          cu ON pc.user_id        = cu.id
-LEFT JOIN users      su ON pc.supervisor_id  = su.id
-JOIN  programmes     p  ON pc.programme_id   = p.id
+JOIN  phd_candidates pc ON vs.candidate_id          = pc.id
+JOIN  students       s  ON pc.registration_number   = s.registration_number
+LEFT JOIN users      su ON pc.supervisor_id         = su.id
+JOIN  programmes     p  ON pc.programme_id          = p.id
 LEFT JOIN viva_examiners vi ON vs.id = vi.viva_id
 LEFT JOIN viva_evaluations ve ON vs.id = ve.viva_id AND ve.is_submitted = TRUE
 LEFT JOIN viva_recommendations vr ON vs.id = vr.viva_id
 GROUP BY vs.id, vs.scheduled_date, vs.scheduled_time, vs.venue,
          vs.status, pc.registration_number, pc.thesis_title,
-         pc.status, cu.first_name, cu.last_name,
+         pc.status, s.first_name, s.last_name, s.email,
          su.first_name, su.last_name, p.name, vr.outcome;
 
 
@@ -713,16 +766,11 @@ WHERE lp.is_active  = TRUE
 
 
 -- ============================================================
---  SECTION 13 — TRIGGERS
+--  SECTION 14 — TRIGGERS
+--  (fn_set_updated_at already defined at the top of this file)
 -- ============================================================
 
-CREATE OR REPLACE FUNCTION fn_set_updated_at()
-RETURNS TRIGGER LANGUAGE plpgsql AS $$ BEGIN
-    NEW.updated_at = NOW();
-    RETURN NEW;
-END;
-$$;
-
+-- Batch-create updated_at triggers for remaining tables
 DO $$ DECLARE
     tbl TEXT;
 BEGIN
@@ -739,7 +787,8 @@ BEGIN
         );
     END LOOP;
 END;
-$$;
+ $$;
+
 
 CREATE OR REPLACE FUNCTION fn_prevent_subquestions_when_disabled()
 RETURNS TRIGGER LANGUAGE plpgsql AS $$ DECLARE
@@ -757,11 +806,12 @@ BEGIN
     END IF;
     RETURN NEW;
 END;
-$$;
+ $$;
 
 CREATE TRIGGER trg_prevent_subquestions_when_disabled
 BEFORE INSERT ON exam_paper_questions
 FOR EACH ROW EXECUTE FUNCTION fn_prevent_subquestions_when_disabled();
+
 
 CREATE OR REPLACE FUNCTION fn_recalculate_total_marks()
 RETURNS TRIGGER LANGUAGE plpgsql AS $$ DECLARE
@@ -777,7 +827,7 @@ BEGIN
     WHERE id = v_paper_id;
     RETURN NULL;
 END;
-$$;
+ $$;
 
 CREATE TRIGGER trg_marks_after_insert
 AFTER INSERT ON exam_paper_questions
@@ -791,16 +841,18 @@ CREATE TRIGGER trg_marks_after_delete
 AFTER DELETE ON exam_paper_questions
 FOR EACH ROW EXECUTE FUNCTION fn_recalculate_total_marks();
 
+
 CREATE OR REPLACE FUNCTION fn_increment_question_usage()
 RETURNS TRIGGER LANGUAGE plpgsql AS $$ BEGIN
     UPDATE questions SET usage_count = usage_count + 1 WHERE id = NEW.question_id;
     RETURN NULL;
 END;
-$$;
+ $$;
 
 CREATE TRIGGER trg_increment_question_usage
 AFTER INSERT ON exam_paper_questions
 FOR EACH ROW EXECUTE FUNCTION fn_increment_question_usage();
+
 
 CREATE OR REPLACE FUNCTION fn_decrement_question_usage()
 RETURNS TRIGGER LANGUAGE plpgsql AS $$ BEGIN
@@ -809,22 +861,24 @@ RETURNS TRIGGER LANGUAGE plpgsql AS $$ BEGIN
     WHERE id = OLD.question_id;
     RETURN NULL;
 END;
-$$;
+ $$;
 
 CREATE TRIGGER trg_decrement_question_usage
 AFTER DELETE ON exam_paper_questions
 FOR EACH ROW EXECUTE FUNCTION fn_decrement_question_usage();
+
 
 CREATE OR REPLACE FUNCTION fn_candidate_status_on_viva_schedule()
 RETURNS TRIGGER LANGUAGE plpgsql AS $$ BEGIN
     UPDATE phd_candidates SET status = 'viva_scheduled' WHERE id = NEW.candidate_id;
     RETURN NULL;
 END;
-$$;
+ $$;
 
 CREATE TRIGGER trg_candidate_status_on_viva_schedule
 AFTER INSERT ON viva_schedules
 FOR EACH ROW EXECUTE FUNCTION fn_candidate_status_on_viva_schedule();
+
 
 CREATE OR REPLACE FUNCTION fn_candidate_status_on_viva_complete()
 RETURNS TRIGGER LANGUAGE plpgsql AS $$ BEGIN
@@ -833,11 +887,12 @@ RETURNS TRIGGER LANGUAGE plpgsql AS $$ BEGIN
     END IF;
     RETURN NULL;
 END;
-$$;
+ $$;
 
 CREATE TRIGGER trg_candidate_status_on_viva_complete
 AFTER UPDATE ON viva_schedules
 FOR EACH ROW EXECUTE FUNCTION fn_candidate_status_on_viva_complete();
+
 
 CREATE OR REPLACE FUNCTION fn_thesis_version_increment()
 RETURNS TRIGGER LANGUAGE plpgsql AS $$ DECLARE
@@ -851,7 +906,7 @@ BEGIN
     NEW.version := v_latest_version + 1;
     RETURN NEW;
 END;
-$$;
+ $$;
 
 CREATE TRIGGER trg_thesis_version_increment
 BEFORE INSERT ON thesis_submissions
@@ -859,7 +914,7 @@ FOR EACH ROW EXECUTE FUNCTION fn_thesis_version_increment();
 
 
 -- ============================================================
---  SECTION 14 — STORED PROCEDURES
+--  SECTION 15 — STORED PROCEDURES
 -- ============================================================
 
 CREATE OR REPLACE PROCEDURE cleanup_expired_sessions()
@@ -951,6 +1006,7 @@ RETURNS TABLE (
     registration_number VARCHAR,
     thesis_title        VARCHAR,
     candidate_name      TEXT,
+    candidate_email     VARCHAR,
     supervisor_name     TEXT,
     programme_name      VARCHAR,
     outcome             viva_outcome,
@@ -967,18 +1023,19 @@ LANGUAGE plpgsql AS $$ BEGIN
         vs.status,
         pc.registration_number,
         pc.thesis_title,
-        cu.first_name || ' ' || cu.last_name,
+        s.first_name || ' ' || s.last_name,
+        s.email,
         su.first_name || ' ' || su.last_name,
         pr.name,
         vr.outcome,
         vr.correction_deadline,
         vr.final_comments
     FROM viva_schedules vs
-    JOIN  phd_candidates pc ON vs.candidate_id = pc.id
-    JOIN  users          cu ON pc.user_id       = cu.id
-    LEFT JOIN users      su ON pc.supervisor_id = su.id
-    JOIN  programmes     pr ON pc.programme_id  = pr.id
-    LEFT JOIN viva_recommendations vr ON vs.id  = vr.viva_id
+    JOIN  phd_candidates pc ON vs.candidate_id        = pc.id
+    JOIN  students       s  ON pc.registration_number = s.registration_number
+    LEFT JOIN users      su ON pc.supervisor_id       = su.id
+    JOIN  programmes     pr ON pc.programme_id        = pr.id
+    LEFT JOIN viva_recommendations vr ON vs.id        = vr.viva_id
     WHERE vs.id = p_viva_id;
 END;
  $$;
@@ -1024,30 +1081,15 @@ END;
 
 
 -- ============================================================
---  SECTION 15 — SCHEDULED JOBS  (pg_cron extension)
---
---  Requires: CREATE EXTENSION IF NOT EXISTS pg_cron;
---  (Must be installed by a superuser, typically in the postgres DB)
---
---  SELECT cron.schedule('daily-session-cleanup',  '0 0 * * *', 'CALL cleanup_expired_sessions()');
---  SELECT cron.schedule('weekly-notif-archive',   '0 1 * * 0', 'CALL archive_old_notifications()');
+--  RPC HELPERS — Next.js query layer
 -- ============================================================
-
--- ============================================================
---  END OF SCHEMA — UEMS-PHD-VV v3.1 (PostgreSQL)
---  Kampala International University | © 2026 Spider Tabs Ltd
--- ============================================================
--- ─────────────────────────────────────────────────────────────────────────────
---  RPC helpers for Next.js query layer
--- ─────────────────────────────────────────────────────────────────────────────
 
 CREATE OR REPLACE FUNCTION public.execute_query(p_sql text, p_params jsonb DEFAULT '[]'::jsonb)
- RETURNS jsonb
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public'
-AS $function$
-DECLARE
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $function$ DECLARE
   v_result JSONB;
   n INTEGER;
 BEGIN
@@ -1081,57 +1123,15 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
   RAISE EXCEPTION 'execute_query [%]: %', SQLSTATE, SQLERRM;
 END;
-$function$;
+ $function$;
+
 
 CREATE OR REPLACE FUNCTION public.execute_write(p_sql text, p_params jsonb DEFAULT '[]'::jsonb)
- RETURNS jsonb
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public'
-AS $function$
-DECLARE
-  n INTEGER;
-BEGIN
-  n := COALESCE(jsonb_array_length(p_params), 0);
-  IF n = 0 THEN
-    EXECUTE p_sql;
-  ELSIF n = 1 THEN
-    EXECUTE p_sql USING (p_params->0);
-  ELSIF n = 2 THEN
-    EXECUTE p_sql USING (p_params->0),(p_params->1);
-  ELSIF n = 3 THEN
-    EXECUTE p_sql USING (p_params->0),(p_params->1),(p_params->2);
-  ELSIF n = 4 THEN
-    EXECUTE p_sql USING (p_params->0),(p_params->1),(p_params->2),(p_params->3);
-  ELSIF n = 5 THEN
-    EXECUTE p_sql USING (p_params->0),(p_params->1),(p_params->2),(p_params->3),(p_params->4);
-  ELSIF n = 6 THEN
-    EXECUTE p_sql USING (p_params->0),(p_params->1),(p_params->2),(p_params->3),(p_params->4),(p_params->5);
-  ELSIF n = 7 THEN
-    EXECUTE p_sql USING (p_params->0),(p_params->1),(p_params->2),(p_params->3),(p_params->4),(p_params->5),(p_params->6);
-  ELSIF n = 8 THEN
-    EXECUTE p_sql USING (p_params->0),(p_params->1),(p_params->2),(p_params->3),(p_params->4),(p_params->5),(p_params->6),(p_params->7);
-  ELSIF n = 9 THEN
-    EXECUTE p_sql USING (p_params->0),(p_params->1),(p_params->2),(p_params->3),(p_params->4),(p_params->5),(p_params->6),(p_params->7),(p_params->8);
-  ELSIF n = 10 THEN
-    EXECUTE p_sql USING (p_params->0),(p_params->1),(p_params->2),(p_params->3),(p_params->4),(p_params->5),(p_params->6),(p_params->7),(p_params->8),(p_params->9);
-  ELSE
-    RAISE EXCEPTION 'execute_write supports up to 10 parameters, got %', n;
-  END IF;
-  RETURN '[]'::jsonb;
-EXCEPTION WHEN OTHERS THEN
-  RAISE EXCEPTION 'execute_write [%]: %', SQLSTATE, SQLERRM;
-END;
-$function$;
-
--- Fix execute_write: handle RETURNING vs non-RETURNING, use text params with explicit casts in SQL
-CREATE OR REPLACE FUNCTION public.execute_write(p_sql text, p_params jsonb DEFAULT '[]'::jsonb)
- RETURNS jsonb
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public'
-AS $function$
-DECLARE
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $function$ DECLARE
   n INTEGER;
   v_result JSONB;
   has_returning BOOLEAN;
@@ -1170,7 +1170,10 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
   RAISE EXCEPTION 'execute_write [%]: %', SQLSTATE, SQLERRM;
 END;
-$function$;
+ $function$;
 
--- Fix execute_write to use lastval() for RETURNING
--- (already applied live, this ensures it persists after db reset)
+
+-- ============================================================
+--  END OF SCHEMA — UEMS-PHD-VV v3.2 (PostgreSQL)
+--  Kampala International University | © 2026 Spider Tabs Ltd
+-- ============================================================
