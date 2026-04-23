@@ -55,20 +55,23 @@ export async function GET(request: NextRequest) {
 
     // Filter based on role
     if (role === 'lecturer') {
-      // Lecturers see questions from courses they have permission for or created
+      // Lecturers see questions from courses they have permission for, created, or in their department
       sql += `
-        AND (q.created_by = ? OR EXISTS (
+        AND (q.created_by = ? OR c.department_id = ? OR EXISTS (
           SELECT 1 FROM lecturer_permissions lp 
           WHERE lp.lecturer_id = ? 
           AND lp.course_id = q.course_id 
           AND lp.is_active = TRUE
         ))
       `;
-      params.push(user_id, user_id);
-    } else if (role === 'hod') {
-      // HODs see all questions in their department
-      sql += ` AND c.department_id = ?`;
-      params.push(department_id);
+      params.push(user_id, department_id, user_id);
+    } else if (role === 'hod' || role === 'viva_coordinator') {
+      // HODs and Viva Coordinators see all questions in their department (or all if admin-like)
+      if (department_id && role === 'hod') {
+        sql += ` AND c.department_id = ?`;
+        params.push(department_id);
+      }
+      // viva_coordinator sees everything by default unless we want to restrict by department
     } else if (role === 'dean') {
       // Deans see all questions in their college
       sql += ` AND c.college_id = ?`;

@@ -155,11 +155,11 @@ export async function testConnection(): Promise<boolean> {
 }
 
 export async function transaction<T>(
-  callback: (client: ReturnType<typeof createClient>) => Promise<T>
+  callback: (conn: { execute: typeof query }) => Promise<T>
 ): Promise<T> {
-  const client = getClient();
   try {
-    return await callback(client);
+    // For now, this is a fake transaction that just provides the expected interface
+    return await callback({ execute: query });
   } catch (error) {
     console.error('❌ Transaction error:', error);
     throw error;

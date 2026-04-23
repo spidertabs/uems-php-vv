@@ -54,7 +54,7 @@ export async function GET(
     const { role, id: user_id, department_id, college_id } = session;
     let hasAccess = false;
 
-    if (role === 'admin' || role === 'exam_master') {
+    if (role === 'admin' || role === 'exam_master' || role === 'viva_coordinator') {
       hasAccess = true;
     } else if (role === 'lecturer') {
       hasAccess = paper.created_by === user_id;
