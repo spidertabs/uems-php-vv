@@ -9,16 +9,16 @@ export async function POST(
 ) {
   try {
     const user = await verifyAuth(req);
-    if (!user || !['viva_coordinator', 'admin'].includes(user.role)) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { evaluationId: evaluationIdStr } = await context.params;
     const evaluationId = parseInt(evaluationIdStr);
 
-    // Get evaluation
+    // Get evaluation with owner info
     const evaluation = await query<any[]>(
-      `SELECT id, is_submitted, originality_score, methodology_score, 
+      `SELECT id, examiner_id, is_submitted, originality_score, methodology_score, 
               presentation_score, literature_score
        FROM viva_evaluations WHERE id = ?`,
       [evaluationId]
@@ -32,6 +32,14 @@ export async function POST(
     }
 
     const eval_data = evaluation[0];
+
+    // Check permission: admin/coordinator can submit any, lecturer can only submit their own
+    const isOwner = eval_data.examiner_id === user.id;
+    const isPrivileged = ['viva_coordinator', 'admin'].includes(user.role);
+
+    if (!isPrivileged && !isOwner) {
+      return NextResponse.json({ error: 'You are not authorized to submit this evaluation' }, { status: 403 });
+    }
 
     // Validation: all 4 scores must be filled before submit
     if (eval_data.originality_score === null || eval_data.originality_score === undefined ||

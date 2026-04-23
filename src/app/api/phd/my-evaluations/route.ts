@@ -54,45 +54,23 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Verify viva exists and belongs to candidate supervised by this lecturer
-    const vivaCheck = await query<any[]>(
-      `SELECT vs.id, vs.candidate_id, pc.supervisor_id, pc.co_supervisor_id
-       FROM viva_schedules vs
-       JOIN phd_candidates pc ON vs.candidate_id = pc.id
-       WHERE vs.id = ?`,
-      [viva_id]
-    );
-
-    if (!vivaCheck || vivaCheck.length === 0) {
-      return NextResponse.json(
-        { error: 'Viva not found' },
-        { status: 404 }
-      );
-    }
-
-    const viva = vivaCheck[0];
-    // Verify lecturer is supervisor/co-supervisor
-    if (viva.supervisor_id !== user.id && viva.co_supervisor_id !== user.id) {
-      return NextResponse.json(
-        { error: 'You are not authorized to evaluate this candidate' },
-        { status: 403 }
-      );
-    }
-
-    // Check examiner exists and is assigned to this viva
-    const examinerCheck = await query<any[]>(
-      `SELECT id FROM viva_examiners WHERE viva_id = ? AND examiner_id = ?`,
+    // Check authorization: Must be an assigned examiner for this viva
+    const assignmentCheck = await query<any[]>(
+      `SELECT role FROM viva_examiners WHERE viva_id = ? AND examiner_id = ?`,
       [viva_id, user.id]
     );
 
-    if (!examinerCheck || examinerCheck.length === 0) {
+    if (!assignmentCheck || assignmentCheck.length === 0) {
       return NextResponse.json(
-        { error: 'You are not assigned as an examiner for this viva' },
+        { error: 'You are not assigned as an examiner for this viva session' },
         { status: 403 }
       );
     }
 
-    // UPSERT evaluation
+    // UPSERT evaluation using the sp_submit_evaluation RPC logic for consistency
+    // Note: We don't mark as submitted here, just save the draft. 
+    // The actual 'submit' route marks is_submitted = true.
+    
     const existing = await query<any[]>(
       `SELECT id FROM viva_evaluations WHERE viva_id = ? AND examiner_id = ?`,
       [viva_id, user.id]
@@ -126,10 +104,10 @@ export async function POST(req: NextRequest) {
           user.id,
         ]
       );
-      result = { id: existing[0].id, message: 'Evaluation updated' };
+      result = { id: existing[0].id, message: 'Evaluation saved as draft' };
     } else {
       // Insert new
-      const insertResult = await query(
+      const insertResult = await query<any>(
         `INSERT INTO viva_evaluations (
           viva_id,
           examiner_id,
@@ -141,9 +119,10 @@ export async function POST(req: NextRequest) {
           weaknesses,
           recommended_corrections,
           general_comments,
+          is_submitted,
           created_at,
           updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, FALSE, NOW(), NOW())`,
         [
           viva_id,
           user.id,
@@ -157,7 +136,7 @@ export async function POST(req: NextRequest) {
           general_comments,
         ]
       );
-      result = { id: (insertResult as any).insertId, message: 'Evaluation created' };
+      result = { id: insertResult.insertId, message: 'Evaluation created as draft' };
     }
 
     return NextResponse.json({
