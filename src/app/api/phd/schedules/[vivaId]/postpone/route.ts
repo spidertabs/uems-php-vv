@@ -1,7 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { NextRequest, NextResponse } from 'next/server';
-import { verifyAuth } from '@/lib/auth';
 import { query } from '@/lib/db';
+import { notifyVivaPostponed } from '@/lib/phd/notifications';
 
 export async function POST(
   req: NextRequest,
@@ -46,23 +44,8 @@ export async function POST(
 
     // Note: Candidate status remains as is (not automatically changed on postponement)
 
-    // Create notification to candidate
-    const candidate = await query<any[]>(
-      `SELECT u.id AS user_id 
-       FROM phd_candidates pc 
-       JOIN students st ON pc.registration_number = st.registration_number
-       JOIN users u ON st.email = u.email
-       WHERE pc.id = ?`,
-      [schedule[0].candidate_id]
-    );
-
-    if (candidate && candidate.length > 0) {
-      await query(
-        `INSERT INTO notifications (user_id, type, title, body, related_id, created_at)
-         VALUES (?, 'viva_postponed', 'Viva Postponed', ?, ?, NOW())`,
-        [candidate[0].user_id, `Your viva has been postponed. Reason: ${postponement_reason}`, vivaId]
-      );
-    }
+    // Notify candidate and supervisor via centralised helper
+    await notifyVivaPostponed(vivaId, postponement_reason);
 
     // Audit log
     await query(

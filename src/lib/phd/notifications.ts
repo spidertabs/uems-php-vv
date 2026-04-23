@@ -15,12 +15,14 @@ async function createNotification(data: {
   message: string;
   action_url?: string;
   priority?: 'low' | 'medium' | 'high' | 'urgent';
+  related_entity_type?: string;
+  related_entity_id?: number;
 }): Promise<void> {
   try {
     await query(
       `INSERT INTO notifications
-         (user_id, type, title, message, action_url, priority, is_read, created_at)
-       VALUES (?, ?::notification_type, ?, ?, ?, ?, FALSE, NOW())`,
+         (user_id, type, title, message, action_url, priority, related_entity_type, related_entity_id, is_read, created_at)
+       VALUES (?, ?::notification_type, ?, ?, ?, ?, ?, ?, FALSE, NOW())`,
       [
         data.user_id,
         data.type,
@@ -28,12 +30,57 @@ async function createNotification(data: {
         data.message,
         data.action_url ?? null,
         data.priority ?? 'medium',
+        data.related_entity_type ?? null,
+        data.related_entity_id ?? null,
       ]
     );
   } catch (err) {
     // Notifications must never crash the main request
     console.error('Notification insert failed:', err);
   }
+}
+
+export async function notifyVivaPostponed(
+  vivaId: number,
+  reason: string
+): Promise<void> {
+  const rows = await query<any[]>(
+    `SELECT
+       (SELECT u.id FROM users u JOIN students s ON u.email = s.email WHERE s.registration_number = pc.registration_number LIMIT 1) AS candidate_user_id,
+       pc.supervisor_id,
+       CONCAT(st.first_name, ' ', st.last_name) AS candidate_name
+     FROM viva_schedules vs
+     JOIN phd_candidates pc ON vs.candidate_id = pc.id
+     JOIN students st ON pc.registration_number = st.registration_number
+     WHERE vs.id = ?
+     LIMIT 1`,
+    [vivaId]
+  );
+  if (!rows.length) return;
+  const { candidate_user_id, supervisor_id, candidate_name } = rows[0];
+
+  const title = 'Viva Postponed';
+  const message = `${candidate_name}'s viva has been postponed. Reason: ${reason}`;
+  const actionUrl = `/phd/schedules/${vivaId}`;
+
+  const recipients: number[] = [];
+  if (candidate_user_id) recipients.push(candidate_user_id);
+  if (supervisor_id) recipients.push(supervisor_id);
+
+  await Promise.all(
+    recipients.map((uid) =>
+      createNotification({
+        user_id: uid,
+        type: 'viva_scheduled', // Use viva_scheduled as postponement is a schedule change
+        title,
+        message,
+        action_url: actionUrl,
+        priority: 'high',
+        related_entity_type: 'viva_schedule',
+        related_entity_id: vivaId
+      })
+    )
+  );
 }
 
 // ── public API ────────────────────────────────────────────────────────────────
