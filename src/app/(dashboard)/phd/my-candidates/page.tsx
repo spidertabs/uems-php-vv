@@ -25,7 +25,9 @@ interface Candidate {
   enrolment_year: number | null;
   thesis_count: number;
   viva_count: number;
-  role_as_supervisor: 'primary' | 'co_supervisor'; // which role the current user has
+  role_as_supervisor: 'primary' | 'co_supervisor' | 'examiner' | 'other'; // which role the current user has
+  pending_evaluations: number;
+  pending_viva_id?: number;
 }
 
 interface PaginationMeta {
@@ -73,7 +75,7 @@ export default function MyCandidatesPage() {
       if (res.status === 401) { router.push('/auth/login'); return; }
       if (res.ok) {
         const d = await res.json();
-        setCandidates(d.candidates ?? []);
+        setCandidates(d.data ?? []);
         setPagination(d.pagination ?? { total: 0, page: 1, limit: 20, total_pages: 1 });
       }
     } catch (err) {
@@ -111,7 +113,7 @@ export default function MyCandidatesPage() {
           <div>
             <h1 className="mb-1 text-3xl font-bold">👤 My Candidates</h1>
             <p className="text-teal-100 text-sm">
-              PhD candidates under your supervision — as primary or co-supervisor.
+              PhD candidates assigned to you — as a supervisor, co-supervisor, or examiner.
             </p>
           </div>
           <div className="text-right">
@@ -244,6 +246,10 @@ export default function MyCandidatesPage() {
                           <span className="rounded-full bg-blue-100 px-2.5 py-1 text-xs font-medium text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
                             Co-Supervisor
                           </span>
+                        ) : c.role_as_supervisor === 'examiner' ? (
+                          <span className="rounded-full bg-purple-100 px-2.5 py-1 text-xs font-medium text-purple-700 dark:bg-purple-900/40 dark:text-purple-300">
+                            Examiner
+                          </span>
                         ) : (
                           <span className="text-xs text-gray-400 dark:text-gray-500">—</span>
                         )}
@@ -254,6 +260,11 @@ export default function MyCandidatesPage() {
                         >
                           {CANDIDATE_STATUS_LABELS[c.status]}
                         </span>
+                        {c.pending_evaluations > 0 && (
+                          <p className="mt-1 flex items-center gap-1 text-[10px] font-bold uppercase text-red-500 animate-pulse">
+                            ⚠️ Pending Evaluation
+                          </p>
+                        )}
                         {c.enrolment_year && (
                           <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
                             Enrolled {c.enrolment_year}
@@ -271,12 +282,22 @@ export default function MyCandidatesPage() {
                         </span>
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <Link
-                          href={getCandidateHref(c)}
-                          className="rounded-lg bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700 transition-colors hover:bg-emerald-100 dark:bg-emerald-900/40 dark:text-emerald-300 dark:hover:bg-emerald-900/60"
-                        >
-                          View →
-                        </Link>
+                        <div className="flex justify-end gap-2">
+                          {c.pending_viva_id && (
+                            <Link
+                              href={`/phd/evaluations/${c.pending_viva_id}`}
+                              className="rounded-lg bg-red-50 px-3 py-1.5 text-xs font-bold text-red-700 transition-colors hover:bg-red-100 dark:bg-red-900/40 dark:text-red-300 dark:hover:bg-red-900/60"
+                            >
+                              Evaluate ★
+                            </Link>
+                          )}
+                          <Link
+                            href={getCandidateHref(c)}
+                            className="rounded-lg bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700 transition-colors hover:bg-emerald-100 dark:bg-emerald-900/40 dark:text-emerald-300 dark:hover:bg-emerald-900/60"
+                          >
+                            View →
+                          </Link>
+                        </div>
                       </td>
                     </tr>
                   ))}
