@@ -27,6 +27,8 @@ interface ExamPaper {
   submitted_at: string;
   hod_name: string;
   dean_name: string;
+  department_id: number;
+  college_id: number;
 }
 
 interface Question {
@@ -59,6 +61,8 @@ interface Programme {
 interface User {
   role: string;
   id: number;
+  department_id?: number;
+  college_id?: number;
 }
 
 export default function ViewExamPaperPage() {
@@ -353,8 +357,12 @@ export default function ViewExamPaperPage() {
   const canApprove =
     user &&
     paper &&
-    ((user.role === 'hod' && paper.status === 'submitted') ||
-      (user.role === 'dean' && paper.status === 'hod_approved') ||
+    ((user.role === 'hod' && 
+      user.department_id === paper.department_id && 
+      ['draft', 'submitted', 'hod_review'].includes(paper.status)) ||
+      (user.role === 'dean' && 
+       user.college_id === paper.college_id && 
+       paper.status === 'hod_approved') ||
       user.role === 'admin');
   
   const canMarkReadyForPrint = user && paper && 

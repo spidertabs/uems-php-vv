@@ -540,7 +540,7 @@ export async function canApprovePaper(userId: number, paperId: number): Promise<
       case 'hod':
         return (
           user.department_id === paper.department_id &&
-          ['submitted', 'hod_review'].includes(paper.status)
+          ['draft', 'submitted', 'hod_review'].includes(paper.status)
         );
 
       case 'dean':

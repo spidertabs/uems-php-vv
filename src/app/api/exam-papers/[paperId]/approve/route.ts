@@ -61,8 +61,8 @@ export async function POST(
     let newStatus = '';
     let workflowAction = '';
 
-    if (session.role === 'hod' && paper.status === 'submitted') {
-      canApprove = paper.hod_id === session.id;
+    if (session.role === 'hod' && ['draft', 'submitted', 'hod_review'].includes(paper.status)) {
+      canApprove = session.department_id === paper.department_id;
       newStatus = action === 'approve' ? 'hod_approved' : 'hod_rejected';
       workflowAction = action === 'approve' ? 'hod_approved' : 'hod_rejected';
     } else if (session.role === 'dean' && paper.status === 'hod_approved') {
@@ -71,7 +71,7 @@ export async function POST(
       workflowAction = action === 'approve' ? 'dean_approved' : 'dean_rejected';
     } else if (session.role === 'admin') {
       canApprove = true;
-      if (paper.status === 'submitted') {
+      if (['draft', 'submitted', 'hod_review'].includes(paper.status)) {
         newStatus = action === 'approve' ? 'hod_approved' : 'hod_rejected';
         workflowAction = action === 'approve' ? 'hod_approved' : 'hod_rejected';
       } else if (paper.status === 'hod_approved') {
@@ -90,24 +90,73 @@ export async function POST(
       );
     }
 
+    // Validation for approval action
+    if (action === 'approve') {
+      // Check if paper has questions
+      const questionsResult = await query<any[]>(
+        'SELECT COUNT(*) as count FROM exam_paper_questions WHERE exam_paper_id = ?',
+        [paperId]
+      );
+
+      if (!questionsResult || questionsResult[0].count === 0) {
+        return NextResponse.json(
+          { error: 'Cannot approve paper without questions' },
+          { status: 400 }
+        );
+      }
+
+      // Check if paper has programmes assigned
+      const programmesResult = await query<any[]>(
+        'SELECT COUNT(*) as count FROM exam_paper_programmes WHERE exam_paper_id = ?',
+        [paperId]
+      );
+
+      if (!programmesResult || programmesResult[0].count === 0) {
+        return NextResponse.json(
+          { error: 'Cannot approve paper without assigned programmes' },
+          { status: 400 }
+        );
+      }
+    }
+
     // Update paper status
-    const approvalField = session.role === 'hod' ? 'hod_approved_at' : 'dean_approved_at';
+    const updateFields = [`status = ?`, `updated_at = NOW()`];
+    const updateParams: any[] = [newStatus];
+
+    if (session.role === 'hod') {
+      updateFields.push(`hod_approved_at = ${action === 'approve' ? 'NOW()' : 'NULL'}`);
+      if (paper.hod_id === null) {
+        updateFields.push(`hod_id = ?`);
+        updateParams.push(session.id);
+      }
+    } else if (session.role === 'dean') {
+      updateFields.push(`dean_approved_at = ${action === 'approve' ? 'NOW()' : 'NULL'}`);
+    }
+
+    if (paper.status === 'draft' && action === 'approve') {
+      updateFields.push(`submitted_at = NOW()`);
+    }
+
+    updateParams.push(paperId);
+    
     const updateSql = `
       UPDATE exam_papers 
-      SET status = ?, 
-          ${approvalField} = ${action === 'approve' ? 'NOW()' : 'NULL'},
-          updated_at = NOW()
+      SET ${updateFields.join(', ')}
       WHERE id = ?
     `;
     
-    await query(updateSql, [newStatus, paperId]);
+    await query(updateSql, updateParams);
 
     // Create workflow history
+    const defaultComment = session.role === 'hod' 
+      ? (action === 'approve' ? 'Approved by HOD' : 'Rejected by HOD')
+      : (action === 'approve' ? 'Approved by Dean' : 'Rejected by Dean');
+
     await query(
       `INSERT INTO workflow_history 
        (exam_paper_id, action, from_status, to_status, actor_id, actor_role, comments)
        VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [paperId, workflowAction, paper.status, newStatus, session.id, session.role, comments || null]
+      [paperId, workflowAction, paper.status, newStatus, session.id, session.role, comments || defaultComment]
     );
 
     // Add comment if provided
