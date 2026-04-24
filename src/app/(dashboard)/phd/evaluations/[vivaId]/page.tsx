@@ -448,8 +448,8 @@ export default function VivaEvaluationsPage() {
     ...(myExaminerRecord
       ? [{ key: 'my_evaluation' as Tab, label: `📝 My Evaluation${locked ? ' ✅' : ''}` }]
       : []),
-    { key: 'all_evaluations', label: `📊 All Evaluations (${submitted.length}/${examiners.length})` },
-    { key: 'examiners',       label: `👥 Examiners (${examiners.length})` },
+    { key: 'all_evaluations', label: `📊 All Evaluations (${submitted.length}/${examiners.length || '—'})` },
+    { key: 'examiners',       label: `👥 Examiners (${examiners.filter(e => e.evaluation_submitted).length}/${examiners.length})` },
     { key: 'outcome',         label: '🏆 Outcome' },
   ];
 
@@ -521,128 +521,194 @@ export default function VivaEvaluationsPage() {
       {/* ── Tab: My Evaluation ───────────────────────────────────────────────── */}
       {activeTab === 'my_evaluation' && myExaminerRecord && (
         <div className="space-y-5">
-          {locked && (
-            <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-5 dark:border-emerald-700 dark:bg-emerald-900/20">
-              <p className="font-medium text-emerald-800 dark:text-emerald-200">
-                ✅ Your evaluation has been submitted and is now locked. No further edits are possible.
-              </p>
-            </div>
-          )}
-
-          {/* Scoring */}
-          <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
-            <h2 className="mb-5 font-semibold text-gray-900 dark:text-white">
-              Scoring{' '}
-              <span className="text-sm font-normal text-gray-500 dark:text-gray-400">(each criterion out of 25)</span>
-            </h2>
-
+          {locked ? (
             <div className="space-y-5">
-              {[
-                { key: 'originality_score'   as keyof EvaluationDraft, label: 'Originality',       desc: 'Novel contribution to the field' },
-                { key: 'methodology_score'   as keyof EvaluationDraft, label: 'Methodology',       desc: 'Research design and approach' },
-                { key: 'presentation_score'  as keyof EvaluationDraft, label: 'Presentation',      desc: 'Clarity of writing and structure' },
-                { key: 'literature_score'    as keyof EvaluationDraft, label: 'Literature Review', desc: 'Coverage and analysis of existing work' },
-              ].map(({ key, label, desc }) => (
-                <div key={key} className="flex items-center gap-4">
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{label}</p>
-                    <p className="text-xs text-gray-400 dark:text-gray-500">{desc}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="number"
-                      min={0}
-                      max={25}
-                      value={draft[key] as string}
-                      onChange={(e) => setScore(key, e.target.value)}
-                      disabled={locked}
-                      placeholder="0"
-                      className={`w-20 rounded-lg border px-3 py-2 text-center text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500/20 ${
-                        locked
-                          ? 'cursor-not-allowed border-gray-200 bg-gray-50 text-gray-500 dark:border-gray-700 dark:bg-gray-700 dark:text-gray-400'
-                          : 'border-gray-300 bg-white focus:border-emerald-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white'
-                      }`}
-                    />
-                    <span className="text-sm text-gray-400">/25</span>
+              <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-5 dark:border-emerald-700 dark:bg-emerald-900/20">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">✅</span>
+                  <div>
+                    <h3 className="font-bold text-emerald-800 dark:text-emerald-200">Evaluation Submitted</h3>
+                    <p className="text-sm text-emerald-700 dark:text-emerald-300">
+                      Your evaluation has been officially recorded. You can view your responses below.
+                    </p>
                   </div>
                 </div>
-              ))}
-            </div>
+              </div>
 
-            {/* Live total */}
-            <div className="mt-6 flex items-center justify-between rounded-xl bg-emerald-50 px-5 py-4 dark:bg-emerald-900/20">
-              <span className="font-semibold text-gray-700 dark:text-gray-300">Total Score</span>
-              <div className="text-right">
-                <span className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">
-                  {allScoresFilled ? totalScore() : '—'}
-                </span>
-                <span className="text-gray-500 dark:text-gray-400"> /100</span>
+              {/* Read-only view for own submission */}
+              <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
+                <div className="mb-6 flex items-center justify-between">
+                  <div>
+                    <h2 className="text-lg font-bold text-gray-900 dark:text-white">Your Evaluation Report</h2>
+                    {viva.evaluations?.some(e => Number(e.examiner_id) === currentUserId) && (
+                      <p className="text-sm text-gray-500">
+                        Submitted on {fmt(viva.evaluations.find(e => Number(e.examiner_id) === currentUserId)!.submitted_at!)}
+                      </p>
+                    )}
+                  </div>
+                  <div className="rounded-lg bg-emerald-50 px-4 py-2 dark:bg-emerald-900/30">
+                    <span className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">{totalScore()}</span>
+                    <span className="text-gray-500 dark:text-gray-400"> / 100</span>
+                  </div>
+                </div>
+
+                <div className="grid gap-8 md:grid-cols-2">
+                  <div className="space-y-5">
+                    {[
+                      { label: 'Originality',       score: parseInt(draft.originality_score) },
+                      { label: 'Methodology',       score: parseInt(draft.methodology_score) },
+                      { label: 'Presentation',      score: parseInt(draft.presentation_score) },
+                      { label: 'Literature Review', score: parseInt(draft.literature_score) },
+                    ].map((row) => (
+                      <div key={row.label} className="space-y-1.5">
+                        <div className="flex justify-between text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                          <span>{row.label}</span>
+                          <span>{row.score}/25</span>
+                        </div>
+                        <ScoreBar score={row.score} max={25} />
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-700 dark:bg-indigo-900 dark:text-indigo-200">ℹ️</span>
+                      <p className="text-sm font-bold text-gray-700 dark:text-gray-200 uppercase tracking-widest">Feedback Summary</p>
+                    </div>
+                    <div className="grid gap-3">
+                      {[
+                        { label: 'Strengths',     val: draft.strengths,     color: 'border-emerald-500' },
+                        { label: 'Weaknesses',    val: draft.weaknesses,    color: 'border-orange-500' },
+                        { label: 'Corrections',   val: draft.recommended_corrections, color: 'border-blue-500' },
+                        { label: 'Comments',      val: draft.general_comments, color: 'border-purple-500' },
+                      ].filter(r => r.val).map((r) => (
+                        <div key={r.label} className={`rounded-lg border-l-4 ${r.color} bg-gray-50 p-3 dark:bg-gray-700/40`}>
+                          <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-gray-400">{r.label}</p>
+                          <p className="whitespace-pre-wrap text-sm text-gray-700 dark:text-gray-300">{r.val}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
+          ) : (
+            <>
+              {/* Scoring */}
+              <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
+                <h2 className="mb-5 font-semibold text-gray-900 dark:text-white">
+                  Scoring{' '}
+                  <span className="text-sm font-normal text-gray-500 dark:text-gray-400">(each criterion out of 25)</span>
+                </h2>
 
-          {/* Qualitative feedback */}
-          <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
-            <h2 className="mb-5 font-semibold text-gray-900 dark:text-white">Qualitative Feedback</h2>
-            <div className="space-y-5">
-              {[
-                { key: 'strengths'               as keyof EvaluationDraft, label: '💪 Strengths',                placeholder: 'Key strengths of the thesis...' },
-                { key: 'weaknesses'              as keyof EvaluationDraft, label: '⚠️ Weaknesses',               placeholder: 'Areas needing improvement...' },
-                { key: 'recommended_corrections' as keyof EvaluationDraft, label: '🔧 Recommended Corrections', placeholder: 'Specific corrections required...' },
-                { key: 'general_comments'        as keyof EvaluationDraft, label: '💬 General Comments',        placeholder: 'Any other observations...' },
-              ].map(({ key, label, placeholder }) => (
-                <div key={key}>
-                  <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">{label}</label>
-                  <textarea
-                    value={draft[key] as string}
-                    onChange={(e) => setDraft((p) => ({ ...p, [key]: e.target.value }))}
-                    rows={3}
-                    disabled={locked}
-                    placeholder={locked ? '' : placeholder}
-                    className={`w-full rounded-lg border px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 ${
-                      locked
-                        ? 'cursor-not-allowed border-gray-200 bg-gray-50 text-gray-600 dark:border-gray-700 dark:bg-gray-700 dark:text-gray-400'
-                        : 'border-gray-300 bg-white focus:border-emerald-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white'
-                    }`}
-                  />
+                <div className="space-y-5">
+                  {[
+                    { key: 'originality_score'   as keyof EvaluationDraft, label: 'Originality',       desc: 'Novel contribution to the field' },
+                    { key: 'methodology_score'   as keyof EvaluationDraft, label: 'Methodology',       desc: 'Research design and approach' },
+                    { key: 'presentation_score'  as keyof EvaluationDraft, label: 'Presentation',      desc: 'Clarity of writing and structure' },
+                    { key: 'literature_score'    as keyof EvaluationDraft, label: 'Literature Review', desc: 'Coverage and analysis of existing work' },
+                  ].map(({ key, label, desc }) => (
+                    <div key={key} className="flex items-center gap-4">
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{label}</p>
+                        <p className="text-xs text-gray-400 dark:text-gray-500">{desc}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          min={0}
+                          max={25}
+                          value={draft[key] as string}
+                          onChange={(e) => setScore(key, e.target.value)}
+                          disabled={locked}
+                          placeholder="0"
+                          className={`w-20 rounded-lg border px-3 py-2 text-center text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500/20 ${
+                            locked
+                              ? 'cursor-not-allowed border-gray-200 bg-gray-50 text-gray-500 dark:border-gray-700 dark:bg-gray-700 dark:text-gray-400'
+                              : 'border-gray-300 bg-white focus:border-emerald-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white'
+                          }`}
+                        />
+                        <span className="text-sm text-gray-400">/25</span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </div>
 
-          {/* Action buttons */}
-          {!locked && (
-            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
-              {draftError && (
-                <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600 dark:bg-red-900/30 dark:text-red-400">
-                  {draftError}
+                <div className="mt-6 flex items-center justify-between rounded-xl bg-emerald-50 px-5 py-4 dark:bg-emerald-900/20">
+                  <span className="font-semibold text-gray-700 dark:text-gray-300">Total Score</span>
+                  <div className="text-right">
+                    <span className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">
+                      {allScoresFilled ? totalScore() : '—'}
+                    </span>
+                    <span className="text-gray-500 dark:text-gray-400"> /100</span>
+                  </div>
                 </div>
-              )}
-              {saveMsg && (
-                <div className="mb-4 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
-                  {saveMsg}
-                </div>
-              )}
-              <div className="flex flex-wrap gap-3">
-                <button
-                  onClick={handleSaveDraft}
-                  disabled={saving}
-                  className="rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
-                >
-                  {saving ? 'Saving...' : '💾 Save Draft'}
-                </button>
-                <button
-                  onClick={handleSubmitEvaluation}
-                  disabled={submitting || !allScoresFilled}
-                  className="rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {submitting ? 'Submitting...' : '✅ Submit Evaluation'}
-                </button>
               </div>
-              <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
-                ⚠️ Once submitted, your evaluation is locked and cannot be edited. Save as draft to preserve progress.
-              </p>
-            </div>
+
+              {/* Qualitative feedback */}
+              <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
+                <h2 className="mb-5 font-semibold text-gray-900 dark:text-white">Qualitative Feedback</h2>
+                <div className="space-y-5">
+                  {[
+                    { key: 'strengths'               as keyof EvaluationDraft, label: '💪 Strengths',                placeholder: 'Key strengths of the thesis...' },
+                    { key: 'weaknesses'              as keyof EvaluationDraft, label: '⚠️ Weaknesses',               placeholder: 'Areas needing improvement...' },
+                    { key: 'recommended_corrections' as keyof EvaluationDraft, label: '🔧 Recommended Corrections', placeholder: 'Specific corrections required...' },
+                    { key: 'general_comments'        as keyof EvaluationDraft, label: '💬 General Comments',        placeholder: 'Any other observations...' },
+                  ].map(({ key, label, placeholder }) => (
+                    <div key={key}>
+                      <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">{label}</label>
+                      <textarea
+                        value={draft[key] as string}
+                        onChange={(e) => setDraft((p) => ({ ...p, [key]: e.target.value }))}
+                        rows={3}
+                        disabled={locked}
+                        placeholder={locked ? '' : placeholder}
+                        className={`w-full rounded-lg border px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 ${
+                          locked
+                            ? 'cursor-not-allowed border-gray-200 bg-gray-50 text-gray-600 dark:border-gray-700 dark:bg-gray-700 dark:text-gray-400'
+                            : 'border-gray-300 bg-white focus:border-emerald-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white'
+                        }`}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Action buttons */}
+              {!locked && (
+                <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
+                  {draftError && (
+                    <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600 dark:bg-red-900/30 dark:text-red-400">
+                      {draftError}
+                    </div>
+                  )}
+                  {saveMsg && (
+                    <div className="mb-4 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+                      {saveMsg}
+                    </div>
+                  )}
+                  <div className="flex flex-wrap gap-3">
+                    <button
+                      onClick={handleSaveDraft}
+                      disabled={saving}
+                      className="rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+                    >
+                      {saving ? 'Saving...' : '💾 Save Draft'}
+                    </button>
+                    <button
+                      onClick={handleSubmitEvaluation}
+                      disabled={submitting || !allScoresFilled}
+                      className="rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {submitting ? 'Submitting...' : '✅ Submit Evaluation'}
+                    </button>
+                  </div>
+                  <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
+                    ⚠️ Once submitted, your evaluation is locked and cannot be edited. Save as draft to preserve progress.
+                  </p>
+                </div>
+              )}
+            </>
           )}
         </div>
       )}
