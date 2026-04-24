@@ -217,7 +217,10 @@ export default function VivaEvaluationsPage() {
         // Set evaluation_submitted flag based on evaluations array
         if (v.evaluations) {
           v.evaluations.forEach((ev) => {
-            const evalMatch = allEvaluators.find((e) => e.examiner_id === ev.examiner_id || e.user_id === ev.examiner_id);
+            const evalMatch = allEvaluators.find(
+              (e) => Number(e.examiner_id) === Number(ev.examiner_id) ||
+                     Number(e.user_id)     === Number(ev.examiner_id)
+            );
             if (evalMatch) {
               evalMatch.evaluation_submitted = ev.is_submitted || false;
               evalMatch.evaluation_id = ev.id || ev.evaluation_id || null;
@@ -231,12 +234,20 @@ export default function VivaEvaluationsPage() {
         setExaminers(uniqueEvaluators);
 
         if (uid) {
-          const me = uniqueEvaluators.find((ex) => ex.examiner_id === uid || ex.user_id === uid);
+          const me = uniqueEvaluators.find(
+            (ex) => Number(ex.examiner_id) === uid || Number(ex.user_id) === uid
+          );
           if (me) {
             setMyExaminerRecord(me);
             setActiveTab('my_evaluation');
-            const myEval = v.evaluations?.find((ev) => ev.examiner_id === uid);
-            if (myEval) prefillDraft(myEval);
+          }
+          // Find this user's saved draft regardless of examiner panel membership
+          const myEval = v.evaluations?.find((ev) => Number(ev.examiner_id) === uid);
+          if (myEval) {
+            prefillDraft(myEval);
+            // If they have a saved evaluation but weren't found in the panel,
+            // still show the My Evaluation tab
+            if (!me) setActiveTab('my_evaluation');
           }
         }
       } else {
