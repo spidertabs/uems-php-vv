@@ -46,8 +46,8 @@ export async function GET(req: NextRequest) {
       baseParams.push(user.department_id);
     }
 
-    // Build params for the SELECT part
-    const selectParams: any[] = [user.id, user.id, user.id, user.id, user.id, user.id, user.id, user.id];
+    // Build params for the SELECT part (14 placeholders)
+    const selectParams: any[] = Array(14).fill(user.id);
 
     // Build query
     let sql = `
