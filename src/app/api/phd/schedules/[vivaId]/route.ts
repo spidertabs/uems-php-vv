@@ -15,12 +15,12 @@ async function buildVivaDetail(vivaId: number): Promise<any | null> {
        vs.scheduled_time, vs.venue, vs.duration_minutes, vs.status,
        vs.postponement_reason, vs.created_at, vs.updated_at,
        pc.registration_number, pc.thesis_title,
-       CONCAT(st.first_name, ' ', st.last_name) AS candidate_name,
+       COALESCE(CONCAT(st.first_name, ' ', st.last_name), pc.registration_number) AS candidate_name,
        p.name AS programme_name,
        CONCAT(sup.first_name, ' ', sup.last_name) AS supervisor_name
      FROM viva_schedules vs
      JOIN phd_candidates pc ON vs.candidate_id = pc.id
-     JOIN students st ON pc.registration_number = st.registration_number
+     LEFT JOIN students st ON pc.registration_number = st.registration_number
      JOIN programmes p ON pc.programme_id = p.id
      LEFT JOIN users sup ON pc.supervisor_id = sup.id
      WHERE vs.id = ? AND pc.deleted_at IS NULL

@@ -25,7 +25,7 @@ export async function GET(
          vs.venue,
          vs.duration_minutes,
          vs.status,
-         CONCAT(st.first_name, ' ', st.last_name) as candidate_name,
+         COALESCE(CONCAT(st.first_name, ' ', st.last_name), pc.registration_number) as candidate_name,
          pc.registration_number,
          pc.thesis_title,
          p.name as programme_name,
@@ -37,7 +37,7 @@ export async function GET(
          vr.issued_at as recommendation_issued
        FROM viva_schedules vs
        JOIN phd_candidates pc ON vs.candidate_id = pc.id
-       JOIN students st ON pc.registration_number = st.registration_number
+       LEFT JOIN students st ON pc.registration_number = st.registration_number
        JOIN programmes p ON pc.programme_id = p.id
        LEFT JOIN users sup ON pc.supervisor_id = sup.id
        LEFT JOIN viva_recommendations vr ON vs.id = vr.viva_id

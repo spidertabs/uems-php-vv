@@ -63,7 +63,7 @@ export async function GET(req: NextRequest) {
         pc.status,
         pc.created_at,
         pc.updated_at,
-        CONCAT(st.first_name, ' ', st.last_name) as candidate_name,
+        COALESCE(CONCAT(st.first_name, ' ', st.last_name), pc.registration_number) as candidate_name,
         st.email as candidate_email,
         p.name as programme_name,
         p.code as programme_code,
@@ -108,7 +108,7 @@ export async function GET(req: NextRequest) {
           LIMIT 1
         ) as pending_viva_id
       FROM phd_candidates pc
-      JOIN students st ON pc.registration_number = st.registration_number
+      LEFT JOIN students st ON pc.registration_number = st.registration_number
       LEFT JOIN programmes p ON pc.programme_id = p.id
       WHERE ${whereClause} AND pc.deleted_at IS NULL
     `;
@@ -140,7 +140,7 @@ export async function GET(req: NextRequest) {
     let countSql = `
       SELECT COUNT(DISTINCT pc.id) as total
       FROM phd_candidates pc
-      JOIN students st ON pc.registration_number = st.registration_number
+      LEFT JOIN students st ON pc.registration_number = st.registration_number
       LEFT JOIN programmes p ON pc.programme_id = p.id
       WHERE ${whereClause}
         AND pc.deleted_at IS NULL
