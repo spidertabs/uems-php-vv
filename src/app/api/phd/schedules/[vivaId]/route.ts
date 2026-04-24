@@ -9,103 +9,138 @@ import { query } from '@/lib/db';
 
 async function buildVivaDetail(vivaId: number): Promise<any | null> {
   // ① Core schedule + candidate/programme fields
-  const schedRows = await query<any[]>(
-    `SELECT
-       vs.id, vs.candidate_id, vs.thesis_id, vs.scheduled_date,
-       vs.scheduled_time, vs.venue, vs.duration_minutes, vs.status,
-       vs.postponement_reason, vs.created_at, vs.updated_at,
-       pc.registration_number, pc.thesis_title,
-       COALESCE(CONCAT(st.first_name, ' ', st.last_name), pc.registration_number) AS candidate_name,
-       p.name AS programme_name,
-       CONCAT(sup.first_name, ' ', sup.last_name) AS supervisor_name
-     FROM viva_schedules vs
-     JOIN phd_candidates pc ON vs.candidate_id = pc.id
-     LEFT JOIN students st ON pc.registration_number = st.registration_number
-     JOIN programmes p ON pc.programme_id = p.id
-     LEFT JOIN users sup ON pc.supervisor_id = sup.id
-     WHERE vs.id = ? AND pc.deleted_at IS NULL
-     LIMIT 1`,
-    [vivaId]
-  );
-  if (!schedRows.length) return null;
+  let schedRows: any[];
+  try {
+    schedRows = await query<any[]>(
+      `SELECT
+         vs.id, vs.candidate_id, vs.thesis_id, vs.scheduled_date,
+         vs.scheduled_time, vs.venue, vs.duration_minutes, vs.status,
+         vs.postponement_reason, vs.created_at, vs.updated_at,
+         pc.registration_number, pc.thesis_title,
+         COALESCE(CONCAT(st.first_name, ' ', st.last_name), pc.registration_number) AS candidate_name,
+         p.name AS programme_name, p.code AS programme_code,
+         CONCAT(sup.first_name, ' ', sup.last_name) AS supervisor_name
+       FROM viva_schedules vs
+       JOIN phd_candidates pc ON vs.candidate_id = pc.id
+       LEFT JOIN students st ON pc.registration_number = st.registration_number
+       JOIN programmes p ON pc.programme_id = p.id
+       LEFT JOIN users sup ON pc.supervisor_id = sup.id
+       WHERE vs.id = ? AND pc.deleted_at IS NULL
+       LIMIT 1`,
+      [vivaId]
+    );
+  } catch (err) {
+    console.error(`[buildVivaDetail] ① core schedule query failed for vivaId=${vivaId}:`, err);
+    throw err;
+  }
+  if (!schedRows.length) {
+    console.warn(`[buildVivaDetail] No viva schedule rows for vivaId=${vivaId}`);
+    return null;
+  }
+  console.log(`[buildVivaDetail] Found viva schedule for vivaId=${vivaId}, candidate_id=${schedRows[0].candidate_id}`);
   const viva = { ...schedRows[0] };
 
   // ② Examiners panel
-  viva.examiners = await query<any[]>(
-    `SELECT ve.id, ve.viva_id, ve.examiner_id, ve.role,
-            ve.confirmed, ve.confirmed_at, ve.notified_at,
-            CONCAT(u.first_name, ' ', u.last_name) AS examiner_name,
-            u.email AS examiner_email
-     FROM viva_examiners ve
-     JOIN users u ON ve.examiner_id = u.id
-     WHERE ve.viva_id = ?
-     ORDER BY ve.id`,
-    [vivaId]
-  );
+  try {
+    viva.examiners = await query<any[]>(
+      `SELECT ve.id, ve.viva_id, ve.examiner_id, ve.role,
+              ve.confirmed, ve.confirmed_at, ve.notified_at,
+              CONCAT(u.first_name, ' ', u.last_name) AS examiner_name,
+              u.email AS examiner_email
+       FROM viva_examiners ve
+       JOIN users u ON ve.examiner_id = u.id
+       WHERE ve.viva_id = ?
+       ORDER BY ve.id`,
+      [vivaId]
+    );
+  } catch (err) {
+    console.error(`[buildVivaDetail] ② examiners query failed for vivaId=${vivaId}:`, err);
+    viva.examiners = [];
+  }
 
   // ③ Evaluations (one per examiner, joined with panel role)
-  viva.evaluations = await query<any[]>(
-    `SELECT ev.id, ev.viva_id, ev.examiner_id,
-            ev.originality_score, ev.methodology_score,
-            ev.presentation_score, ev.literature_score, ev.overall_score,
-            ev.strengths, ev.weaknesses, ev.recommended_corrections,
-            ev.general_comments, ev.is_submitted, ev.submitted_at,
-            CONCAT(u.first_name, ' ', u.last_name) AS examiner_name,
-            COALESCE(ve.role, 'supervisor') AS examiner_panel_role
-     FROM viva_evaluations ev
-     JOIN users u ON ev.examiner_id = u.id
-     LEFT JOIN viva_examiners ve ON ve.viva_id = ev.viva_id AND ve.examiner_id = ev.examiner_id
-     WHERE ev.viva_id = ?
-     ORDER BY ev.id`,
-    [vivaId]
-  );
+  try {
+    viva.evaluations = await query<any[]>(
+      `SELECT ev.id, ev.viva_id, ev.examiner_id,
+              ev.originality_score, ev.methodology_score,
+              ev.presentation_score, ev.literature_score, ev.overall_score,
+              ev.strengths, ev.weaknesses, ev.recommended_corrections,
+              ev.general_comments, ev.is_submitted, ev.submitted_at,
+              CONCAT(u.first_name, ' ', u.last_name) AS examiner_name,
+              COALESCE(ve.role, 'supervisor') AS examiner_panel_role
+       FROM viva_evaluations ev
+       JOIN users u ON ev.examiner_id = u.id
+       LEFT JOIN viva_examiners ve ON ve.viva_id = ev.viva_id AND ve.examiner_id = ev.examiner_id
+       WHERE ev.viva_id = ?
+       ORDER BY ev.id`,
+      [vivaId]
+    );
+  } catch (err) {
+    console.error(`[buildVivaDetail] ③ evaluations query failed for vivaId=${vivaId}:`, err);
+    viva.evaluations = [];
+  }
 
   // ③.b Supervisors (to add to expected evaluators)
-  viva.supervisors = await query<any[]>(
-    `SELECT DISTINCT u.id as supervisor_id, CONCAT(u.first_name, ' ', u.last_name) as supervisor_name, u.email as supervisor_email, 'supervisor' as role
-     FROM phd_candidates pc
-     JOIN users u ON (pc.supervisor_id = u.id OR pc.co_supervisor_id = u.id)
-     WHERE pc.id = ?
-     UNION
-     SELECT pcs.supervisor_id as supervisor_id, CONCAT(u.first_name, ' ', u.last_name) as supervisor_name, u.email as supervisor_email, pcs.role as role
-     FROM phd_candidate_supervisors pcs
-     JOIN users u ON pcs.supervisor_id = u.id
-     WHERE pcs.candidate_id = ?`,
-    [viva.candidate_id, viva.candidate_id]
-  );
+  try {
+    viva.supervisors = await query<any[]>(
+      `SELECT DISTINCT u.id as supervisor_id, CONCAT(u.first_name, ' ', u.last_name) as supervisor_name, u.email as supervisor_email, 'supervisor' as role
+       FROM phd_candidates pc
+       JOIN users u ON (pc.supervisor_id = u.id OR pc.co_supervisor_id = u.id)
+       WHERE pc.id = ?
+       UNION
+       SELECT pcs.supervisor_id as supervisor_id, CONCAT(u.first_name, ' ', u.last_name) as supervisor_name, u.email as supervisor_email, pcs.role as role
+       FROM phd_candidate_supervisors pcs
+       JOIN users u ON pcs.supervisor_id = u.id
+       WHERE pcs.candidate_id = ?`,
+      [viva.candidate_id, viva.candidate_id]
+    );
+  } catch (err) {
+    console.error(`[buildVivaDetail] ③.b supervisors query failed for candidateId=${viva.candidate_id}:`, err);
+    viva.supervisors = [];
+  }
 
   // ④ Recommendation (or null)
-  const recRows = await query<any[]>(
-    'SELECT * FROM viva_recommendations WHERE viva_id = ? LIMIT 1',
-    [vivaId]
-  );
-  viva.recommendation = recRows.length > 0 ? recRows[0] : null;
+  try {
+    const recRows = await query<any[]>(
+      'SELECT * FROM viva_recommendations WHERE viva_id = ? LIMIT 1',
+      [vivaId]
+    );
+    viva.recommendation = recRows.length > 0 ? recRows[0] : null;
+  } catch (err) {
+    console.error(`[buildVivaDetail] ④ recommendation query failed for vivaId=${vivaId}:`, err);
+    viva.recommendation = null;
+  }
 
   // ⑤ Evaluation summary (averages)
-  const summaryRows = await query<any[]>(
-    `SELECT
-       COUNT(*) AS total_examiners,
-       SUM(is_submitted::int) AS submitted_count,
-       AVG(CASE WHEN is_submitted THEN originality_score END)  AS avg_originality,
-       AVG(CASE WHEN is_submitted THEN methodology_score END)  AS avg_methodology,
-       AVG(CASE WHEN is_submitted THEN presentation_score END) AS avg_presentation,
-       AVG(CASE WHEN is_submitted THEN literature_score END)   AS avg_literature,
-       AVG(CASE WHEN is_submitted THEN overall_score END)      AS avg_overall
-     FROM viva_evaluations
-     WHERE viva_id = ?`,
-    [vivaId]
-  );
-  const sr = summaryRows[0] ?? {};
-  viva.evaluation_summary = {
-    viva_id: vivaId,
-    total_examiners: Number(sr.total_examiners ?? 0),
-    submitted_count: Number(sr.submitted_count ?? 0),
-    avg_originality: sr.avg_originality !== null ? Number(sr.avg_originality) : null,
-    avg_methodology: sr.avg_methodology !== null ? Number(sr.avg_methodology) : null,
-    avg_presentation: sr.avg_presentation !== null ? Number(sr.avg_presentation) : null,
-    avg_literature: sr.avg_literature !== null ? Number(sr.avg_literature) : null,
-    avg_overall: sr.avg_overall !== null ? Number(sr.avg_overall) : null,
-  };
+  try {
+    const summaryRows = await query<any[]>(
+      `SELECT
+         COUNT(*) AS total_examiners,
+         SUM(CASE WHEN is_submitted THEN 1 ELSE 0 END) AS submitted_count,
+         AVG(CASE WHEN is_submitted THEN originality_score END)  AS avg_originality,
+         AVG(CASE WHEN is_submitted THEN methodology_score END)  AS avg_methodology,
+         AVG(CASE WHEN is_submitted THEN presentation_score END) AS avg_presentation,
+         AVG(CASE WHEN is_submitted THEN literature_score END)   AS avg_literature,
+         AVG(CASE WHEN is_submitted THEN overall_score END)      AS avg_overall
+       FROM viva_evaluations
+       WHERE viva_id = ?`,
+      [vivaId]
+    );
+    const sr = summaryRows[0] ?? {};
+    viva.evaluation_summary = {
+      viva_id: vivaId,
+      total_examiners: Number(sr.total_examiners ?? 0),
+      submitted_count: Number(sr.submitted_count ?? 0),
+      avg_originality: sr.avg_originality !== null ? Number(sr.avg_originality) : null,
+      avg_methodology: sr.avg_methodology !== null ? Number(sr.avg_methodology) : null,
+      avg_presentation: sr.avg_presentation !== null ? Number(sr.avg_presentation) : null,
+      avg_literature: sr.avg_literature !== null ? Number(sr.avg_literature) : null,
+      avg_overall: sr.avg_overall !== null ? Number(sr.avg_overall) : null,
+    };
+  } catch (err) {
+    console.error(`[buildVivaDetail] ⑤ summary query failed for vivaId=${vivaId}:`, err);
+    viva.evaluation_summary = null;
+  }
 
   return viva;
 }

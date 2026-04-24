@@ -151,6 +151,7 @@ export default function VivaEvaluationsPage() {
   const [examiners, setExaminers] = useState<ExaminerRecord[]>([]);
   const [evaluations, setEvaluations] = useState<SubmittedEvaluation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<{ status: number; message: string } | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>('all_evaluations');
 
   // Current user
@@ -178,6 +179,7 @@ export default function VivaEvaluationsPage() {
 
   const fetchAll = async () => {
     setLoading(true);
+    setFetchError(null);
     try {
       const [meRes, vivaRes] = await Promise.all([
         fetch('/api/auth/me'),
@@ -237,6 +239,9 @@ export default function VivaEvaluationsPage() {
             if (myEval) prefillDraft(myEval);
           }
         }
+      } else {
+        const errData = await vivaRes.json().catch(() => ({ error: 'Unknown error' }));
+        setFetchError({ status: vivaRes.status, message: errData.error || errData.message || 'Failed to load viva' });
       }
 
       // No longer fetch from dedicated endpoints since viva contains examiners AND supervisors!
@@ -395,6 +400,11 @@ export default function VivaEvaluationsPage() {
       <div className="lg:pl-64 py-16 text-center space-y-3">
         <div className="text-5xl">🔍</div>
         <p className="font-medium text-gray-800 dark:text-white">Viva not found.</p>
+        {fetchError && (
+          <p className="text-sm text-red-500 dark:text-red-400">
+            {fetchError.status} — {fetchError.message}
+          </p>
+        )}
         <Link href="/phd/schedules" className="inline-block text-emerald-600 hover:underline">
           ← Back to Schedules
         </Link>
