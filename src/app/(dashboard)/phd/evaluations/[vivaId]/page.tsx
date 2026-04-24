@@ -317,24 +317,27 @@ export default function VivaEvaluationsPage() {
     if (!confirm('Submit your evaluation? This cannot be undone.')) return;
     setSubmitting(true); setDraftError('');
     try {
-      await fetch('/api/phd/my-evaluations', {
+      const res = await fetch('/api/phd/my-evaluations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(buildEvalPayload()),
       });
-      const checkRes = await fetch(`/api/phd/schedules/${vivaId}/evaluations`);
-      if (checkRes.ok) {
-        const checkData = await checkRes.json();
-        const myEv = checkData.evaluations?.find(
-          (ev: SubmittedEvaluation) => ev.examiner_id === currentUserId,
-        );
-        if (myEv) {
-          const evalId = myEv.id ?? myEv.evaluation_id;
-          const subRes = await fetch(`/api/phd/evaluations/${evalId}/submit`, { method: 'POST' });
-          if (subRes.ok) { setDraft((p) => ({ ...p, is_submitted: true })); fetchAll(); return; }
-          const d = await subRes.json();
-          setDraftError(d.error || 'Submit failed.');
-        }
+      
+      const saveResult = await res.json();
+      if (!res.ok) {
+        setDraftError(saveResult.error || 'Failed to save evaluation before submit.');
+        return;
+      }
+      
+      const evalId = saveResult.data?.id;
+      
+      if (evalId) {
+        const subRes = await fetch(`/api/phd/evaluations/${evalId}/submit`, { method: 'POST' });
+        if (subRes.ok) { setDraft((p) => ({ ...p, is_submitted: true })); fetchAll(); return; }
+        const d = await subRes.json();
+        setDraftError(d.error || 'Submit failed.');
+      } else {
+        setDraftError('Failed to capture evaluation ID. Cannot submit.');
       }
     } catch { setDraftError('Network error.'); }
     finally { setSubmitting(false); }
