@@ -54,15 +54,20 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Check authorization: Must be an assigned examiner for this viva
+    // Check authorization: Must be an assigned examiner OR an assigned supervisor for this candidate
     const assignmentCheck = await query<any[]>(
-      `SELECT role FROM viva_examiners WHERE viva_id = ? AND examiner_id = ?`,
-      [viva_id, user.id]
+      `SELECT 1 FROM viva_schedules vs
+       LEFT JOIN viva_examiners ve ON vs.id = ve.viva_id AND ve.examiner_id = ?
+       JOIN phd_candidates pc ON vs.candidate_id = pc.id
+       LEFT JOIN phd_candidate_supervisors pcs ON pcs.candidate_id = pc.id AND pcs.supervisor_id = ?
+       WHERE vs.id = ? 
+       AND (ve.role IS NOT NULL OR pc.supervisor_id = ? OR pc.co_supervisor_id = ? OR pcs.role IS NOT NULL)`,
+      [user.id, user.id, viva_id, user.id, user.id]
     );
 
     if (!assignmentCheck || assignmentCheck.length === 0) {
       return NextResponse.json(
-        { error: 'You are not assigned as an examiner for this viva session' },
+        { error: 'You are not assigned as an examiner or supervisor for this viva session' },
         { status: 403 }
       );
     }

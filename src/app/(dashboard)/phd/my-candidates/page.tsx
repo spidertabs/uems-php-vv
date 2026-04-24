@@ -25,7 +25,7 @@ interface Candidate {
   enrolment_year: number | null;
   thesis_count: number;
   viva_count: number;
-  role_as_supervisor: 'primary' | 'co_supervisor' | 'examiner' | 'other'; // which role the current user has
+  role_as_supervisor: 'primary' | 'co_supervisor' | 'supervisor' | 'examiner' | 'other'; // which role the current user has
   pending_evaluations: number;
   pending_viva_id?: number;
 }
@@ -246,6 +246,10 @@ export default function MyCandidatesPage() {
                           <span className="rounded-full bg-blue-100 px-2.5 py-1 text-xs font-medium text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
                             Co-Supervisor
                           </span>
+                        ) : c.role_as_supervisor === 'supervisor' ? (
+                          <span className="rounded-full bg-teal-100 px-2.5 py-1 text-xs font-medium text-teal-700 dark:bg-teal-900/40 dark:text-teal-300">
+                            Supervisor
+                          </span>
                         ) : c.role_as_supervisor === 'examiner' ? (
                           <span className="rounded-full bg-purple-100 px-2.5 py-1 text-xs font-medium text-purple-700 dark:bg-purple-900/40 dark:text-purple-300">
                             Examiner
@@ -332,6 +336,16 @@ export default function MyCandidatesPage() {
                         {c.role_as_supervisor === 'co_supervisor' && (
                           <span className="ml-2 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
                             Co-Supervisor
+                          </span>
+                        )}
+                        {c.role_as_supervisor === 'supervisor' && (
+                          <span className="ml-2 rounded-full bg-teal-100 px-2 py-0.5 text-xs font-medium text-teal-700 dark:bg-teal-900/40 dark:text-teal-300">
+                            Supervisor
+                          </span>
+                        )}
+                        {c.role_as_supervisor === 'examiner' && (
+                          <span className="ml-2 rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700 dark:bg-purple-900/40 dark:text-purple-300">
+                            Examiner
                           </span>
                         )}
                       </p>

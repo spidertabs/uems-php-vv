@@ -30,13 +30,15 @@ export async function GET(req: NextRequest) {
     const offset = (page - 1) * limit;
 
     // Get candidates where the user is a supervisor (old schema compatibility) 
-    // OR an assigned examiner (new schema)
+    // OR a supervisor (new schema) OR an assigned examiner (new schema)
     let whereClause = `(pc.supervisor_id = ? OR pc.co_supervisor_id = ? OR pc.id IN (
+      SELECT pcs.candidate_id FROM phd_candidate_supervisors pcs WHERE pcs.supervisor_id = ?
+    ) OR pc.id IN (
       SELECT vs_sub.candidate_id FROM viva_schedules vs_sub 
       JOIN viva_examiners ve_sub ON vs_sub.id = ve_sub.viva_id 
       WHERE ve_sub.examiner_id = ?
     ))`;
-    const baseParams: any[] = [user.id, user.id, user.id];
+    const baseParams: any[] = [user.id, user.id, user.id, user.id];
 
     // If HOD, also include all candidates in their department
     if (user.role === 'hod' && user.department_id) {
@@ -45,7 +47,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Build params for the SELECT part
-    const selectParams: any[] = [user.id, user.id, user.id, user.id, user.id];
+    const selectParams: any[] = [user.id, user.id, user.id, user.id, user.id, user.id, user.id, user.id];
 
     // Build query
     let sql = `
@@ -73,25 +75,34 @@ export async function GET(req: NextRequest) {
         CASE 
           WHEN pc.supervisor_id = ? THEN 'primary'
           WHEN pc.co_supervisor_id = ? THEN 'co_supervisor'
+          WHEN pc.id IN (SELECT pcs.candidate_id FROM phd_candidate_supervisors pcs WHERE pcs.supervisor_id = ?) THEN 'supervisor'
           WHEN pc.id IN (SELECT vs_sub.candidate_id FROM viva_schedules vs_sub JOIN viva_examiners ve_sub ON vs_sub.id = ve_sub.viva_id WHERE ve_sub.examiner_id = ?) THEN 'examiner'
           ELSE 'other'
         END as role_as_supervisor,
         -- Pending evaluations
         (
           SELECT COUNT(*) FROM viva_schedules vs2
-          JOIN viva_examiners ve2 ON vs2.id = ve2.viva_id
-          LEFT JOIN viva_evaluations veval ON vs2.id = veval.viva_id AND veval.examiner_id = ve2.examiner_id
+          LEFT JOIN viva_evaluations veval ON vs2.id = veval.viva_id AND veval.examiner_id = ?
           WHERE vs2.candidate_id = pc.id 
-            AND ve2.examiner_id = ?
+            AND (
+              vs2.id IN (SELECT ve2.viva_id FROM viva_examiners ve2 WHERE ve2.examiner_id = ?)
+              OR pc.supervisor_id = ? 
+              OR pc.co_supervisor_id = ? 
+              OR pc.id IN (SELECT pcs2.candidate_id FROM phd_candidate_supervisors pcs2 WHERE pcs2.supervisor_id = ?)
+            )
             AND (veval.id IS NULL OR veval.is_submitted = FALSE)
             AND vs2.status IN ('scheduled', 'in_progress')
         ) as pending_evaluations,
         (
           SELECT vs2.id FROM viva_schedules vs2
-          JOIN viva_examiners ve2 ON vs2.id = ve2.viva_id
-          LEFT JOIN viva_evaluations veval ON vs2.id = veval.viva_id AND veval.examiner_id = ve2.examiner_id
+          LEFT JOIN viva_evaluations veval ON vs2.id = veval.viva_id AND veval.examiner_id = ?
           WHERE vs2.candidate_id = pc.id 
-            AND ve2.examiner_id = ?
+            AND (
+              vs2.id IN (SELECT ve2.viva_id FROM viva_examiners ve2 WHERE ve2.examiner_id = ?)
+              OR pc.supervisor_id = ? 
+              OR pc.co_supervisor_id = ? 
+              OR pc.id IN (SELECT pcs3.candidate_id FROM phd_candidate_supervisors pcs3 WHERE pcs3.supervisor_id = ?)
+            )
             AND (veval.id IS NULL OR veval.is_submitted = FALSE)
             AND vs2.status IN ('scheduled', 'in_progress')
           LIMIT 1
