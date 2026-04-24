@@ -61,7 +61,7 @@ export async function POST(
 
     // Submit evaluation
     await query(
-      `UPDATE viva_evaluations SET is_submitted = TRUE, submitted_at = NOW(), updated_at = NOW() 
+      `UPDATE viva_evaluations SET is_submitted = TRUE, submitted_at = NOW()
        WHERE id = ?`,
       [evaluationId]
     );
@@ -73,10 +73,10 @@ export async function POST(
     );
 
     return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error('Error submitting evaluation:', error);
+  } catch (error: any) {
+    console.error('[evaluations/submit] POST error:', error);
     return NextResponse.json(
-      { error: 'Failed to submit evaluation' },
+      { error: error?.message || 'Failed to submit evaluation' },
       { status: 500 }
     );
   }

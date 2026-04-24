@@ -88,8 +88,7 @@ export async function POST(req: NextRequest) {
          strengths = COALESCE(?, strengths),
          weaknesses = COALESCE(?, weaknesses),
          recommended_corrections = COALESCE(?, recommended_corrections),
-         general_comments = COALESCE(?, general_comments),
-         updated_at = NOW()
+         general_comments = COALESCE(?, general_comments)
          WHERE viva_id = ? AND examiner_id = ?`,
         [
           originality_score, methodology_score, presentation_score, literature_score,

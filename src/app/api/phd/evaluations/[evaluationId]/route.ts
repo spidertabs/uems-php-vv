@@ -77,7 +77,6 @@ export async function PUT(
       }
     }
 
-    updates.push('updated_at = NOW()');
     values.push(evaluationId);
 
     await query(
