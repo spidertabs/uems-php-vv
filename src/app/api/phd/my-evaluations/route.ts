@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
        JOIN phd_candidates pc ON vs.candidate_id = pc.id
        WHERE vs.id = ? 
        AND (
-         EXISTS (SELECT 1 FROM viva_examiners ve WHERE ve.viva_id = vs.viva_id AND ve.examiner_id = ?)
+         EXISTS (SELECT 1 FROM viva_examiners ve WHERE ve.viva_id = vs.id AND ve.examiner_id = ?)
          OR pc.supervisor_id = ?
          OR pc.co_supervisor_id = ?
          OR EXISTS (SELECT 1 FROM phd_candidate_supervisors pcs WHERE pcs.candidate_id = pc.id AND pcs.supervisor_id = ?)
