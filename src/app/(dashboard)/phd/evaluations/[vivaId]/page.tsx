@@ -230,24 +230,41 @@ export default function VivaEvaluationsPage() {
         }
 
         // Deduplicate evaluators (in case someone is both examiner and supervisor)
-        const uniqueEvaluators = Array.from(new Map(allEvaluators.map((e) => [e.examiner_id, e])).values());
+        // Use Number keys because DB IDs can arrive either as strings or numbers
+        const uniqueEvaluators = Array.from(
+          new Map(allEvaluators.map((e) => [Number(e.examiner_id), e])).values()
+        );
         setExaminers(uniqueEvaluators);
 
         if (uid) {
-          const me = uniqueEvaluators.find(
+          let me = uniqueEvaluators.find(
             (ex) => Number(ex.examiner_id) === uid || Number(ex.user_id) === uid
           );
-          if (me) {
-            setMyExaminerRecord(me);
-            setActiveTab('my_evaluation');
-          }
-          // Find this user's saved draft regardless of examiner panel membership
+
+          // Find this user's saved draft 
           const myEval = v.evaluations?.find((ev) => Number(ev.examiner_id) === uid);
           if (myEval) {
             prefillDraft(myEval);
-            // If they have a saved evaluation but weren't found in the panel,
-            // still show the My Evaluation tab
-            if (!me) setActiveTab('my_evaluation');
+            
+            // If they have an evaluation but weren't found in the formal panel (e.g. supervisors),
+            // synthesize a record so the form can render.
+            if (!me) {
+              me = {
+                examiner_id: uid,
+                examiner_name: myEval.examiner_name || 'Your Evaluation',
+                examiner_email: '',
+                role: (myEval.examiner_role as any) || 'supervisor',
+                confirmed: true,
+                evaluation_submitted: myEval.is_submitted,
+                evaluation_id: myEval.id || null
+              };
+            }
+          }
+
+          if (me) {
+            setMyExaminerRecord(me);
+            // Default to My Evaluation tab if looking at own viva
+            setActiveTab('my_evaluation');
           }
         }
       } else {
@@ -322,7 +339,11 @@ export default function VivaEvaluationsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(buildEvalPayload()),
       });
-      if (res.ok) { setSaveMsg('Draft saved ✓'); }
+      if (res.ok) { 
+        setSaveMsg('Draft saved ✓');
+        // Re-fetch to ensure the local evaluations list and IDs are updated
+        fetchAll(); 
+      }
       else { const d = await res.json(); setDraftError(d.error || 'Save failed.'); }
     } catch { setDraftError('Network error.'); }
     finally { setSaving(false); }
