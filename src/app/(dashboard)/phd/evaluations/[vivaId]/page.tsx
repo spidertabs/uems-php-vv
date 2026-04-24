@@ -193,16 +193,43 @@ export default function VivaEvaluationsPage() {
         uid = meData.user?.id ?? null;
         setCurrentUserId(uid);
       }
-
       if (vivaRes.ok) {
         const vivaData = await vivaRes.json();
         const v: VivaInfo = vivaData.schedule ?? vivaData.viva ?? vivaData;
         setViva(v);
-        if (v.examiners) setExaminers(v.examiners);
-        if (v.evaluations) setEvaluations(v.evaluations);
 
-        if (uid && v.examiners) {
-          const me = v.examiners.find((ex) => ex.examiner_id === uid || ex.user_id === uid);
+        const allEvaluators: ExaminerRecord[] = [
+          ...(v.examiners || []),
+          ...((v as any).supervisors || []).map((s: any) => ({
+            examiner_id: s.supervisor_id,
+            user_id: s.supervisor_id,
+            examiner_name: s.supervisor_name,
+            examiner_email: s.supervisor_email,
+            role: s.role as any,
+            confirmed: true,
+            evaluation_submitted: false,
+            evaluation_id: null
+          }))
+        ];
+
+        // Set evaluation_submitted flag based on evaluations array
+        if (v.evaluations) {
+          v.evaluations.forEach((ev) => {
+            const evalMatch = allEvaluators.find((e) => e.examiner_id === ev.examiner_id || e.user_id === ev.examiner_id);
+            if (evalMatch) {
+              evalMatch.evaluation_submitted = ev.is_submitted || false;
+              evalMatch.evaluation_id = ev.id || ev.evaluation_id || null;
+            }
+          });
+          setEvaluations(v.evaluations);
+        }
+
+        // Deduplicate evaluators (in case someone is both examiner and supervisor)
+        const uniqueEvaluators = Array.from(new Map(allEvaluators.map((e) => [e.examiner_id, e])).values());
+        setExaminers(uniqueEvaluators);
+
+        if (uid) {
+          const me = uniqueEvaluators.find((ex) => ex.examiner_id === uid || ex.user_id === uid);
           if (me) {
             setMyExaminerRecord(me);
             setActiveTab('my_evaluation');
@@ -212,29 +239,7 @@ export default function VivaEvaluationsPage() {
         }
       }
 
-      // Also fetch from dedicated endpoints (may override embedded data)
-      const [examRes, evalRes] = await Promise.all([
-        fetch(`/api/phd/schedules/${vivaId}/examiners`),
-        fetch(`/api/phd/schedules/${vivaId}/evaluations`),
-      ]);
-      if (examRes.ok) {
-        const d = await examRes.json();
-        const list: ExaminerRecord[] = d.examiners ?? [];
-        setExaminers(list);
-        if (uid) {
-          const me = list.find((ex) => ex.examiner_id === uid || ex.user_id === uid);
-          if (me) { setMyExaminerRecord(me); setActiveTab('my_evaluation'); }
-        }
-      }
-      if (evalRes.ok) {
-        const d = await evalRes.json();
-        const list: SubmittedEvaluation[] = d.evaluations ?? [];
-        setEvaluations(list);
-        if (uid) {
-          const myEval = list.find((ev) => ev.examiner_id === uid);
-          if (myEval) prefillDraft(myEval);
-        }
-      }
+      // No longer fetch from dedicated endpoints since viva contains examiners AND supervisors!
     } catch (err) {
       console.error('Failed to fetch viva evaluation data:', err);
     } finally {
@@ -242,7 +247,7 @@ export default function VivaEvaluationsPage() {
     }
   };
 
-  const prefillDraft = (ev: SubmittedEvaluation) => {
+  function prefillDraft(ev: SubmittedEvaluation) {
     setDraft({
       id: ev.id ?? ev.evaluation_id,
       originality_score: ev.originality_score?.toString() ?? '',
@@ -255,7 +260,7 @@ export default function VivaEvaluationsPage() {
       general_comments: ev.general_comments ?? '',
       is_submitted: ev.is_submitted ?? false,
     });
-  };
+  }
 
   // ── My evaluation handlers ───────────────────────────────────────────────────
 
@@ -296,7 +301,7 @@ export default function VivaEvaluationsPage() {
   const handleSaveDraft = async () => {
     setSaving(true); setSaveMsg(''); setDraftError('');
     try {
-      const res = await fetch('/api/phd/evaluations', {
+      const res = await fetch('/api/phd/my-evaluations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(buildEvalPayload()),
@@ -312,7 +317,7 @@ export default function VivaEvaluationsPage() {
     if (!confirm('Submit your evaluation? This cannot be undone.')) return;
     setSubmitting(true); setDraftError('');
     try {
-      await fetch('/api/phd/evaluations', {
+      await fetch('/api/phd/my-evaluations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(buildEvalPayload()),

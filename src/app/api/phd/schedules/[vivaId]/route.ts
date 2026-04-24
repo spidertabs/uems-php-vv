@@ -51,13 +51,27 @@ async function buildVivaDetail(vivaId: number): Promise<any | null> {
             ev.strengths, ev.weaknesses, ev.recommended_corrections,
             ev.general_comments, ev.is_submitted, ev.submitted_at,
             CONCAT(u.first_name, ' ', u.last_name) AS examiner_name,
-            ve.role AS examiner_panel_role
+            COALESCE(ve.role, 'supervisor') AS examiner_panel_role
      FROM viva_evaluations ev
      JOIN users u ON ev.examiner_id = u.id
-     JOIN viva_examiners ve ON ve.viva_id = ev.viva_id AND ve.examiner_id = ev.examiner_id
+     LEFT JOIN viva_examiners ve ON ve.viva_id = ev.viva_id AND ve.examiner_id = ev.examiner_id
      WHERE ev.viva_id = ?
      ORDER BY ev.id`,
     [vivaId]
+  );
+
+  // ③.b Supervisors (to add to expected evaluators)
+  viva.supervisors = await query<any[]>(
+    `SELECT DISTINCT u.id as supervisor_id, CONCAT(u.first_name, ' ', u.last_name) as supervisor_name, u.email as supervisor_email, 'supervisor' as role
+     FROM phd_candidates pc
+     JOIN users u ON (pc.supervisor_id = u.id OR pc.co_supervisor_id = u.id)
+     WHERE pc.id = ?
+     UNION
+     SELECT pcs.supervisor_id as supervisor_id, CONCAT(u.first_name, ' ', u.last_name) as supervisor_name, u.email as supervisor_email, pcs.role as role
+     FROM phd_candidate_supervisors pcs
+     JOIN users u ON pcs.supervisor_id = u.id
+     WHERE pcs.candidate_id = ?`,
+    [viva.candidate_id, viva.candidate_id]
   );
 
   // ④ Recommendation (or null)
