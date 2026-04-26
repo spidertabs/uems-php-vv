@@ -18,6 +18,7 @@ interface TimetableSlot {
   capacity: number | null;
   enrollment_count: number;
   supervisor_names?: string;
+  supervisor_ids?: number[];
 }
 
 interface PublishedPaper {
@@ -292,6 +293,7 @@ export default function TimetablePage() {
                                setEditingId(slot.id);
                                setSelectedCourseId(slot.course_id?.toString() || '');
                                setSelectedPaperId(slot.exam_paper_id?.toString() || '');
+                               setSelectedLecturers(slot.supervisor_ids || []);
                                setExamDate(slot.exam_date.split('T')[0]);
                                setStartTime(slot.start_time.slice(0, 5));
                                setEndTime(slot.end_time.slice(0, 5));

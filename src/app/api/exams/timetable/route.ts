@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAuth } from '@/lib/auth';
-import { getDepartmentalTimetables, getStudentTimetable, getLecturerSupervisionSlots } from '@/lib/exams';
 import { query } from '@/lib/db';
-import { notifyEnrolledStudents, notifySupervisorAssigned } from '@/lib/notifications';
+import { notifySupervisorAssigned, notifyEnrolledStudents } from '@/lib/notifications';
 
 export async function GET(request: NextRequest) {
   try {
@@ -23,7 +22,12 @@ export async function GET(request: NextRequest) {
                  FROM exam_supervisors es
                  JOIN staff s ON es.lecturer_id = s.id
                  WHERE es.timetable_id = et.id
-               ) as supervisor_names
+               ) as supervisor_names,
+               (
+                 SELECT JSON_AGG(lecturer_id)
+                 FROM exam_supervisors
+                 WHERE timetable_id = et.id
+               ) as supervisor_ids
         FROM exam_timetables et
         LEFT JOIN exam_papers ep ON et.exam_paper_id = ep.id
         LEFT JOIN courses c ON et.course_id = c.id
@@ -31,14 +35,43 @@ export async function GET(request: NextRequest) {
         ORDER BY et.exam_date ASC
       `);
     } else if (user.role === 'hod' || user.role === 'dean') {
-      data = await getDepartmentalTimetables(user.department_id!);
-    } else if (user.role === 'lecturer') {
-       // Lecturers see what they supervise
-      data = await getLecturerSupervisionSlots(user.id);
-    } else if (user.role === 'student') {
-      data = await getStudentTimetable(user.id);
+      const deptId = user.department_id;
+      if (!deptId) return NextResponse.json({ success: false, error: 'Department not found' }, { status: 404 });
+      
+      data = await query(`
+        SELECT et.*, ep.paper_code, 
+               COALESCE(c.title, pc.title) as course_title, 
+               COALESCE(c.code, pc.code) as course_code,
+               (
+                 SELECT STRING_AGG(s.first_name || ' ' || s.last_name, ', ')
+                 FROM exam_supervisors es
+                 JOIN staff s ON es.lecturer_id = s.id
+                 WHERE es.timetable_id = et.id
+               ) as supervisor_names,
+               (
+                 SELECT JSON_AGG(lecturer_id)
+                 FROM exam_supervisors
+                 WHERE timetable_id = et.id
+               ) as supervisor_ids
+        FROM exam_timetables et
+        LEFT JOIN exam_papers ep ON et.exam_paper_id = ep.id
+        LEFT JOIN courses c ON et.course_id = c.id
+        LEFT JOIN courses pc ON ep.course_id = pc.id
+        WHERE COALESCE(c.department_id, pc.department_id) = ?
+        ORDER BY et.exam_date ASC
+      `, [deptId]);
     } else {
-      return NextResponse.json({ success: false, error: 'Access denied' }, { status: 403 });
+      // Lecturers and students see the general timetable
+      data = await query(`
+        SELECT et.*, ep.paper_code, 
+               COALESCE(c.title, pc.title) as course_title, 
+               COALESCE(c.code, pc.code) as course_code
+        FROM exam_timetables et
+        LEFT JOIN exam_papers ep ON et.exam_paper_id = ep.id
+        LEFT JOIN courses c ON et.course_id = c.id
+        LEFT JOIN courses pc ON ep.course_id = pc.id
+        ORDER BY et.exam_date ASC
+      `);
     }
 
     return NextResponse.json({ success: true, data });
@@ -55,7 +88,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
+    const body = await request.json();
     const { 
+      id,
       exam_paper_id, 
       course_id,
       exam_date, 
@@ -64,11 +99,11 @@ export async function POST(request: NextRequest) {
       venue, 
       capacity, 
       supervisor_ids 
-    } = await request.json();
+    } = body;
 
     let targetPaperId = exam_paper_id;
 
-    // If only course_id is provided, find the latest published paper
+    // Resolve paper if possible
     if (!targetPaperId && course_id) {
        const [paper]: any = await query(
          `SELECT id FROM exam_papers WHERE course_id = ? AND status = 'published' ORDER BY created_at DESC LIMIT 1`,
@@ -86,75 +121,70 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Use a transaction or sequential updates
-    // We target based on course_id if paper is not set yet, or paper_id if it is
-    const result: any = await query(
-      `INSERT INTO exam_timetables (exam_paper_id, course_id, exam_date, start_time, end_time, venue, capacity, created_by)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-       ON CONFLICT (exam_paper_id) WHERE exam_paper_id IS NOT NULL 
-       DO UPDATE SET
-         exam_date = EXCLUDED.exam_date,
-         start_time = EXCLUDED.start_time,
-         end_time = EXCLUDED.end_time,
-         venue = EXCLUDED.venue,
-         capacity = EXCLUDED.capacity,
-         updated_at = NOW()
-       RETURNING id`,
-      [targetPaperId || null, course_id || null, exam_date, start_time, end_time, venue, capacity || null, user.id]
-    );
+    let timetableId = id;
 
-    // If no paper_id was used, we might need another conflict clause for course_id alone
-    // But since exam_paper_id was UNIQUE in the original schema, I should probably handle course_id uniqueness too
-    // For now, let's assume the user knows what they're doing or I'll add a check.
-    
-    let timetableId = result[0]?.id;
-
-    if (!timetableId && course_id) {
-       // Try updating by course_id if it already exists
-       const updateRes: any = await query(
-         `UPDATE exam_timetables SET
-            exam_date = ?, start_time = ?, end_time = ?, venue = ?, capacity = ?, updated_at = NOW()
-          WHERE course_id = ? AND exam_paper_id IS NULL
-          RETURNING id`,
-         [exam_date, start_time, end_time, venue, capacity || null, course_id]
-       );
-       timetableId = updateRes[0]?.id;
-       
-       if (!timetableId) {
-          // If still not found, it's a fresh insert that failed conflict? 
-          // (Actually the INSERT above should have worked if no conflict)
-       }
+    if (id) {
+      // Direct update for existing slot
+      await query(
+        `UPDATE exam_timetables SET 
+           exam_paper_id = ?, course_id = ?, exam_date = ?, 
+           start_time = ?, end_time = ?, venue = ?, capacity = ?, updated_at = NOW()
+         WHERE id = ?`,
+        [targetPaperId || null, course_id || null, exam_date, start_time, end_time, venue, capacity || null, id]
+      );
+    } else {
+      // Create or upsert
+      const result: any = await query(
+        `INSERT INTO exam_timetables (exam_paper_id, course_id, exam_date, start_time, end_time, venue, capacity, created_by)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+         ON CONFLICT (exam_paper_id) WHERE exam_paper_id IS NOT NULL 
+         DO UPDATE SET
+           exam_date = EXCLUDED.exam_date,
+           start_time = EXCLUDED.start_time,
+           end_time = EXCLUDED.end_time,
+           venue = EXCLUDED.venue,
+           capacity = EXCLUDED.capacity,
+           updated_at = NOW()
+         RETURNING id`,
+        [targetPaperId || null, course_id || null, exam_date, start_time, end_time, venue, capacity || null, user.id]
+      );
+      
+      timetableId = result[0]?.id;
+      
+      // Secondary fallback if insert-conflict didn't return ID (shouldn't happen with RETURNING but being safe)
+      if (!timetableId && targetPaperId) {
+         const [existing]: any = await query(`SELECT id FROM exam_timetables WHERE exam_paper_id = ?`, [targetPaperId]);
+         timetableId = existing?.id;
+      }
     }
 
+    // Handle Supervisors
     if (timetableId && supervisor_ids && Array.isArray(supervisor_ids)) {
-      // Clear existing supervisors for this slot if any
+      // Clear existing assignments for this slot
       await query(`DELETE FROM exam_supervisors WHERE timetable_id = ?`, [timetableId]);
       
-      // Add new ones
+      // Add new assignments
       for (const lectId of supervisor_ids) {
         await query(
           `INSERT INTO exam_supervisors (timetable_id, lecturer_id) VALUES (?, ?)`,
           [timetableId, lectId]
         );
-        // Notify supervisor
-        await notifySupervisorAssigned(lectId, timetableId);
+        // Async notification (don't block the response)
+        notifySupervisorAssigned(lectId, timetableId).catch(err => console.error('Notification error:', err));
       }
     }
 
-    // Notify all enrolled students
-    const [paperInfo]: any = await query(`SELECT course_id, academic_year, semester FROM exam_papers WHERE id = ?`, [targetPaperId]);
-    if (paperInfo) {
-      await notifyEnrolledStudents(
-        paperInfo.course_id, 
-        paperInfo.academic_year, 
-        paperInfo.semester,
-        'Exam Timetable Update',
-        `The exam schedule for one of your courses has been set or updated. Venue: ${venue}`,
-        '/exams/timetable'
-      );
+    // Async notification for students
+    if (course_id) {
+       notifyEnrolledStudents(
+         course_id, 2026, 1, 
+         'Exam Timetable Update', 
+         `Exam schedule fixed for your course. Venue: ${venue}`,
+         '/exams/timetable'
+       ).catch(err => console.error('Student notification error:', err));
     }
 
-    return NextResponse.json({ success: true, message: 'Timetable and supervisors updated' });
+    return NextResponse.json({ success: true, message: 'Timetable updated successfully' });
   } catch (error: any) {
     console.error('❌ POST Timetable error:', error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
