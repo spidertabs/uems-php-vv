@@ -31,6 +31,7 @@ export default function TimetablePage() {
   const router = useRouter();
   const [slots, setSlots] = useState<TimetableSlot[]>([]);
   const [publishedPapers, setPublishedPapers] = useState<PublishedPaper[]>([]);
+  const [courses, setCourses] = useState<any[]>([]);
   const [staff, setStaff] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
@@ -52,11 +53,12 @@ export default function TimetablePage() {
 
   const fetchData = async () => {
     try {
-      const [userRes, timetableRes, papersRes, staffRes] = await Promise.all([
+      const [userRes, timetableRes, papersRes, staffRes, coursesRes] = await Promise.all([
         fetch('/api/auth/me'),
         fetch('/api/exams/timetable'),
         fetch('/api/exam-papers?status=published'),
-        fetch('/api/users')
+        fetch('/api/staff?all=true'),
+        fetch('/api/courses')
       ]);
 
       if (userRes.ok) {
@@ -77,6 +79,11 @@ export default function TimetablePage() {
       if (staffRes.ok) {
         const staffData = await staffRes.json();
         setStaff(staffData.data || []);
+      }
+
+      if (coursesRes.ok) {
+        const coursesData = await coursesRes.json();
+        setCourses(coursesData.data || []);
       }
     } catch (error) {
       console.error('Fetch error:', error);
@@ -148,11 +155,6 @@ export default function TimetablePage() {
   }
 
   const isHOD = user?.role === 'hod' || user?.role === 'admin';
-
-  // Group papers by course for unique course list
-  const coursesWithPapers = Array.from(new Set(publishedPapers.map(p => (p as any).course_id))).map(cid => {
-    return publishedPapers.find(p => (p as any).course_id === cid);
-  });
 
   return (
     <div className="space-y-6 lg:pl-64 p-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
@@ -277,14 +279,18 @@ export default function TimetablePage() {
                        className="w-full rounded-xl border border-gray-300 bg-gray-50 p-2.5 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                     >
                        <option value="">Choose a course...</option>
-                       {coursesWithPapers.map(p => (
-                          <option key={p?.id} value={(p as any)?.course_id}>{(p as any)?.course_code} - {(p as any)?.course_title}</option>
+                       {courses.map(course => (
+                          <option key={course.id} value={course.id.toString()}>{course.code} - {course.title}</option>
                        ))}
                     </select>
                  </div>
-                 {selectedPaperId && (
+                 {selectedPaperId ? (
                     <div className="rounded-xl bg-blue-50 p-3 text-xs font-bold text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
                        Linked Paper: {publishedPapers.find(p => p.id.toString() === selectedPaperId)?.paper_code}
+                    </div>
+                 ) : selectedCourseId && (
+                    <div className="rounded-xl bg-red-50 p-3 text-xs font-bold text-red-700 dark:bg-red-900/30 dark:text-red-400">
+                       ⚠️ No published exam paper found for this course. You cannot schedule an exam until a paper is published.
                     </div>
                  )}
                  <div>

@@ -29,8 +29,10 @@ export async function GET(req: NextRequest) {
       WHERE u.deleted_at IS NULL`;
     
     const params = [];
+    const searchParams = req.nextUrl.searchParams;
+    const all = searchParams.get('all') === 'true';
     
-    if (user.role !== 'admin') {
+    if (user.role !== 'admin' && !all) {
       queryStr += ` AND u.department_id = ?`;
       params.push(user.department_id);
     }
