@@ -28,6 +28,9 @@ export default function EnrollmentPage() {
   const [selectedCourseId, setSelectedCourseId] = useState('');
   const [year, setYear] = useState('2026');
   const [semester, setSemester] = useState('1');
+  const [viewingCourse, setViewingCourse] = useState<any>(null);
+  const [studentList, setStudentList] = useState<any[]>([]);
+  const [listLoading, setListLoading] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -87,6 +90,22 @@ export default function EnrollmentPage() {
       }
     } catch (error) {
       console.error('Enroll error:', error);
+    }
+  };
+
+  const fetchStudentList = async (course: any) => {
+    setViewingCourse(course);
+    setListLoading(true);
+    try {
+      const res = await fetch(`/api/exams/enroll?course_id=${course.id}`);
+      if (res.ok) {
+        const data = await res.json();
+        setStudentList(data.data || []);
+      }
+    } catch (error) {
+      console.error('List error:', error);
+    } finally {
+      setListLoading(false);
     }
   };
 
@@ -201,6 +220,14 @@ export default function EnrollmentPage() {
                         <span className="inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">
                           {isStudent ? '✅ Active' : '📊 Tracking'}
                         </span>
+                        {!isStudent && (
+                           <button 
+                              onClick={() => fetchStudentList(en)}
+                              className="ml-3 text-xs font-bold text-blue-600 hover:underline"
+                           >
+                              View List
+                           </button>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -217,6 +244,62 @@ export default function EnrollmentPage() {
           </div>
         </div>
       </div>
+
+      {/* Student List Modal */}
+      {viewingCourse && (
+         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <div className="w-full max-w-2xl rounded-3xl bg-white p-8 shadow-2xl dark:bg-gray-800">
+               <div className="flex items-center justify-between mb-6">
+                  <div>
+                     <h2 className="text-2xl font-black text-gray-900 dark:text-white">Enrolled Students</h2>
+                     <p className="text-sm font-bold text-emerald-600 uppercase">{viewingCourse.code} - {viewingCourse.title}</p>
+                  </div>
+                  <button onClick={() => setViewingCourse(null)} className="text-gray-500 hover:text-gray-700">✕</button>
+               </div>
+               
+               <div className="max-h-96 overflow-y-auto rounded-2xl border border-gray-100 dark:border-gray-700">
+                  {listLoading ? (
+                     <div className="py-20 text-center">
+                        <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-emerald-600 mx-auto"></div>
+                     </div>
+                  ) : (
+                     <table className="w-full text-left text-sm">
+                        <thead className="bg-gray-50/50 dark:bg-gray-900/50">
+                           <tr>
+                              <th className="px-4 py-3 font-bold text-gray-500">Reg Number</th>
+                              <th className="px-4 py-3 font-bold text-gray-500">Name</th>
+                              <th className="px-4 py-3 font-bold text-gray-500">Email</th>
+                           </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
+                           {studentList.map((s, i) => (
+                              <tr key={i} className="hover:bg-gray-50/50">
+                                 <td className="px-4 py-3 font-mono font-bold text-emerald-600">{s.registration_number}</td>
+                                 <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">{s.first_name} {s.last_name}</td>
+                                 <td className="px-4 py-3 text-gray-500">{s.email}</td>
+                              </tr>
+                           ))}
+                           {studentList.length === 0 && (
+                              <tr>
+                                 <td colSpan={3} className="py-10 text-center text-gray-500">No students enrolled yet.</td>
+                              </tr>
+                           )}
+                        </tbody>
+                     </table>
+                  )}
+               </div>
+               
+               <div className="mt-6 flex justify-end">
+                  <button 
+                     onClick={() => setViewingCourse(null)}
+                     className="rounded-xl bg-gray-100 px-6 py-2.5 font-bold text-gray-600 hover:bg-gray-200"
+                  >
+                     Close
+                  </button>
+               </div>
+            </div>
+         </div>
+      )}
     </div>
   );
 }

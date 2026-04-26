@@ -11,6 +11,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
+    const searchParams = request.nextUrl.searchParams;
+    const courseId = searchParams.get('course_id');
+
     let data;
     if (user.role === 'student') {
       data = await query(
@@ -19,6 +22,15 @@ export async function GET(request: NextRequest) {
          JOIN courses c ON ce.course_id = c.id
          WHERE ce.student_id = ?`,
         [user.id]
+      );
+    } else if (courseId) {
+      // Staff see students in a specific course
+      data = await query(
+        `SELECT s.registration_number, s.first_name, s.last_name, s.email, ce.academic_year, ce.semester
+         FROM course_enrollments ce
+         JOIN students s ON ce.student_id = s.id
+         WHERE ce.course_id = ?`,
+        [courseId]
       );
     } else {
       // Staff see all enrollments grouped by course

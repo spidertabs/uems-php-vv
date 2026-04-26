@@ -83,7 +83,7 @@ export default function TimetablePage() {
 
       if (coursesRes.ok) {
         const coursesData = await coursesRes.json();
-        setCourses(coursesData.data || []);
+        setCourses(coursesData.courses || []);
       }
     } catch (error) {
       console.error('Fetch error:', error);
