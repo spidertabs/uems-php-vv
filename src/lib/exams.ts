@@ -32,16 +32,17 @@ export async function getDepartmentalTimetables(departmentId: number) {
     `SELECT 
         et.*,
         ep.paper_code,
-        c.title as course_title,
-        c.code as course_code,
+        COALESCE(c.title, pc.title) as course_title,
+        COALESCE(c.code, pc.code) as course_code,
         (SELECT COUNT(*) FROM course_enrollments ce 
-         WHERE ce.course_id = c.id 
-         AND ce.academic_year = ep.academic_year 
-         AND ce.semester = ep.semester) as enrollment_count
+         WHERE ce.course_id = COALESCE(et.course_id, ep.course_id)
+         AND ce.academic_year = COALESCE(ep.academic_year, 2026) 
+         AND ce.semester = COALESCE(ep.semester, 1)) as enrollment_count
       FROM exam_timetables et
-      JOIN exam_papers ep ON et.exam_paper_id = ep.id
-      JOIN courses c ON ep.course_id = c.id
-      WHERE c.department_id = ?
+      LEFT JOIN exam_papers ep ON et.exam_paper_id = ep.id
+      LEFT JOIN courses c ON et.course_id = c.id
+      LEFT JOIN courses pc ON ep.course_id = pc.id
+      WHERE COALESCE(c.department_id, pc.department_id) = ?
       ORDER BY et.exam_date ASC, et.start_time ASC`,
     [departmentId]
   );
@@ -55,14 +56,13 @@ export async function getStudentTimetable(studentId: number) {
     `SELECT 
         et.*,
         ep.paper_code,
-        c.title as course_title,
-        c.code as course_code
+        COALESCE(c.title, pc.title) as course_title,
+        COALESCE(c.code, pc.code) as course_code
       FROM exam_timetables et
-      JOIN exam_papers ep ON et.exam_paper_id = ep.id
-      JOIN courses c ON ep.course_id = c.id
-      JOIN course_enrollments ce ON ce.course_id = c.id 
-        AND ce.academic_year = ep.academic_year 
-        AND ce.semester = ep.semester
+      LEFT JOIN exam_papers ep ON et.exam_paper_id = ep.id
+      LEFT JOIN courses c ON et.course_id = c.id
+      LEFT JOIN courses pc ON ep.course_id = pc.id
+      JOIN course_enrollments ce ON ce.course_id = COALESCE(et.course_id, ep.course_id)
       WHERE ce.student_id = ?
       ORDER BY et.exam_date ASC, et.start_time ASC`,
     [studentId]
@@ -78,16 +78,15 @@ export async function getLecturerSupervisionSlots(lecturerId: number) {
         es.id as supervision_id,
         et.*,
         ep.paper_code,
-        c.title as course_title,
-        c.code as course_code,
+        COALESCE(c.title, pc.title) as course_title,
+        COALESCE(c.code, pc.code) as course_code,
         (SELECT COUNT(*) FROM course_enrollments ce 
-         WHERE ce.course_id = c.id 
-         AND ce.academic_year = ep.academic_year 
-         AND ce.semester = ep.semester) as enrollment_count
+         WHERE ce.course_id = COALESCE(et.course_id, ep.course_id)) as enrollment_count
       FROM exam_supervisors es
       JOIN exam_timetables et ON es.timetable_id = et.id
-      JOIN exam_papers ep ON et.exam_paper_id = ep.id
-      JOIN courses c ON ep.course_id = c.id
+      LEFT JOIN exam_papers ep ON et.exam_paper_id = ep.id
+      LEFT JOIN courses c ON et.course_id = c.id
+      LEFT JOIN courses pc ON ep.course_id = pc.id
       WHERE es.lecturer_id = ?
       ORDER BY et.exam_date ASC, et.start_time ASC`,
     [lecturerId]

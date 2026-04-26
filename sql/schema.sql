@@ -1458,7 +1458,8 @@ END;
 
 CREATE TABLE exam_timetables (
     id               SERIAL      PRIMARY KEY,
-    exam_paper_id    INT         NOT NULL UNIQUE REFERENCES exam_papers(id) ON DELETE CASCADE,
+    exam_paper_id    INT         REFERENCES exam_papers(id) ON DELETE CASCADE,
+    course_id        INT         REFERENCES courses(id) ON DELETE CASCADE,
     exam_date        DATE        NOT NULL,
     start_time       TIME        NOT NULL,
     end_time         TIME        NOT NULL,

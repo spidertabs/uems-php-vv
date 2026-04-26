@@ -209,7 +209,7 @@ export default function TimetablePage() {
                   <tr key={slot.id} className="group transition hover:bg-gray-50/50 dark:hover:bg-gray-700/30">
                     <td className="py-4">
                       <div className="flex flex-col">
-                        <span className="text-sm font-black text-blue-600 dark:text-blue-400">{slot.paper_code}</span>
+                        <span className="text-sm font-black text-blue-600 dark:text-blue-400">{slot.paper_code || slot.course_code}</span>
                         <span className="text-sm font-medium text-gray-900 dark:text-white truncate max-w-[200px]">{slot.course_title}</span>
                       </div>
                     </td>
@@ -285,13 +285,9 @@ export default function TimetablePage() {
                        ))}
                     </select>
                  </div>
-                 {selectedPaperId ? (
+                 {selectedPaperId && (
                     <div className="rounded-xl bg-blue-50 p-3 text-xs font-bold text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
                        Linked Paper: {publishedPapers.find(p => p.id.toString() === selectedPaperId)?.paper_code}
-                    </div>
-                 ) : selectedCourseId && (
-                    <div className="rounded-xl bg-red-50 p-3 text-xs font-bold text-red-700 dark:bg-red-900/30 dark:text-red-400">
-                       ⚠️ No published exam paper found for this course. You cannot schedule an exam until a paper is published.
                     </div>
                  )}
                  <div>
