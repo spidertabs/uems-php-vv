@@ -31,12 +31,15 @@ export default function TimetablePage() {
   const router = useRouter();
   const [slots, setSlots] = useState<TimetableSlot[]>([]);
   const [publishedPapers, setPublishedPapers] = useState<PublishedPaper[]>([]);
+  const [staff, setStaff] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
 
   // Form State
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedCourseId, setSelectedCourseId] = useState<string>('');
   const [selectedPaperId, setSelectedPaperId] = useState<string>('');
+  const [selectedLecturers, setSelectedLecturers] = useState<number[]>([]);
   const [examDate, setExamDate] = useState('');
   const [startTime, setStartTime] = useState('09:00');
   const [endTime, setEndTime] = useState('12:00');
@@ -49,10 +52,11 @@ export default function TimetablePage() {
 
   const fetchData = async () => {
     try {
-      const [userRes, timetableRes, papersRes] = await Promise.all([
+      const [userRes, timetableRes, papersRes, staffRes] = await Promise.all([
         fetch('/api/auth/me'),
         fetch('/api/exams/timetable'),
-        fetch('/api/exam-papers?status=published')
+        fetch('/api/exam-papers?status=published'),
+        fetch('/api/users')
       ]);
 
       if (userRes.ok) {
@@ -67,14 +71,36 @@ export default function TimetablePage() {
 
       if (papersRes.ok) {
         const papersData = await papersRes.json();
-        // Only include papers not yet on timetable if creating new, 
-        // but for now we'll show all published department papers
         setPublishedPapers(papersData.papers || []);
+      }
+
+      if (staffRes.ok) {
+        const staffData = await staffRes.json();
+        setStaff(staffData.data || []);
       }
     } catch (error) {
       console.error('Fetch error:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCourseChange = (courseId: string) => {
+    setSelectedCourseId(courseId);
+    // Find the published paper for this course
+    const paper = publishedPapers.find(p => (p as any).course_id.toString() === courseId);
+    if (paper) {
+      setSelectedPaperId(paper.id.toString());
+    } else {
+      setSelectedPaperId('');
+    }
+  };
+
+  const toggleLecturer = (id: number) => {
+    if (selectedLecturers.includes(id)) {
+      setSelectedLecturers(selectedLecturers.filter(l => l !== id));
+    } else {
+      setSelectedLecturers([...selectedLecturers, id]);
     }
   };
 
@@ -90,7 +116,8 @@ export default function TimetablePage() {
           start_time: startTime,
           end_time: endTime,
           venue,
-          capacity: capacity ? parseInt(capacity) : null
+          capacity: capacity ? parseInt(capacity) : null,
+          supervisor_ids: selectedLecturers
         })
       });
 
@@ -98,7 +125,9 @@ export default function TimetablePage() {
         setIsModalOpen(false);
         fetchData();
         // Reset form
+        setSelectedCourseId('');
         setSelectedPaperId('');
+        setSelectedLecturers([]);
         setExamDate('');
         setVenue('');
       } else {
@@ -119,6 +148,11 @@ export default function TimetablePage() {
   }
 
   const isHOD = user?.role === 'hod' || user?.role === 'admin';
+
+  // Group papers by course for unique course list
+  const coursesWithPapers = Array.from(new Set(publishedPapers.map(p => (p as any).course_id))).map(cid => {
+    return publishedPapers.find(p => (p as any).course_id === cid);
+  });
 
   return (
     <div className="space-y-6 lg:pl-64 p-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
@@ -235,19 +269,24 @@ export default function TimetablePage() {
               <h2 className="mb-6 text-2xl font-black text-gray-900 dark:text-white">Schedule Exam</h2>
               <form onSubmit={handleSubmit} className="space-y-4">
                  <div>
-                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Select Published Paper</label>
+                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Select Course</label>
                     <select 
                        required
-                       value={selectedPaperId}
-                       onChange={(e) => setSelectedPaperId(e.target.value)}
+                       value={selectedCourseId}
+                       onChange={(e) => handleCourseChange(e.target.value)}
                        className="w-full rounded-xl border border-gray-300 bg-gray-50 p-2.5 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                     >
-                       <option value="">Choose a paper...</option>
-                       {publishedPapers.map(p => (
-                          <option key={p.id} value={p.id}>{p.paper_code} - {p.course_title}</option>
+                       <option value="">Choose a course...</option>
+                       {coursesWithPapers.map(p => (
+                          <option key={p?.id} value={(p as any)?.course_id}>{(p as any)?.course_code} - {(p as any)?.course_title}</option>
                        ))}
                     </select>
                  </div>
+                 {selectedPaperId && (
+                    <div className="rounded-xl bg-blue-50 p-3 text-xs font-bold text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                       Linked Paper: {publishedPapers.find(p => p.id.toString() === selectedPaperId)?.paper_code}
+                    </div>
+                 )}
                  <div>
                     <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Exam Date</label>
                     <input 
@@ -300,6 +339,22 @@ export default function TimetablePage() {
                        onChange={(e) => setCapacity(e.target.value)}
                        className="w-full rounded-xl border border-gray-300 bg-gray-50 p-2.5 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                     />
+                 </div>
+                 <div>
+                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Assign Supervisors</label>
+                    <div className="max-h-40 overflow-y-auto rounded-xl border border-gray-300 bg-gray-50 p-3 dark:border-gray-600 dark:bg-gray-700">
+                       {staff.filter(s => s.role === 'lecturer' || s.role === 'hod').map(lecturer => (
+                          <label key={lecturer.id} className="flex items-center gap-3 py-1 cursor-pointer">
+                             <input 
+                                type="checkbox"
+                                checked={selectedLecturers.includes(lecturer.id)}
+                                onChange={() => toggleLecturer(lecturer.id)}
+                                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                             />
+                             <span className="text-sm text-gray-700 dark:text-gray-200">{lecturer.first_name} {lecturer.last_name}</span>
+                          </label>
+                       ))}
+                    </div>
                  </div>
                  <div className="flex gap-3 pt-4">
                     <button 

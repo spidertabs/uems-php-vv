@@ -45,13 +45,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { exam_paper_id, exam_date, start_time, end_time, venue, capacity } = await request.json();
+    const { exam_paper_id, exam_date, start_time, end_time, venue, capacity, supervisor_ids } = await request.json();
 
     if (!exam_paper_id || !exam_date || !start_time || !end_time || !venue) {
       return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 });
     }
 
-    const result = await query(
+    // Use a transaction or sequential updates
+    const result: any = await query(
       `INSERT INTO exam_timetables (exam_paper_id, exam_date, start_time, end_time, venue, capacity, created_by)
        VALUES (?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT (exam_paper_id) DO UPDATE SET
@@ -60,11 +61,27 @@ export async function POST(request: NextRequest) {
          end_time = EXCLUDED.end_time,
          venue = EXCLUDED.venue,
          capacity = EXCLUDED.capacity,
-         updated_at = NOW()`,
+         updated_at = NOW()
+       RETURNING id`,
       [exam_paper_id, exam_date, start_time, end_time, venue, capacity || null, user.id]
     );
 
-    return NextResponse.json({ success: true, message: 'Timetable updated successfully' });
+    const timetableId = result[0]?.id;
+
+    if (timetableId && supervisor_ids && Array.isArray(supervisor_ids)) {
+      // Clear existing supervisors for this slot if any
+      await query(`DELETE FROM exam_supervisors WHERE timetable_id = ?`, [timetableId]);
+      
+      // Add new ones
+      for (const lectId of supervisor_ids) {
+        await query(
+          `INSERT INTO exam_supervisors (timetable_id, lecturer_id) VALUES (?, ?)`,
+          [timetableId, lectId]
+        );
+      }
+    }
+
+    return NextResponse.json({ success: true, message: 'Timetable and supervisors updated' });
   } catch (error: any) {
     console.error('❌ POST Timetable error:', error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });

@@ -13,34 +13,31 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Only admins can view all staff
-    if (user.role !== 'admin') {
+    // Admins, HODs, and Deans can view staff
+    if (!['admin', 'hod', 'dean'].includes(user.role)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const staff = await query<any[]>(
-      `SELECT 
-        u.id,
-        u.email,
-        u.first_name,
-        u.last_name,
-        u.role,
-        u.department_id,
-        d.name as department_name,
-        u.college_id,
-        c.name as college_name,
-        u.phone,
-        u.is_active,
-        u.last_login,
-        u.created_at,
-        u.updated_at
+    let queryStr = `SELECT 
+        u.id, u.email, u.first_name, u.last_name, u.role, 
+        u.department_id, d.name as department_name,
+        u.college_id, c.name as college_name,
+        u.phone, u.is_active, u.created_at
       FROM staff u
       LEFT JOIN departments d ON u.department_id = d.id
       LEFT JOIN colleges c ON u.college_id = c.id
-      WHERE u.deleted_at IS NULL
-      ORDER BY u.created_at DESC`,
-      []
-    );
+      WHERE u.deleted_at IS NULL`;
+    
+    const params = [];
+    
+    if (user.role !== 'admin') {
+      queryStr += ` AND u.department_id = ?`;
+      params.push(user.department_id);
+    }
+    
+    queryStr += ` ORDER BY u.first_name ASC`;
+
+    const staff = await query<any[]>(queryStr, params);
 
     return NextResponse.json({
       success: true,
