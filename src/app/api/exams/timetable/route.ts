@@ -46,10 +46,35 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { exam_paper_id, exam_date, start_time, end_time, venue, capacity, supervisor_ids } = await request.json();
+    const { 
+      exam_paper_id, 
+      course_id,
+      exam_date, 
+      start_time, 
+      end_time, 
+      venue, 
+      capacity, 
+      supervisor_ids 
+    } = await request.json();
 
-    if (!exam_paper_id || !exam_date || !start_time || !end_time || !venue) {
-      return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 });
+    let targetPaperId = exam_paper_id;
+
+    // If only course_id is provided, find the latest published paper
+    if (!targetPaperId && course_id) {
+       const [paper]: any = await query(
+         `SELECT id FROM exam_papers WHERE course_id = ? AND status = 'published' ORDER BY created_at DESC LIMIT 1`,
+         [course_id]
+       );
+       if (paper) {
+          targetPaperId = paper.id;
+       }
+    }
+
+    if (!targetPaperId || !exam_date || !start_time || !end_time || !venue) {
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Missing required fields. Please ensure a published paper exists for this course.' 
+      }, { status: 400 });
     }
 
     // Use a transaction or sequential updates
@@ -64,7 +89,7 @@ export async function POST(request: NextRequest) {
          capacity = EXCLUDED.capacity,
          updated_at = NOW()
        RETURNING id`,
-      [exam_paper_id, exam_date, start_time, end_time, venue, capacity || null, user.id]
+      [targetPaperId, exam_date, start_time, end_time, venue, capacity || null, user.id]
     );
 
     const timetableId = result[0]?.id;
@@ -85,7 +110,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Notify all enrolled students
-    const [paperInfo]: any = await query(`SELECT course_id, academic_year, semester FROM exam_papers WHERE id = ?`, [exam_paper_id]);
+    const [paperInfo]: any = await query(`SELECT course_id, academic_year, semester FROM exam_papers WHERE id = ?`, [targetPaperId]);
     if (paperInfo) {
       await notifyEnrolledStudents(
         paperInfo.course_id, 

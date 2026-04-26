@@ -118,7 +118,8 @@ export default function TimetablePage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          exam_paper_id: parseInt(selectedPaperId),
+          exam_paper_id: selectedPaperId ? parseInt(selectedPaperId) : null,
+          course_id: selectedCourseId ? parseInt(selectedCourseId) : null,
           exam_date: examDate,
           start_time: startTime,
           end_time: endTime,
