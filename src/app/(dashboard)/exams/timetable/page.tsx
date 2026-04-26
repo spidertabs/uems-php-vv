@@ -38,6 +38,7 @@ export default function TimetablePage() {
 
   // Form State
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [selectedCourseId, setSelectedCourseId] = useState<string>('');
   const [selectedPaperId, setSelectedPaperId] = useState<string>('');
   const [selectedLecturers, setSelectedLecturers] = useState<number[]>([]);
@@ -118,6 +119,7 @@ export default function TimetablePage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          id: editingId,
           exam_paper_id: selectedPaperId ? parseInt(selectedPaperId) : null,
           course_id: selectedCourseId ? parseInt(selectedCourseId) : null,
           exam_date: examDate,
@@ -138,6 +140,7 @@ export default function TimetablePage() {
         setSelectedLecturers([]);
         setExamDate('');
         setVenue('');
+        setEditingId(null);
       } else {
         const error = await response.json();
         alert(error.error || 'Failed to update timetable');
@@ -170,7 +173,18 @@ export default function TimetablePage() {
           </div>
           {isHOD && (
             <button
-              onClick={() => setIsModalOpen(true)}
+              onClick={() => {
+                setEditingId(null);
+                setSelectedCourseId('');
+                setSelectedPaperId('');
+                setExamDate('');
+                setStartTime('09:00');
+                setEndTime('12:00');
+                setVenue('');
+                setCapacity('');
+                setSelectedLecturers([]);
+                setIsModalOpen(true);
+              }}
               className="rounded-xl bg-white/20 backdrop-blur-md px-6 py-3 font-bold text-white ring-1 ring-white/30 transition hover:bg-white/30"
             >
               🗓️ Schedule Paper
@@ -253,7 +267,9 @@ export default function TimetablePage() {
                       <td className="py-4 text-right">
                          <button 
                             onClick={() => {
-                               setSelectedPaperId(slot.exam_paper_id.toString());
+                               setEditingId(slot.id);
+                               setSelectedCourseId((slot as any).course_id?.toString() || '');
+                               setSelectedPaperId(slot.exam_paper_id?.toString() || '');
                                setExamDate(slot.exam_date.split('T')[0]);
                                setStartTime(slot.start_time.slice(0, 5));
                                setEndTime(slot.end_time.slice(0, 5));
