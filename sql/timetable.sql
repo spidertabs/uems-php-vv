@@ -11,29 +11,27 @@ INSERT INTO exam_papers (paper_code, course_id, created_by, exam_type, academic_
 ('EP-BSE1203-2026', 4, 32, 'CAT',   2026, 1, '2026-05-21', 120, 50,  'published', NOW())
 ON CONFLICT (paper_code) DO NOTHING;
 
--- 2. Timetable Slots (Course-Based & Paper-Based)
--- Note: We now include course_id directly for better tracking and flexibility
+-- 2. Timetable Slots
+-- Insert slots for published papers (using NOT EXISTS to avoid constraint issues)
 INSERT INTO exam_timetables (exam_paper_id, course_id, exam_date, start_time, end_time, venue, capacity, created_by)
 SELECT 
     ep.id as exam_paper_id,
     ep.course_id as course_id,
     ep.exam_date,
-    '09:00:00' as start_time,
-    '12:00:00' as end_time,
-    'Complex Room ' || (ep.id % 5 + 1) as venue,
-    150 as capacity,
-    ep.created_by
+    '09:00:00', '12:00:00',
+    'Complex Room ' || (ep.id % 5 + 1),
+    150, ep.created_by
 FROM exam_papers ep
-ON CONFLICT (exam_paper_id) WHERE exam_paper_id IS NOT NULL DO NOTHING;
+WHERE NOT EXISTS (
+    SELECT 1 FROM exam_timetables et WHERE et.exam_paper_id = ep.id
+);
 
 -- ADD SLOTS FOR COURSES WITHOUT PUBLISHED PAPERS
--- This demonstrates the new schema's flexibility
 INSERT INTO exam_timetables (course_id, exam_date, start_time, end_time, venue, capacity, created_by)
 VALUES 
 (11, '2026-06-01', '14:00:00', '17:00:00', 'University Auditorium', 500, 1),
 (8,  '2026-06-02', '09:00:00', '12:00:00', 'Exhibition Hall B', 200, 1),
-(14, '2026-06-03', '14:00:00', '17:00:00', 'Science Lab 4', 40, 1)
-ON CONFLICT DO NOTHING;
+(14, '2026-06-03', '14:00:00', '17:00:00', 'Science Lab 4', 40, 1);
 
 -- 3. Student Course Enrollments (Bulk Sample)
 INSERT INTO course_enrollments (student_id, course_id, academic_year, semester)
@@ -57,5 +55,7 @@ SELECT t.id, l.id
 FROM exam_timetables t, staff l
 WHERE l.role = 'lecturer'
 AND l.is_active = TRUE
-LIMIT 50
-ON CONFLICT DO NOTHING;
+AND NOT EXISTS (
+    SELECT 1 FROM exam_supervisors es WHERE es.timetable_id = t.id AND es.lecturer_id = l.id
+)
+LIMIT 50;

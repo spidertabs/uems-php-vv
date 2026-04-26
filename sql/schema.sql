@@ -1469,7 +1469,7 @@ CREATE TABLE exam_timetables (
     created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-CREATE INDEX idx_et_paper ON exam_timetables (exam_paper_id);
+CREATE UNIQUE INDEX idx_et_paper ON exam_timetables (exam_paper_id) WHERE exam_paper_id IS NOT NULL;
 CREATE INDEX idx_et_course ON exam_timetables (course_id);
 CREATE INDEX idx_et_date  ON exam_timetables (exam_date);
 
