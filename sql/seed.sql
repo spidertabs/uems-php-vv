@@ -425,7 +425,15 @@ CROSS JOIN (
     ('lect.pol1@uems.ac.ug', 'Titus', 'Kawuma', 'lecturer', 43, 11, '0707000164'),
     ('lect.pol2@uems.ac.ug', 'Antoinette', 'Opolot', 'lecturer', 43, 11, '0707000165'),
     ('lect.pol3@uems.ac.ug', 'Rose', 'Kigozi', 'lecturer', 43, 11, '0707000166'),
-    ('lect.pol4@uems.ac.ug', 'Amos', 'Nanyonjo', 'lecturer', 43, 11, '0707000167')
+    ('lect.pol4@uems.ac.ug', 'Amos', 'Nanyonjo', 'lecturer', 43, 11, '0707000167'),
+
+    -- PROFESSORS
+    ('prof.kato@uems.ac.ug', 'Joseph', 'Kato', 'professor', 14, 6, '0708000001'),
+    ('prof.musoke@uems.ac.ug', 'Sarah', 'Musoke', 'professor', 22, 8, '0708000002'),
+
+    -- EXTERNAL EXAMINERS
+    ('ext.smith@external.ac.uk', 'John', 'Smith', 'external_examiner', NULL, NULL, '0709000001'),
+    ('ext.njeri@external.ac.ke', 'Grace', 'Njeri', 'external_examiner', NULL, NULL, '0709000002')
 ) AS v(email, first_name, last_name, role, department_id, college_id, phone);
 
 

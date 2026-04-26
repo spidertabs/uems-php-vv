@@ -107,6 +107,22 @@ export default function VivaDetailPage() {
     finally { setAssignLoading(false); }
   };
 
+  const handleAssignManually = async (examinerId: number, role: ExaminerRole, slot?: number) => {
+    setAssignError('');
+    setAssignLoading(true);
+    try {
+      const res = await fetch(`/api/phd/schedules/${vivaId}/examiners`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ examiner_id: examinerId, role, panel_slot: slot }),
+      });
+      const d = await res.json();
+      if (!res.ok) { setAssignError(d.error || 'Failed to assign examiner'); return; }
+      fetchAll();
+    } catch { setAssignError('Network error'); }
+    finally { setAssignLoading(false); }
+  };
+
   const handleComplete = async () => {
     if (!confirm('Mark this viva as completed?')) return;
     await fetch(`/api/phd/schedules/${vivaId}/complete`, { method: 'POST' });
@@ -291,63 +307,98 @@ export default function VivaDetailPage() {
           )}
 
           {showAssignForm && (
-            <form
-              onSubmit={handleAssign}
-              className="rounded-xl border border-emerald-200 bg-emerald-50 p-5 dark:border-emerald-800 dark:bg-emerald-900/20"
-            >
-              <h3 className="mb-4 font-semibold text-gray-900 dark:text-white">Assign New Examiner</h3>
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Examiner</label>
+            <div className="rounded-xl border border-emerald-200 bg-white p-6 shadow-lg dark:border-emerald-800 dark:bg-gray-800">
+              <h3 className="mb-6 flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-white">
+                <span className="text-2xl">📋</span> Configure Examination Panel
+              </h3>
+              
+              <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
+                {/* Slot 1: Professor */}
+                <div className="space-y-4 rounded-lg bg-gray-50 p-4 dark:bg-gray-700/30">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-bold text-gray-900 dark:text-white">1. Professor (Internal)</label>
+                    <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-bold text-indigo-700 uppercase">Staff</span>
+                  </div>
                   <select
-                    value={assignForm.examiner_id}
-                    onChange={(e) => setAssignForm((p) => ({ ...p, examiner_id: e.target.value }))}
-                    required
+                    disabled={assignLoading}
+                    onChange={(e) => {
+                      if (e.target.value) handleAssignManually(parseInt(e.target.value), 'internal_examiner', 1);
+                    }}
                     className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                   >
-                    <option value="">Select examiner...</option>
+                    <option value="">Choose Professor...</option>
                     {eligibleStaff
-                      .filter((u) => !viva.examiners.find((e) => e.examiner_id === u.id))
+                      .filter((u) => u.role === 'professor' && !viva.examiners.find((e) => e.examiner_id === u.id))
                       .map((u) => (
                         <option key={u.id} value={u.id}>
-                          {u.first_name} {u.last_name} ({u.role.replace('_', ' ')})
-                          {u.department_name ? ` — ${u.department_name}` : ''}
+                          {u.first_name} {u.last_name}
                         </option>
                       ))}
                   </select>
+                  <p className="text-[11px] text-gray-500">Must be a senior staff member with Professor rank.</p>
                 </div>
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Role</label>
+
+                {/* Slot 2: Lecturer */}
+                <div className="space-y-4 rounded-lg bg-gray-50 p-4 dark:bg-gray-700/30">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-bold text-gray-900 dark:text-white">2. Lecturer (Internal)</label>
+                    <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-bold text-indigo-700 uppercase">Staff</span>
+                  </div>
                   <select
-                    value={assignForm.role}
-                    onChange={(e) => setAssignForm((p) => ({ ...p, role: e.target.value as ExaminerRole }))}
-                    required
+                    disabled={assignLoading}
+                    onChange={(e) => {
+                      if (e.target.value) handleAssignManually(parseInt(e.target.value), 'internal_examiner', 2);
+                    }}
                     className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                   >
-                    <option value="">Select role...</option>
-                    {(Object.entries(EXAMINER_ROLE_LABELS) as [ExaminerRole, string][]).map(([v, l]) => (
-                      <option key={v} value={v}>{l}</option>
-                    ))}
+                    <option value="">Choose Lecturer...</option>
+                    {eligibleStaff
+                      .filter((u) => u.role === 'lecturer' && !viva.examiners.find((e) => e.examiner_id === u.id))
+                      .map((u) => (
+                        <option key={u.id} value={u.id}>
+                          {u.first_name} {u.last_name}
+                        </option>
+                      ))}
                   </select>
+                  <p className="text-[11px] text-gray-500">Internal examiner from the relevant department.</p>
+                </div>
+
+                {/* Slot 3: External */}
+                <div className="space-y-4 rounded-lg bg-gray-50 p-4 dark:bg-gray-700/30">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-bold text-gray-900 dark:text-white">3. External Examiner</label>
+                    <span className="rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-bold text-orange-700 uppercase">External</span>
+                  </div>
+                  <select
+                    disabled={assignLoading}
+                    onChange={(e) => {
+                      if (e.target.value) handleAssignManually(parseInt(e.target.value), 'external_examiner', 3);
+                    }}
+                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                  >
+                    <option value="">Choose External...</option>
+                    {eligibleStaff
+                      .filter((u) => u.role === 'external_examiner' && !viva.examiners.find((e) => e.examiner_id === u.id))
+                      .map((u) => (
+                        <option key={u.id} value={u.id}>
+                          {u.first_name} {u.last_name}
+                        </option>
+                      ))}
+                  </select>
+                  <p className="text-[11px] text-gray-500">1 examiner from an external institution.</p>
                 </div>
               </div>
-              <div className="mt-4 flex gap-3">
+
+              <div className="mt-8 flex justify-end">
                 <button
                   type="button"
                   onClick={() => setShowAssignForm(false)}
-                  className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300"
+                  className="rounded-lg border border-gray-300 px-6 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300"
                 >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={assignLoading}
-                  className="rounded-lg bg-emerald-600 px-4 py-2 text-sm text-white hover:bg-emerald-700 disabled:opacity-50"
-                >
-                  {assignLoading ? 'Assigning...' : 'Assign'}
+                  Close
                 </button>
               </div>
-            </form>
+            </div>
           )}
 
           {viva.examiners.length === 0 ? (
@@ -367,7 +418,9 @@ export default function VivaDetailPage() {
                       👤
                     </div>
                     <div>
-                      <p className="font-medium text-gray-900 dark:text-white">{ex.examiner_name}</p>
+                      <p className="font-medium text-gray-900 dark:text-white">
+                        {ex.panel_slot ? `${ex.panel_slot}. ` : ''}{ex.examiner_name}
+                      </p>
                       <p className="text-xs text-gray-500 dark:text-gray-400">{ex.examiner_email}</p>
                       <span className="mt-1 inline-block rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-700 dark:bg-indigo-900 dark:text-indigo-200">
                         {EXAMINER_ROLE_LABELS[ex.role]}

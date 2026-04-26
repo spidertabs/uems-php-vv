@@ -13,7 +13,7 @@ SET client_encoding = 'UTF8';
 -- ============================================================
 
 CREATE TYPE programme_level      AS ENUM ('certificate','diploma','bachelors','masters','phd');
-CREATE TYPE user_role            AS ENUM ('lecturer','hod','dean','exam_master','viva_coordinator','admin');
+CREATE TYPE user_role            AS ENUM ('lecturer','professor','external_examiner','hod','dean','exam_master','viva_coordinator','admin');
 CREATE TYPE question_type        AS ENUM ('multiple_choice','true_false','short_answer','essay','practical','case_study');
 CREATE TYPE difficulty_level     AS ENUM ('easy','medium','hard');
 CREATE TYPE bloom_taxonomy       AS ENUM ('remember','understand','apply','analyze','evaluate','create');
@@ -579,10 +579,12 @@ CREATE TABLE viva_examiners (
     viva_id      INT           NOT NULL REFERENCES viva_schedules(id) ON DELETE CASCADE,
     examiner_id  INT           NOT NULL REFERENCES staff(id)          ON DELETE RESTRICT,
     role         examiner_role NOT NULL,
+    panel_slot   INT,           -- 1: Professor, 2: Lecturer, 3: External
     confirmed    BOOLEAN       NOT NULL DEFAULT FALSE,
     confirmed_at TIMESTAMPTZ,
     notified_at  TIMESTAMPTZ,
-    UNIQUE (viva_id, examiner_id)
+    UNIQUE (viva_id, examiner_id),
+    UNIQUE (viva_id, panel_slot) -- Each slot can only be filled once per viva
 );
 CREATE INDEX idx_ve_viva     ON viva_examiners (viva_id);
 CREATE INDEX idx_ve_examiner ON viva_examiners (examiner_id);

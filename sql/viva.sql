@@ -494,99 +494,105 @@ VALUES
 --  external examiners (no dedicated external accounts in seed).
 -- ============================================================
 
-INSERT INTO viva_examiners (viva_id, examiner_id, role, confirmed, confirmed_at, notified_at)
+INSERT INTO viva_examiners (viva_id, examiner_id, role, panel_slot, confirmed, confirmed_at, notified_at)
 
 -- CS candidates: KIU/2020/1001, KIU/2020/1002, KIU/2019/P001
-SELECT vs.id, u.id, ex.role, ex.confirmed,
+SELECT vs.id, u.id, ex.role, ex.panel_slot, ex.confirmed,
        CASE WHEN ex.confirmed THEN NOW() - INTERVAL '3 days' ELSE NULL END,
        NOW() - INTERVAL '5 days'
 FROM viva_schedules vs
 JOIN phd_candidates pc ON vs.candidate_id = pc.id
 CROSS JOIN LATERAL (VALUES
-    ((SELECT id FROM staff WHERE email = 'lect.cs1@uems.ac.ug'),   'chairperson'::examiner_role,      TRUE),
-    ((SELECT id FROM staff WHERE email = 'lect.cs2@uems.ac.ug'),   'internal_examiner'::examiner_role, TRUE),
-    ((SELECT id FROM staff WHERE email = 'lect.math1@uems.ac.ug'), 'external_examiner'::examiner_role, TRUE)
-) AS ex(id, role, confirmed)
+    ((SELECT id FROM staff WHERE email = 'viva.coord@uems.ac.ug'), 'chairperson'::examiner_role,       NULL, TRUE),
+    ((SELECT id FROM staff WHERE email = 'prof.kato@uems.ac.ug'),  'internal_examiner'::examiner_role, 1,    TRUE),
+    ((SELECT id FROM staff WHERE email = 'lect.cs1@uems.ac.ug'),   'internal_examiner'::examiner_role, 2,    TRUE),
+    ((SELECT id FROM staff WHERE email = 'ext.smith@external.ac.uk'), 'external_examiner'::examiner_role, 3,    TRUE)
+) AS ex(id, role, panel_slot, confirmed)
 JOIN staff u ON u.id = ex.id
 WHERE pc.registration_number IN ('KIU/2020/1001','KIU/2020/1002','KIU/2019/P001')
 
 UNION ALL
 
 -- PH candidates: KIU/2019/2001, KIU/2019/2002, KIU/2019/P004
-SELECT vs.id, u.id, ex.role, ex.confirmed,
+SELECT vs.id, u.id, ex.role, ex.panel_slot, ex.confirmed,
        CASE WHEN ex.confirmed THEN NOW() - INTERVAL '3 days' ELSE NULL END,
        NOW() - INTERVAL '5 days'
 FROM viva_schedules vs
 JOIN phd_candidates pc ON vs.candidate_id = pc.id
 CROSS JOIN LATERAL (VALUES
-    ((SELECT id FROM staff WHERE email = 'lect.ph1@uems.ac.ug'),   'chairperson'::examiner_role,      TRUE),
-    ((SELECT id FROM staff WHERE email = 'lect.ph2@uems.ac.ug'),   'internal_examiner'::examiner_role, TRUE),
-    ((SELECT id FROM staff WHERE email = 'lect.epid1@uems.ac.ug'), 'external_examiner'::examiner_role, FALSE)
-) AS ex(id, role, confirmed)
+    ((SELECT id FROM staff WHERE email = 'dean.sph@uems.ac.ug'),   'chairperson'::examiner_role,       NULL, TRUE),
+    ((SELECT id FROM staff WHERE email = 'prof.musoke@uems.ac.ug'),'internal_examiner'::examiner_role, 1,    TRUE),
+    ((SELECT id FROM staff WHERE email = 'lect.ph1@uems.ac.ug'),   'internal_examiner'::examiner_role, 2,    TRUE),
+    ((SELECT id FROM staff WHERE email = 'ext.njeri@external.ac.ke'), 'external_examiner'::examiner_role, 3,    FALSE)
+) AS ex(id, role, panel_slot, confirmed)
 JOIN staff u ON u.id = ex.id
 WHERE pc.registration_number IN ('KIU/2019/2001','KIU/2019/2002','KIU/2019/P004')
 
 UNION ALL
 
 -- LAW candidates: KIU/2021/3001, KIU/2021/P008
-SELECT vs.id, u.id, ex.role, ex.confirmed,
+SELECT vs.id, u.id, ex.role, ex.panel_slot, ex.confirmed,
        CASE WHEN ex.confirmed THEN NOW() - INTERVAL '3 days' ELSE NULL END,
        NOW() - INTERVAL '5 days'
 FROM viva_schedules vs
 JOIN phd_candidates pc ON vs.candidate_id = pc.id
 CROSS JOIN LATERAL (VALUES
-    ((SELECT id FROM staff WHERE email = 'lect.law1@uems.ac.ug'),  'chairperson'::examiner_role,      TRUE),
-    ((SELECT id FROM staff WHERE email = 'lect.law2@uems.ac.ug'),  'internal_examiner'::examiner_role, TRUE),
-    ((SELECT id FROM staff WHERE email = 'lect.math1@uems.ac.ug'), 'external_examiner'::examiner_role, TRUE)
-) AS ex(id, role, confirmed)
+    ((SELECT id FROM staff WHERE email = 'dean.sol@uems.ac.ug'),   'chairperson'::examiner_role,       NULL, TRUE),
+    ((SELECT id FROM staff WHERE email = 'prof.kato@uems.ac.ug'),  'internal_examiner'::examiner_role, 1,    TRUE),
+    ((SELECT id FROM staff WHERE email = 'lect.law1@uems.ac.ug'),  'internal_examiner'::examiner_role, 2,    TRUE),
+    ((SELECT id FROM staff WHERE email = 'ext.smith@external.ac.uk'), 'external_examiner'::examiner_role, 3,    TRUE)
+) AS ex(id, role, panel_slot, confirmed)
 JOIN staff u ON u.id = ex.id
 WHERE pc.registration_number IN ('KIU/2021/3001','KIU/2021/P008')
 
 UNION ALL
 
 -- BA candidates: KIU/2020/4001, KIU/2020/P011
-SELECT vs.id, u.id, ex.role, ex.confirmed,
+SELECT vs.id, u.id, ex.role, ex.panel_slot, ex.confirmed,
        CASE WHEN ex.confirmed THEN NOW() - INTERVAL '3 days' ELSE NULL END,
        NOW() - INTERVAL '5 days'
 FROM viva_schedules vs
 JOIN phd_candidates pc ON vs.candidate_id = pc.id
 CROSS JOIN LATERAL (VALUES
-    ((SELECT id FROM staff WHERE email = 'lect.bus1@uems.ac.ug'),  'chairperson'::examiner_role,      TRUE),
-    ((SELECT id FROM staff WHERE email = 'lect.bus2@uems.ac.ug'),  'internal_examiner'::examiner_role, TRUE),
-    ((SELECT id FROM staff WHERE email = 'lect.epid1@uems.ac.ug'), 'external_examiner'::examiner_role, TRUE)
-) AS ex(id, role, confirmed)
+    ((SELECT id FROM staff WHERE email = 'dean.som@uems.ac.ug'),   'chairperson'::examiner_role,       NULL, TRUE),
+    ((SELECT id FROM staff WHERE email = 'prof.musoke@uems.ac.ug'),'internal_examiner'::examiner_role, 1,    TRUE),
+    ((SELECT id FROM staff WHERE email = 'lect.bus1@uems.ac.ug'),  'internal_examiner'::examiner_role, 2,    TRUE),
+    ((SELECT id FROM staff WHERE email = 'ext.njeri@external.ac.ke'), 'external_examiner'::examiner_role, 3,    TRUE)
+) AS ex(id, role, panel_slot, confirmed)
 JOIN staff u ON u.id = ex.id
 WHERE pc.registration_number IN ('KIU/2020/4001','KIU/2020/P011')
 
 UNION ALL
 
 -- MSEA candidates: KIU/2021/5001, KIU/2021/P016
-SELECT vs.id, u.id, ex.role, ex.confirmed,
+SELECT vs.id, u.id, ex.role, ex.panel_slot, ex.confirmed,
        CASE WHEN ex.confirmed THEN NOW() - INTERVAL '3 days' ELSE NULL END,
        NOW() - INTERVAL '5 days'
 FROM viva_schedules vs
 JOIN phd_candidates pc ON vs.candidate_id = pc.id
 CROSS JOIN LATERAL (VALUES
-    ((SELECT id FROM staff WHERE email = 'lect.edu1@uems.ac.ug'),  'chairperson'::examiner_role,      TRUE),
-    ((SELECT id FROM staff WHERE email = 'lect.edu2@uems.ac.ug'),  'internal_examiner'::examiner_role, TRUE),
-    ((SELECT id FROM staff WHERE email = 'lect.math1@uems.ac.ug'), 'external_examiner'::examiner_role, TRUE)
-) AS ex(id, role, confirmed)
+    ((SELECT id FROM staff WHERE email = 'dean.soe@uems.ac.ug'),   'chairperson'::examiner_role,       NULL, TRUE),
+    ((SELECT id FROM staff WHERE email = 'prof.kato@uems.ac.ug'),  'internal_examiner'::examiner_role, 1,    TRUE),
+    ((SELECT id FROM staff WHERE email = 'lect.edu1@uems.ac.ug'),  'internal_examiner'::examiner_role, 2,    TRUE),
+    ((SELECT id FROM staff WHERE email = 'ext.smith@external.ac.uk'), 'external_examiner'::examiner_role, 3,    TRUE)
+) AS ex(id, role, panel_slot, confirmed)
 JOIN staff u ON u.id = ex.id
 WHERE pc.registration_number IN ('KIU/2021/5001','KIU/2021/P016')
 
 UNION ALL
 
 -- ENG candidates: KIU/2020/P019, KIU/2021/P021
-SELECT vs.id, u.id, ex.role, ex.confirmed,
+SELECT vs.id, u.id, ex.role, ex.panel_slot, ex.confirmed,
        CASE WHEN ex.confirmed THEN NOW() - INTERVAL '3 days' ELSE NULL END,
        NOW() - INTERVAL '5 days'
 FROM viva_schedules vs
 JOIN phd_candidates pc ON vs.candidate_id = pc.id
 CROSS JOIN LATERAL (VALUES
-    ((SELECT id FROM staff WHERE email = 'lect.civ1@uems.ac.ug'),  'chairperson'::examiner_role,      TRUE),
-    ((SELECT id FROM staff WHERE email = 'lect.civ2@uems.ac.ug'),  'internal_examiner'::examiner_role, TRUE),
-    ((SELECT id FROM staff WHERE email = 'lect.epid1@uems.ac.ug'), 'external_examiner'::examiner_role, TRUE)
-) AS ex(id, role, confirmed)
+    ((SELECT id FROM staff WHERE email = 'dean.eng@uems.ac.ug'),   'chairperson'::examiner_role,       NULL, TRUE),
+    ((SELECT id FROM staff WHERE email = 'prof.musoke@uems.ac.ug'),'internal_examiner'::examiner_role, 1,    TRUE),
+    ((SELECT id FROM staff WHERE email = 'lect.civ1@uems.ac.ug'),  'internal_examiner'::examiner_role, 2,    TRUE),
+    ((SELECT id FROM staff WHERE email = 'ext.njeri@external.ac.ke'), 'external_examiner'::examiner_role, 3,    TRUE)
+) AS ex(id, role, panel_slot, confirmed)
 JOIN staff u ON u.id = ex.id
 WHERE pc.registration_number IN ('KIU/2020/P019','KIU/2021/P021');
 
@@ -606,9 +612,9 @@ INSERT INTO viva_evaluations (
 -- PHD-COMPSCI: Sekitto Adam (KIU/2019/P001)
 SELECT vs.id,
        unnest(ARRAY[
+           (SELECT id FROM staff WHERE email = 'prof.kato@uems.ac.ug'),
            (SELECT id FROM staff WHERE email = 'lect.cs1@uems.ac.ug'),
-           (SELECT id FROM staff WHERE email = 'lect.cs2@uems.ac.ug'),
-           (SELECT id FROM staff WHERE email = 'lect.math1@uems.ac.ug')
+           (SELECT id FROM staff WHERE email = 'ext.smith@external.ac.uk')
        ]),
        unnest(ARRAY[20, 18, 19]),
        unnest(ARRAY[21, 19, 20]),
@@ -644,9 +650,9 @@ UNION ALL
 -- PHD-PH: Oryem Nicholas (KIU/2019/P004)
 SELECT vs.id,
        unnest(ARRAY[
+           (SELECT id FROM staff WHERE email = 'prof.musoke@uems.ac.ug'),
            (SELECT id FROM staff WHERE email = 'lect.ph1@uems.ac.ug'),
-           (SELECT id FROM staff WHERE email = 'lect.ph2@uems.ac.ug'),
-           (SELECT id FROM staff WHERE email = 'lect.epid1@uems.ac.ug')
+           (SELECT id FROM staff WHERE email = 'ext.njeri@external.ac.ke')
        ]),
        unnest(ARRAY[19, 17, 18]),
        unnest(ARRAY[20, 19, 21]),
@@ -682,9 +688,9 @@ UNION ALL
 -- PHD-LAW: Mugabi Richard (KIU/2021/P008)
 SELECT vs.id,
        unnest(ARRAY[
+           (SELECT id FROM staff WHERE email = 'prof.kato@uems.ac.ug'),
            (SELECT id FROM staff WHERE email = 'lect.law1@uems.ac.ug'),
-           (SELECT id FROM staff WHERE email = 'lect.law2@uems.ac.ug'),
-           (SELECT id FROM staff WHERE email = 'lect.math1@uems.ac.ug')
+           (SELECT id FROM staff WHERE email = 'ext.smith@external.ac.uk')
        ]),
        unnest(ARRAY[22, 20, 21]),
        unnest(ARRAY[20, 21, 20]),
@@ -720,9 +726,9 @@ UNION ALL
 -- PHD-BA: Barigye Felix (KIU/2020/P011)
 SELECT vs.id,
        unnest(ARRAY[
+           (SELECT id FROM staff WHERE email = 'prof.musoke@uems.ac.ug'),
            (SELECT id FROM staff WHERE email = 'lect.bus1@uems.ac.ug'),
-           (SELECT id FROM staff WHERE email = 'lect.bus2@uems.ac.ug'),
-           (SELECT id FROM staff WHERE email = 'lect.epid1@uems.ac.ug')
+           (SELECT id FROM staff WHERE email = 'ext.njeri@external.ac.ke')
        ]),
        unnest(ARRAY[18, 19, 17]),
        unnest(ARRAY[19, 20, 18]),
@@ -758,9 +764,9 @@ UNION ALL
 -- PHD-MSEA: Kirunda Andrew (KIU/2021/P016)
 SELECT vs.id,
        unnest(ARRAY[
+           (SELECT id FROM staff WHERE email = 'prof.kato@uems.ac.ug'),
            (SELECT id FROM staff WHERE email = 'lect.edu1@uems.ac.ug'),
-           (SELECT id FROM staff WHERE email = 'lect.edu2@uems.ac.ug'),
-           (SELECT id FROM staff WHERE email = 'lect.math1@uems.ac.ug')
+           (SELECT id FROM staff WHERE email = 'ext.smith@external.ac.uk')
        ]),
        unnest(ARRAY[21, 20, 19]),
        unnest(ARRAY[20, 22, 20]),
@@ -796,9 +802,9 @@ UNION ALL
 -- PHD-ENG: Tumusiime Caroline (KIU/2021/P021)
 SELECT vs.id,
        unnest(ARRAY[
+           (SELECT id FROM staff WHERE email = 'prof.musoke@uems.ac.ug'),
            (SELECT id FROM staff WHERE email = 'lect.civ1@uems.ac.ug'),
-           (SELECT id FROM staff WHERE email = 'lect.civ2@uems.ac.ug'),
-           (SELECT id FROM staff WHERE email = 'lect.epid1@uems.ac.ug')
+           (SELECT id FROM staff WHERE email = 'ext.njeri@external.ac.ke')
        ]),
        unnest(ARRAY[22, 21, 20]),
        unnest(ARRAY[23, 22, 21]),

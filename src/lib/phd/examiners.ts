@@ -22,11 +22,12 @@ export async function assignExaminer(data: {
   viva_id: number;
   examiner_id: number;
   role: ExaminerRole;
+  panel_slot?: number;
 }): Promise<number> {
   const result = await query<any>(
-    `INSERT INTO viva_examiners (viva_id, examiner_id, role, confirmed)
-     VALUES (?, ?, ?, FALSE)`,
-    [data.viva_id, data.examiner_id, data.role]
+    `INSERT INTO viva_examiners (viva_id, examiner_id, role, panel_slot, confirmed)
+     VALUES (?, ?, ?, ?, FALSE)`,
+    [data.viva_id, data.examiner_id, data.role, data.panel_slot]
   );
   return result.insertId;
 }

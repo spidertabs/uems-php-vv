@@ -83,6 +83,7 @@ export interface VivaExaminer {
   viva_id: number;
   examiner_id: number;
   role: ExaminerRole;
+  panel_slot: number | null;
   confirmed: boolean;
   confirmed_at: string | null;
   notified_at: string | null;

@@ -131,10 +131,14 @@ Draft → Submit → HOD Review → HOD Approval → Ready for Print → Printin
 
 #### Examiner Panel Management
 
-- Assign three-member panels: **Chairperson**, **Internal Examiner**, **External Examiner**
+- Assign structured three-member panels using designated slots:
+  - **Slot 1**: Professor / Staff
+  - **Slot 2**: Lecturer / Staff
+  - **Slot 3**: External Examiner
+- "Configure Panel" interface with role-based filtering for each slot
 - Track individual confirmation status per examiner
 - Record notification timestamps
-- Prevent duplicate assignments (unique constraint per viva + examiner)
+- Prevent duplicate assignments (unique constraint per viva + examiner and unique per viva + slot)
 
 #### Structured Evaluations
 
@@ -177,6 +181,14 @@ Draft → Submit → HOD Review → HOD Approval → Ready for Print → Printin
 - Candidate progress tracking
 - Examiner evaluation summaries
 - Audit logs and activity history
+
+### 📱 Student Mobile Application (Flutter) *(Upcoming)*
+
+- **Results & Reports**: Real-time access to viva outcomes and examiner feedback
+- **Schedule Management**: View upcoming viva dates, venues, and panel members
+- **Thesis Tracker**: Monitor submission history and version status
+- **Smart Notifications**: Push alerts for schedule changes, examiner confirmations, and final results
+- **Progress Visualization**: Dynamic tracking of the PhD lifecycle (Enrolled → Thesis → Viva → Awarded)
 
 ---
 
@@ -227,7 +239,7 @@ Draft → Submit → HOD Review → HOD Approval → Ready for Print → Printin
 1. **Register Candidate**: Create PhD candidate record linked to programme and supervisor
 2. **Track Thesis**: Log thesis submission(s); system auto-increments version numbers
 3. **Schedule Viva**: Set date, time, venue, and duration
-4. **Assign Panel**: Add chairperson, internal examiner, and external examiner; record confirmations
+4. **Configure Panel**: Assign examiners to structured slots (1: Professor, 2: Lecturer, 3: External) with role-based filtering
 5. **Monitor Evaluations**: Track which examiners have submitted their scored evaluations
 6. **Issue Recommendation**: Record the panel's binding outcome and any correction deadline
 7. **Update Candidate Status**: System triggers automatically advance candidate status on key events

@@ -19,7 +19,7 @@ export async function GET(
     const vivaId = parseInt(vivaIdStr);
 
     const examiners = await query<any[]>(
-      `SELECT ve.id, ve.viva_id, ve.examiner_id, ve.role, 
+      `SELECT ve.id, ve.viva_id, ve.examiner_id, ve.role, ve.panel_slot,
               ve.confirmed, ve.confirmed_at, ve.notified_at,
               u.email, u.first_name, u.last_name
        FROM viva_examiners ve
@@ -52,7 +52,7 @@ export async function POST(
     const { vivaId: vivaIdStr } = await context.params;
     const vivaId = parseInt(vivaIdStr);
     const body = await req.json();
-    const { examiner_id: examiner_id_raw, role } = body;
+    const { examiner_id: examiner_id_raw, role, panel_slot } = body;
     const examiner_id = parseInt(examiner_id_raw);
 
     if (!examiner_id || !role) {
@@ -113,6 +113,21 @@ export async function POST(
       }
     }
 
+    // Check panel_slot availability
+    if (panel_slot) {
+      const existingSlot = await query<any[]>(
+        `SELECT id FROM viva_examiners WHERE viva_id = ? AND panel_slot = ?`,
+        [vivaId, panel_slot]
+      );
+
+      if (existingSlot && existingSlot.length > 0) {
+        return NextResponse.json(
+          { error: `Examiner Slot ${panel_slot} is already filled.` },
+          { status: 400 }
+        );
+      }
+    }
+
     // Check for duplicate role+examiner per viva
     const existing = await query<any[]>(
       `SELECT id FROM viva_examiners WHERE viva_id = ? AND examiner_id = ? AND role = ?::examiner_role`,
@@ -128,9 +143,9 @@ export async function POST(
 
     // Assign examiner
     const result = await query<any>(
-      `INSERT INTO viva_examiners (viva_id, examiner_id, role, confirmed)
-       VALUES (?, ?, ?::examiner_role, FALSE)`,
-      [vivaId, examiner_id, role]
+      `INSERT INTO viva_examiners (viva_id, examiner_id, role, panel_slot, confirmed)
+       VALUES (?, ?, ?::examiner_role, ?, FALSE)`,
+      [vivaId, examiner_id, role, panel_slot]
     );
 
     // Notify assigned examiner via centralised helper
@@ -140,7 +155,7 @@ export async function POST(
     await query(
       `INSERT INTO audit_logs (user_id, action, entity_type, entity_id, new_values, created_at)
        VALUES (?, 'CREATE', 'viva_examiners', ?, CAST(? AS jsonb), NOW())`,
-      [user.id, (result as any).insertId, JSON.stringify({ viva_id: vivaId, examiner_id, role })]
+      [user.id, (result as any).insertId, JSON.stringify({ viva_id: vivaId, examiner_id, role, panel_slot })]
     );
 
     return NextResponse.json({ id: result.insertId }, { status: 201 });

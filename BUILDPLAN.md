@@ -11,14 +11,16 @@
 | Module | Status | Progress |
 |--------|--------|----------|
 | UEMS Core (Sections 1–10) | ✅ Complete | 100% |
-| PhD VV — Database Schema (Section 11) | ✅ Complete | 100% |
-| PhD VV — Seed Data | ✅ Complete | 100% |
+| PhD VV — Database Schema (Section 11-14) | ✅ Complete | 100% |
+| PhD VV — Seed Data (viva.sql) | ✅ Complete | 100% |
 | PhD VV — Data Access Layer (Phase A) | ✅ Complete | 100% |
 | PhD VV — API Routes (Phase B) | ✅ Complete | 100% |
 | PhD VV — UI Pages (Phase C) | ✅ Complete | 100% |
 | PhD VV — Notifications wiring (Phase D) | ✅ Complete | 100% |
 | PhD VV — RBAC Guards (Phase E) | ✅ Complete | 100% |
 | PhD VV — Audit Logging (Phase F) | ✅ Complete | 100% |
+| PhD VV — Panel Structure (v3.1.2) | ✅ Complete | 100% |
+| Student Mobile App — API Supporting (Phase G) | 🏗️ Planned | 0% |
 
 ---
 
@@ -122,7 +124,7 @@ Everything below is **done and shipped**. Listed here for reference only.
 PhdCandidate
 ThesisSubmission
 VivaSchedule
-VivaExaminer
+VivaExaminer (includes `panel_slot`)
 VivaEvaluation
 VivaRecommendation
 
@@ -187,7 +189,7 @@ ExaminerRole
 | Function | SQL target | Returns |
 |----------|-----------|---------|
 | `getExaminersByVivaId(vivaId)` | `viva_examiners` JOIN staff | `VivaExaminer[]` |
-| `assignExaminer(data)` | INSERT `viva_examiners` | `number` |
+| `assignExaminer(data)` | INSERT `viva_examiners` with `panel_slot` | `number` |
 | `confirmExaminer(vivaId, examinerId)` | UPDATE confirmed, confirmed_at | `void` |
 | `removeExaminer(vivaId, examinerId)` | DELETE | `void` |
 | `getEligibleExaminers(deptId?)` | staff WHERE role IN (hod, lecturer) | `User[]` |
@@ -349,8 +351,8 @@ GET  /api/phd/schedules/[vivaId]/examiners
      returns: VivaExaminer[] with user details
 
 POST /api/phd/schedules/[vivaId]/examiners
-     body: { examiner_id, role: 'chairperson'|'internal_examiner'|'external_examiner' }
-     validation: max 1 chairperson, unique role+examiner per viva
+     body: { examiner_id, panel_slot: 1|2|3 }
+     validation: unique panel_slot per viva, role-based filtering logic
      side-effect: notification (examiner_assigned) to assigned examiner
 ```
 
@@ -1073,5 +1075,30 @@ F — Audit logging
   - recommendation_issued (POST schedules/[id]/recommendation)
 
 ---
+
+---
+
+## PHASE G — Mobile API & Student Support
+
+> Extend the system to support a Flutter-based mobile application for candidates.  
+> Focus on read-only access to their own data via secure endpoints.
+
+### G1 — Student Authentication API
+- [ ] `POST /api/mobile/auth/login` (Student registration number + password)
+- [ ] `GET /api/mobile/auth/me` (Session check)
+- [ ] Token-based or secure session support for mobile clients
+
+### G2 — Candidate Data Endpoints
+- [ ] `GET /api/mobile/viva/current` (Active/Upcoming viva for the student)
+- [ ] `GET /api/mobile/viva/history` (Past vivas and outcomes)
+- [ ] `GET /api/mobile/thesis/versions` (Thesis submission history)
+- [ ] `GET /api/mobile/results/[vivaId]` (Outcome and final comments)
+
+### G3 — Push Notification Service
+- [ ] Integration with Firebase Cloud Messaging (FCM)
+- [ ] Side-effects to trigger push alerts on viva scheduling/completion
+
+### G4 — Document Export
+- [ ] `GET /api/mobile/report/[vivaId]/pdf` (Generate a mobile-friendly results summary)
 
 *UEMS-PHD-VV v3.1 · Spider Tabs Ltd © 2026*
