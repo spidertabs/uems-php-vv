@@ -110,6 +110,11 @@ const headerNavLinks: NavLink[] = [
     roles: ['admin'],
   },
   {
+    title: '👨‍🎓 Students',
+    href: '/students',
+    roles: ['admin', 'hod'],
+  },
+  {
     title: '🔐 Permissions',
     href: '/permissions',
     roles: ['admin', 'hod'],

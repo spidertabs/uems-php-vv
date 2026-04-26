@@ -150,10 +150,10 @@ export default function StaffPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            👥 User Management
+            👥 Staff Management
           </h1>
           <p className="mt-2 text-gray-600 dark:text-gray-400">
-            Manage system staff and their roles
+            Manage university staff, faculty, and administrative roles
           </p>
         </div>
         <div className="flex gap-3">
