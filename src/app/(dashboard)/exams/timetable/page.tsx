@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 interface TimetableSlot {
   id: number;
   exam_paper_id: number;
+  course_id: number;
   paper_code: string;
   course_title: string;
   course_code: string;
@@ -16,10 +17,12 @@ interface TimetableSlot {
   venue: string;
   capacity: number | null;
   enrollment_count: number;
+  supervisor_names?: string;
 }
 
 interface PublishedPaper {
   id: number;
+  course_id: number;
   paper_code: string;
   course_title: string;
   course_code: string;
@@ -27,14 +30,33 @@ interface PublishedPaper {
   semester: number;
 }
 
+interface Course {
+  id: number;
+  title: string;
+  code: string;
+}
+
+interface StaffMember {
+  id: number;
+  first_name: string;
+  last_name: string;
+  role: string;
+  department_name: string;
+}
+
+interface User {
+  id: number;
+  role: string;
+}
+
 export default function TimetablePage() {
   const router = useRouter();
   const [slots, setSlots] = useState<TimetableSlot[]>([]);
   const [publishedPapers, setPublishedPapers] = useState<PublishedPaper[]>([]);
-  const [courses, setCourses] = useState<any[]>([]);
-  const [staff, setStaff] = useState<any[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [staff, setStaff] = useState<StaffMember[]>([]);
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
 
   // Form State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -96,7 +118,7 @@ export default function TimetablePage() {
   const handleCourseChange = (courseId: string) => {
     setSelectedCourseId(courseId);
     // Find the published paper for this course
-    const paper = publishedPapers.find(p => (p as any).course_id.toString() === courseId);
+    const paper = publishedPapers.find(p => p.course_id.toString() === courseId);
     if (paper) {
       setSelectedPaperId(paper.id.toString());
     } else {
@@ -246,7 +268,7 @@ export default function TimetablePage() {
                     {(user?.role === 'admin' || user?.role === 'hod') && (
                       <td className="py-4">
                          <span className="text-xs font-medium text-gray-600 dark:text-gray-400 italic">
-                            {(slot as any).supervisor_names || 'None assigned'}
+                            {slot.supervisor_names || 'None assigned'}
                          </span>
                       </td>
                     )}
@@ -268,7 +290,7 @@ export default function TimetablePage() {
                          <button 
                             onClick={() => {
                                setEditingId(slot.id);
-                               setSelectedCourseId((slot as any).course_id?.toString() || '');
+                               setSelectedCourseId(slot.course_id?.toString() || '');
                                setSelectedPaperId(slot.exam_paper_id?.toString() || '');
                                setExamDate(slot.exam_date.split('T')[0]);
                                setStartTime(slot.start_time.slice(0, 5));
