@@ -59,8 +59,8 @@ export async function GET(request: NextRequest) {
         JOIN courses c ON ep.course_id = c.id
         LEFT JOIN departments d ON c.department_id = d.id
         LEFT JOIN colleges col ON c.college_id = col.id
-        LEFT JOIN users creator ON ep.created_by = creator.id
-        LEFT JOIN users hod ON ep.hod_id = hod.id
+        LEFT JOIN staff creator ON ep.created_by = creator.id
+        LEFT JOIN staff hod ON ep.hod_id = hod.id
         LEFT JOIN exam_paper_programmes epp ON ep.id = epp.exam_paper_id
         LEFT JOIN programmes p ON epp.programme_id = p.id
         WHERE ep.deleted_at IS NULL
@@ -152,7 +152,7 @@ export async function GET(request: NextRequest) {
           SUM(CASE WHEN ep.status IN ('submitted', 'hod_review', 'dean_review') THEN 1 ELSE 0 END) as pending_papers,
           SUM(CASE WHEN ep.status IN ('hod_approved', 'dean_approved', 'ready_for_print', 'printed') THEN 1 ELSE 0 END) as approved_papers,
           SUM(CASE WHEN ep.status IN ('hod_rejected', 'dean_rejected') THEN 1 ELSE 0 END) as rejected_papers
-        FROM users u
+        FROM staff u
         LEFT JOIN departments d ON u.department_id = d.id
         LEFT JOIN exam_papers ep ON u.id = ep.created_by AND ep.deleted_at IS NULL
         WHERE u.role = 'lecturer' AND u.deleted_at IS NULL

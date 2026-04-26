@@ -27,7 +27,7 @@ interface AuditLog {
 interface AuditStats {
   total_logs: number;
   logs_today: number;
-  unique_users_today: number;
+  unique_staff_today: number;
   critical_actions_today: number;
 }
 
@@ -277,10 +277,10 @@ export default function AuditLogsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                  Active Users Today
+                  Active Staff Today
                 </p>
                 <p className="mt-2 text-3xl font-bold text-gray-900 dark:text-white">
-                  {stats.unique_users_today}
+                  {stats.unique_staff_today}
                 </p>
               </div>
               <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-purple-500 text-2xl">

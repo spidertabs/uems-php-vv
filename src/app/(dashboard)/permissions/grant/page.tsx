@@ -54,16 +54,16 @@ export default function GrantPermissionPage() {
       }
 
       // Fetch lecturers
-      const lecturersRes = await fetch('/api/users');
+      const lecturersRes = await fetch('/api/staff');
       if (lecturersRes.ok) {
         const lecturersData = await lecturersRes.json();
         // Filter only lecturers
-        const allUsers = lecturersData.data || lecturersData.users || [];
-        const lecturerUsers = allUsers.filter((u: any) => u.role === 'lecturer' && u.is_active);
-        setLecturers(lecturerUsers);
-        console.log('Lecturers loaded:', lecturerUsers.length, 'from', allUsers.length, 'total users');
+        const allStaff = lecturersData.data || lecturersData.staff || [];
+        const lecturerStaff = allStaff.filter((u: any) => u.role === 'lecturer' && u.is_active);
+        setLecturers(lecturerStaff);
+        console.log('Lecturers loaded:', lecturerStaff.length, 'from', allStaff.length, 'total staff');
       } else {
-        console.error('Failed to fetch users:', await lecturersRes.text());
+        console.error('Failed to fetch staff:', await lecturersRes.text());
       }
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -146,7 +146,7 @@ export default function GrantPermissionPage() {
               )}
               {lecturers.length === 0 && (
                 <Link
-                  href="/users/create"
+                  href="/staff/create"
                   className="rounded-lg bg-green-600 px-4 py-2 text-white hover:bg-green-700"
                 >
                   Create Lecturer

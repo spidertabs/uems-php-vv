@@ -79,7 +79,7 @@ export async function POST(
 
       // Create notification for exam master
       const examMasters = await connection.execute(
-        `SELECT id FROM users WHERE role = 'exam_master' AND is_active = TRUE`
+        `SELECT id FROM staff WHERE role = 'exam_master' AND is_active = TRUE`
       );
 
       if (examMasters[0] && Array.isArray(examMasters[0])) {

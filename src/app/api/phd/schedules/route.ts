@@ -38,7 +38,7 @@ export async function GET(req: NextRequest) {
       JOIN phd_candidates pc ON vs.candidate_id = pc.id
       LEFT JOIN students st ON pc.registration_number = st.registration_number
       JOIN programmes p ON pc.programme_id = p.id
-      LEFT JOIN users sup ON pc.supervisor_id = sup.id
+      LEFT JOIN staff sup ON pc.supervisor_id = sup.id
       LEFT JOIN viva_recommendations vr ON vs.id = vr.viva_id
       WHERE pc.deleted_at IS NULL
     `;

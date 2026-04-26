@@ -56,12 +56,12 @@ if (!service || service.includes('REPLACE_WITH') || service === 'your-service-ro
 if (url && anon && !url.includes('supabase.co')) {
   try {
     const client = createClient(url, anon);
-    const { error } = await client.from('users').select('count', { count: 'exact', head: true });
+    const { error } = await client.from('staff').select('count', { count: 'exact', head: true });
     if (error) {
       fail(`Cannot query local Supabase: ${error.message}`);
       warn('  → Is supabase running? Try: supabase start');
     } else {
-      ok('Local Supabase reachable and users table exists');
+      ok('Local Supabase reachable and staff table exists');
     }
   } catch (e) {
     fail(`Cannot connect to local Supabase: ${e.message}`);

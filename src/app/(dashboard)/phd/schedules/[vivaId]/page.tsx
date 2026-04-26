@@ -35,7 +35,7 @@ export default function VivaDetailPage() {
   const [activeTab, setActiveTab] = useState<Tab>('panel');
 
   // Panel management
-  const [eligibleUsers, setEligibleUsers] = useState<EligibleUser[]>([]);
+  const [eligibleStaff, setEligibleStaff] = useState<EligibleUser[]>([]);
   const [assignForm, setAssignForm] = useState({ examiner_id: '', role: '' as ExaminerRole | '' });
   const [assignLoading, setAssignLoading] = useState(false);
   const [assignError, setAssignError] = useState('');
@@ -61,7 +61,7 @@ export default function VivaDetailPage() {
       ]);
       if (vRes.status === 401) { router.push('/auth/login'); return; }
       if (vRes.ok) { const d = await vRes.json(); setViva(d.viva); }
-      if (uRes.ok) { const d = await uRes.json(); setEligibleUsers(d.users || []); }
+      if (uRes.ok) { const d = await uRes.json(); setEligibleStaff(d.staff || []); }
     } catch (err) {
       console.error(err);
     } finally {
@@ -306,7 +306,7 @@ export default function VivaDetailPage() {
                     className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                   >
                     <option value="">Select examiner...</option>
-                    {eligibleUsers
+                    {eligibleStaff
                       .filter((u) => !viva.examiners.find((e) => e.examiner_id === u.id))
                       .map((u) => (
                         <option key={u.id} value={u.id}>

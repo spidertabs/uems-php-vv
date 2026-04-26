@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// src/app/api/users/[id]/route.ts
+// src/app/api/staff/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { verifyAuth } from '@/lib/auth';
 import bcrypt from 'bcryptjs';
 
-// GET /api/users/[id] - Get single user
+// GET /api/staff/[id] - Get single user
 export async function GET(
   req: NextRequest,
   context: { params: Promise<{ id: string }> }
@@ -19,12 +19,12 @@ export async function GET(
     const { id } = await context.params;
   const userId = parseInt(id);
 
-    // Users can view their own profile, admins can view anyone
+    // Staff can view their own profile, admins can view anyone
     if (user.id !== userId && user.role !== 'admin') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const users = await query<any[]>(
+    const staff = await query<any[]>(
       `SELECT 
         u.id,
         u.email,
@@ -40,20 +40,20 @@ export async function GET(
         u.last_login,
         u.created_at,
         u.updated_at
-      FROM users u
+      FROM staff u
       LEFT JOIN departments d ON u.department_id = d.id
       LEFT JOIN colleges c ON u.college_id = c.id
       WHERE u.id = ? AND u.deleted_at IS NULL`,
       [userId]
     );
 
-    if (!users || users.length === 0) {
+    if (!staff || staff.length === 0) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
     return NextResponse.json({
       success: true,
-      data: users[0],
+      data: staff[0],
     });
   } catch (error) {
     console.error('Error fetching user:', error);
@@ -64,7 +64,7 @@ export async function GET(
   }
 }
 
-// PUT /api/users/[id] - Update user
+// PUT /api/staff/[id] - Update user
 export async function PUT(
   req: NextRequest,
   context: { params: Promise<{ id: string }> }
@@ -77,7 +77,7 @@ export async function PUT(
 
     const { id: rawId } = await context.params; const userId = parseInt(rawId);
 
-    // Users can update their own profile, admins can update anyone
+    // Staff can update their own profile, admins can update anyone
     if (user.id !== userId && user.role !== 'admin') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
@@ -102,7 +102,7 @@ export async function PUT(
     if (email !== undefined) {
       // Check if email is already taken by another user
       const existing = await query<any[]>(
-        'SELECT id FROM users WHERE email = ? AND id != ? AND deleted_at IS NULL',
+        'SELECT id FROM staff WHERE email = ? AND id != ? AND deleted_at IS NULL',
         [email, userId]
       );
       if (existing && existing.length > 0) {
@@ -168,7 +168,7 @@ export async function PUT(
     values.push(userId);
 
     const updateQuery = `
-      UPDATE users 
+      UPDATE staff 
       SET ${updates.join(', ')}
       WHERE id = ? AND deleted_at IS NULL
     `;
@@ -190,7 +190,7 @@ export async function PUT(
         u.phone,
         u.is_active,
         u.updated_at
-      FROM users u
+      FROM staff u
       LEFT JOIN departments d ON u.department_id = d.id
       LEFT JOIN colleges c ON u.college_id = c.id
       WHERE u.id = ?`,
@@ -211,7 +211,7 @@ export async function PUT(
   }
 }
 
-// DELETE /api/users/[id] - Soft delete user
+// DELETE /api/staff/[id] - Soft delete user
 export async function DELETE(
   req: NextRequest,
   context: { params: Promise<{ id: string }> }
@@ -222,7 +222,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Only admins can delete users
+    // Only admins can delete staff
     if (user.role !== 'admin') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
@@ -239,7 +239,7 @@ export async function DELETE(
 
     // Soft delete
     await query(
-      'UPDATE users SET deleted_at = NOW(), deleted_by = ? WHERE id = ?',
+      'UPDATE staff SET deleted_at = NOW(), deleted_by = ? WHERE id = ?',
       [user.id, userId]
     );
 

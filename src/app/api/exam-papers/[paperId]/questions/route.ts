@@ -42,7 +42,7 @@ export async function GET(
       JOIN questions q ON epq.question_id = q.id
       JOIN courses c ON q.course_id = c.id
       LEFT JOIN study_units su ON q.study_unit_id = su.id
-      LEFT JOIN users u ON q.created_by = u.id
+      LEFT JOIN staff u ON q.created_by = u.id
       LEFT JOIN exam_paper_questions parent_epq ON epq.parent_question_id = parent_epq.id
       WHERE epq.exam_paper_id = ?
       ORDER BY epq.section ASC, epq.sequence_order ASC, epq.indentation_level ASC`,

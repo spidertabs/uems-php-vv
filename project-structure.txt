@@ -198,7 +198,7 @@ NOTE: Dont generate files that I have ...I already have my data in my database
 │   │   │   │   └── 🔧 route.ts
 │   │   │   ├── 📁 study-units/
 │   │   │   │   └── 🔧 route.ts
-│   │   │   ├── 📁 users/
+│   │   │   ├── 📁 staff/
 │   │   │   │   ├── 📁 [id]/
 │   │   │   │   │   ├── 🔧 route.ts
 │   │   │   │   │   └── 📁 stats/
@@ -345,7 +345,7 @@ NOTE: Dont generate files that I have ...I already have my data in my database
 │   │   │   │   │   └── 📄 page.tsx
 │   │   │   │   └── 📁 system/
 │   │   │   │       └── 📄 page.tsx
-│   │   │   └── 📁 users/
+│   │   │   └── 📁 staff/
 │   │   │       ├── 📁 create/
 │   │   │       │   └── 📄 page.tsx
 │   │   │       ├── 📁 [id]/

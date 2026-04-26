@@ -97,7 +97,7 @@ export async function POST(
     // Find the HOD for this course's department
     const hodResult = await query<User[]>(
       `SELECT id, role, first_name, last_name 
-       FROM users 
+       FROM staff 
        WHERE role = 'hod' 
        AND department_id = ? 
        AND is_active = TRUE
@@ -118,7 +118,7 @@ export async function POST(
     // Find the Dean for this course's college
     const deanResult = await query<User[]>(
       `SELECT id, role, first_name, last_name 
-       FROM users 
+       FROM staff 
        WHERE role = 'dean' 
        AND college_id = ? 
        AND is_active = TRUE

@@ -38,9 +38,9 @@ export async function POST(
               CONCAT(dean.first_name, ' ', dean.last_name) AS dean_name
        FROM exam_papers ep
        JOIN courses c ON ep.course_id = c.id
-       LEFT JOIN users creator ON ep.created_by = creator.id
-       LEFT JOIN users hod ON ep.hod_id = hod.id
-       LEFT JOIN users dean ON ep.dean_id = dean.id
+       LEFT JOIN staff creator ON ep.created_by = creator.id
+       LEFT JOIN staff hod ON ep.hod_id = hod.id
+       LEFT JOIN staff dean ON ep.dean_id = dean.id
        WHERE ep.id = ? AND ep.deleted_at IS NULL`,
       [paperId]
     );
@@ -164,7 +164,7 @@ export async function POST(
 
       // Notify Exam Masters
       const examMasters = await query<any[]>(
-        `SELECT id FROM users WHERE role = 'exam_master' AND is_active = TRUE AND deleted_at IS NULL`
+        `SELECT id FROM staff WHERE role = 'exam_master' AND is_active = TRUE AND deleted_at IS NULL`
       );
 
       for (const master of examMasters) {

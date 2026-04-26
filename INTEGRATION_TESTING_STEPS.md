@@ -57,8 +57,8 @@ For **EACH** of these files in order:
 
 ✅ **Verify Tables Exist**:
 - Go to: https://supabase.com/dashboard/project/zgklfrakozlpjheecatj/editor
-- Click "users" table in left sidebar
-- Should see these test users:
+- Click "staff" table in left sidebar
+- Should see these test staff:
   - admin@uems.ac.ug
   - hod.cs@uems.ac.ug
   - lect.cs1@uems.ac.ug
@@ -70,7 +70,7 @@ For **EACH** of these files in order:
 
 ✅ **Verify Tables Created**:
 - Click table selector in editor
-- Should show: colleges, departments, users, questions, etc.
+- Should show: colleges, departments, staff, questions, etc.
 
 ---
 
@@ -114,7 +114,7 @@ If you see: **✅ 40 passed** → Setup complete! 🎉
 - [ ] execute_query function was created
 - [ ] No SQL errors when creating it
 
-### Error: "Relation 'public.users' does not exist"
+### Error: "Relation 'public.staff' does not exist"
 → STEP 2 didn't work. Verify:
 - [ ] All 5 SQL files were imported in order
 - [ ] No SQL errors during import
@@ -122,8 +122,8 @@ If you see: **✅ 40 passed** → Setup complete! 🎉
 ### Tests still failing after setup
 → Run this in Supabase SQL Editor to debug:
 ```sql
-SELECT COUNT(*) as user_count FROM users;
-SELECT * FROM users WHERE email = 'admin@uems.ac.ug';
+SELECT COUNT(*) as user_count FROM staff;
+SELECT * FROM staff WHERE email = 'admin@uems.ac.ug';
 SELECT public.execute_query('SELECT 1', '[]'::jsonb);
 ```
 
@@ -146,5 +146,5 @@ If setup fails:
    WHERE table_schema = 'public' LIMIT 10;
    
    -- Check test data
-   SELECT COUNT(*) as user_count FROM users;
+   SELECT COUNT(*) as user_count FROM staff;
    ```

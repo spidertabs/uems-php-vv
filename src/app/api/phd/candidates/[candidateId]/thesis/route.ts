@@ -89,7 +89,7 @@ export async function POST(
 
     // Notify all viva coordinators via centralised helper
     const coordinators = await query<any[]>(
-      `SELECT id FROM users WHERE role = 'viva_coordinator' AND is_active = TRUE`
+      `SELECT id FROM staff WHERE role = 'viva_coordinator' AND is_active = TRUE`
     );
     const coordinatorIds = coordinators.map((c) => c.id);
     await notifyThesisUploaded(candidateId, coordinatorIds);

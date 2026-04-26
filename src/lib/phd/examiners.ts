@@ -11,7 +11,7 @@ export async function getExaminersByVivaId(vivaId: number): Promise<VivaExaminer
        u.email AS examiner_email,
        u.role AS examiner_role_title
      FROM viva_examiners ve
-     JOIN users u ON ve.examiner_id = u.id
+     JOIN staff u ON ve.examiner_id = u.id
      WHERE ve.viva_id = ?
      ORDER BY ve.id`,
     [vivaId]
@@ -49,7 +49,7 @@ export async function getEligibleExaminers(deptId?: number): Promise<any[]> {
   let sql = `
     SELECT DISTINCT u.id, u.first_name, u.last_name, u.email, u.role,
            d.name AS department_name
-    FROM users u
+    FROM staff u
     LEFT JOIN departments d ON u.department_id = d.id
     WHERE u.role NOT IN ('hod', 'exam_master') 
       AND u.is_active = TRUE 

@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
         ep.status
       FROM exam_papers ep
       JOIN courses c ON ep.course_id = c.id
-      LEFT JOIN users u ON ep.exam_master_id = u.id
+      LEFT JOIN staff u ON ep.exam_master_id = u.id
       LEFT JOIN exam_paper_programmes epp ON ep.id = epp.exam_paper_id
       LEFT JOIN programmes p ON epp.programme_id = p.id
       WHERE ep.status IN ('printed', 'published')

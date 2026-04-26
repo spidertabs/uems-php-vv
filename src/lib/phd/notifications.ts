@@ -46,7 +46,7 @@ export async function notifyVivaPostponed(
 ): Promise<void> {
   const rows = await query<any[]>(
     `SELECT
-       (SELECT u.id FROM users u JOIN students s ON u.email = s.email WHERE s.registration_number = pc.registration_number LIMIT 1) AS candidate_user_id,
+       (SELECT u.id FROM staff u JOIN students s ON u.email = s.email WHERE s.registration_number = pc.registration_number LIMIT 1) AS candidate_user_id,
        pc.supervisor_id,
        CONCAT(st.first_name, ' ', st.last_name) AS candidate_name
      FROM viva_schedules vs
@@ -126,7 +126,7 @@ export async function notifyVivaScheduled(vivaId: number): Promise<void> {
     `SELECT
        vs.scheduled_date, vs.scheduled_time, vs.venue,
        pc.id AS candidate_id,
-       (SELECT u.id FROM users u JOIN students s ON u.email = s.email WHERE s.registration_number = pc.registration_number LIMIT 1) AS candidate_user_id,
+       (SELECT u.id FROM staff u JOIN students s ON u.email = s.email WHERE s.registration_number = pc.registration_number LIMIT 1) AS candidate_user_id,
        CONCAT(st.first_name, ' ', st.last_name) AS candidate_name,
        pc.supervisor_id,
        ve.examiner_id
@@ -198,7 +198,7 @@ export async function notifyExaminerAssigned(
 export async function notifyVivaResult(vivaId: number): Promise<void> {
   const rows = await query<any[]>(
     `SELECT
-       (SELECT u.id FROM users u JOIN students s ON u.email = s.email WHERE s.registration_number = pc.registration_number LIMIT 1) AS candidate_user_id,
+       (SELECT u.id FROM staff u JOIN students s ON u.email = s.email WHERE s.registration_number = pc.registration_number LIMIT 1) AS candidate_user_id,
        pc.supervisor_id,
        CONCAT(st.first_name, ' ', st.last_name) AS candidate_name,
        vr.outcome

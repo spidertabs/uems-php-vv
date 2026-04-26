@@ -182,12 +182,12 @@ INSERT INTO programmes (code, name, level, duration_years, department_id, colleg
 
 
 -- ============================================================
---  Users  COMMON PASSWORD: uems@2026
+--  staff  COMMON PASSWORD: uems@2026
 -- ============================================================
 WITH pw(hash) AS (
     VALUES ('$2b$12$hsqbYaw0n/FY9M7hU0i9ju.8/dxPP03CGh4zeZy6xGCX4qAFBYRgu'::TEXT)
 )
-INSERT INTO users (email, password_hash, first_name, last_name, role, department_id, college_id, phone)
+INSERT INTO staff (email, password_hash, first_name, last_name, role, department_id, college_id, phone)
 SELECT v.email, pw.hash, v.first_name, v.last_name, v.role::user_role, v.department_id, v.college_id, v.phone
 FROM pw
 CROSS JOIN (

@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
 
     // Verify lecturer exists and is actually a lecturer
     const [lecturer] = await query<any[]>(
-      `SELECT id, role FROM users 
+      `SELECT id, role FROM staff 
        WHERE id = ? AND role = 'lecturer' AND deleted_at IS NULL`,
       [lecturer_id]
     );
@@ -142,7 +142,7 @@ export async function POST(req: NextRequest) {
         lp.expires_at,
         lp.is_active
       FROM lecturer_permissions lp
-      JOIN users u ON lp.lecturer_id = u.id
+      JOIN staff u ON lp.lecturer_id = u.id
       JOIN courses c ON lp.course_id = c.id
       WHERE lp.id = ?`,
       [result.insertId]

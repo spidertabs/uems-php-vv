@@ -23,7 +23,7 @@ export async function GET(
         wh.*,
         CONCAT(u.first_name, ' ', u.last_name) AS actor_name
       FROM workflow_history wh
-      LEFT JOIN users u ON wh.actor_id = u.id
+      LEFT JOIN staff u ON wh.actor_id = u.id
       WHERE wh.exam_paper_id = ?
       ORDER BY wh.created_at DESC
     `;

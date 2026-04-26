@@ -20,27 +20,27 @@ export default function DebugPermissionsPage() {
 
   const fetchDebugData = async () => {
     try {
-      const [permissionsRes, coursesRes, usersRes] = await Promise.all([
+      const [permissionsRes, coursesRes, staffRes] = await Promise.all([
         fetch('/api/permissions'),
         fetch('/api/courses'),
-        fetch('/api/users'),
+        fetch('/api/staff'),
       ]);
 
       const permissions = permissionsRes.ok ? await permissionsRes.json() : { error: await permissionsRes.text() };
       const courses = coursesRes.ok ? await coursesRes.json() : { error: await coursesRes.text() };
-      const users = usersRes.ok ? await usersRes.json() : { error: await usersRes.text() };
+      const staff = staffRes.ok ? await staffRes.json() : { error: await staffRes.text() };
 
       setData({
         permissions: permissions.data || permissions.permissions || permissions,
         courses: courses.data || courses.courses || courses,
-        users: users.data || users.users || users,
+        staff: staff.data || staff.staff || staff,
         loading: false,
       });
 
       console.log('Debug Data:', {
         permissions: permissions.data || permissions,
         courses: courses.data || courses,
-        users: users.data || users,
+        staff: staff.data || staff,
       });
     } catch (error) {
       console.error('Error fetching debug data:', error);
@@ -56,8 +56,8 @@ export default function DebugPermissionsPage() {
     );
   }
 
-  const lecturers = Array.isArray(data.users) 
-    ? data.users.filter((u: any) => u.role === 'lecturer')
+  const lecturers = Array.isArray(data.staff) 
+    ? data.staff.filter((u: any) => u.role === 'lecturer')
     : [];
 
   return (
@@ -162,7 +162,7 @@ export default function DebugPermissionsPage() {
           </div>
         ) : (
           <div className="rounded-lg bg-yellow-50 p-4 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
-            ⚠️ No lecturers found. Create lecturer users first!
+            ⚠️ No lecturers found. Create lecturer staff first!
           </div>
         )}
       </div>
@@ -186,7 +186,7 @@ export default function DebugPermissionsPage() {
           ➕ Create Course
         </Link>
         <Link
-          href="/users/create"
+          href="/staff/create"
           className="rounded-lg bg-green-600 px-4 py-2 text-white hover:bg-green-700"
         >
           ➕ Create Lecturer

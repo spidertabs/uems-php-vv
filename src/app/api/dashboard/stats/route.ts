@@ -156,16 +156,16 @@ export async function GET(request: NextRequest) {
         );
         stats.myQuestions = allQuestions[0]?.count || 0;
 
-        // Total users
-        const totalUsers = await query<any[]>(
-          'SELECT COUNT(*) as count FROM users WHERE deleted_at IS NULL',
+        // Total staff
+        const totalStaff = await query<any[]>(
+          'SELECT COUNT(*) as count FROM staff WHERE deleted_at IS NULL',
           []
         );
-        stats.totalUsers = totalUsers[0]?.count || 0;
+        stats.totalStaff = totalStaff[0]?.count || 0;
         break;
     }
 
-    // Get unread notifications for all users
+    // Get unread notifications for all staff
     const notifications = await query<any[]>(
       'SELECT COUNT(*) as count FROM notifications WHERE user_id = ? AND is_read = FALSE',
       [user.id]

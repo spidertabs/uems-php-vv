@@ -50,7 +50,7 @@ export async function getFullVivaReport(vivaId: number): Promise<VivaReportFull 
        FROM viva_schedules vs
        JOIN phd_candidates pc ON vs.candidate_id = pc.id
        JOIN students st ON pc.registration_number = st.registration_number
-       LEFT JOIN users su ON pc.supervisor_id = su.id
+       LEFT JOIN staff su ON pc.supervisor_id = su.id
        JOIN programmes p ON pc.programme_id = p.id
        LEFT JOIN viva_recommendations vr ON vr.viva_id = vs.id
        WHERE vs.id = ?
@@ -71,7 +71,7 @@ export async function getFullVivaReport(vivaId: number): Promise<VivaReportFull 
          ev.recommended_corrections, ev.general_comments,
          ev.submitted_at
        FROM viva_evaluations ev
-       JOIN users u ON ev.examiner_id = u.id
+       JOIN staff u ON ev.examiner_id = u.id
        JOIN viva_examiners ve_panel
          ON ve_panel.viva_id = ev.viva_id AND ve_panel.examiner_id = ev.examiner_id
        WHERE ev.viva_id = ?

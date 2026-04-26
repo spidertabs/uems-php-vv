@@ -191,12 +191,12 @@ The system assumes the following database tables exist:
 
 1. **phd_candidates**
    - `id` (PK)
-   - `user_id` (FK to users)
+   - `user_id` (FK to staff)
    - `registration_number`
    - `thesis_title`
    - `programme_id` (FK)
-   - `supervisor_id` (FK to users)
-   - `co_supervisor_id` (FK to users, nullable)
+   - `supervisor_id` (FK to staff)
+   - `co_supervisor_id` (FK to staff, nullable)
    - `status` (ENUM: enrolled, thesis_submitted, viva_scheduled, viva_completed...)
    - `deleted_at`
 
@@ -211,7 +211,7 @@ The system assumes the following database tables exist:
 3. **viva_examiners**
    - `id` (PK)
    - `viva_id` (FK)
-   - `examiner_id` (FK to users)
+   - `examiner_id` (FK to staff)
    - `role` (chairperson, internal_examiner, external_examiner)
 
 4. **viva_evaluations**

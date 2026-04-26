@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// src/app/api/users/[id]/stats/route.ts
+// src/app/api/staff/[id]/stats/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { verifyAuth } from '@/lib/auth';
@@ -16,7 +16,7 @@ export async function GET(
 
     const { id: rawId } = await context.params; const userId = parseInt(rawId);
 
-    // Users can view their own stats, admins can view anyone's
+    // Staff can view their own stats, admins can view anyone's
     if (user.id !== userId && user.role !== 'admin') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
@@ -24,7 +24,7 @@ export async function GET(
     // Get user details first
     const userDetails = await query<any[]>(
       `SELECT id, role, first_name, last_name, email, created_at 
-       FROM users 
+       FROM staff 
        WHERE id = ? AND deleted_at IS NULL`,
       [userId]
     );

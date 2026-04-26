@@ -42,10 +42,10 @@ export async function POST(
 
     const paper = paperResult[0];
 
-    // Get dean for this college (from users table)
+    // Get dean for this college (from staff table)
     const deanResult = await query<any[]>(
       `SELECT id, first_name, last_name 
-       FROM users 
+       FROM staff 
        WHERE role = 'dean' 
        AND college_id = ? 
        AND is_active = TRUE 
@@ -217,7 +217,7 @@ export async function POST(
     // If ready for print, notify exam master
     if (newStatus === 'ready_for_print') {
       const examMasters = await query<any[]>(
-        "SELECT id FROM users WHERE role = 'exam_master' AND is_active = TRUE AND deleted_at IS NULL"
+        "SELECT id FROM staff WHERE role = 'exam_master' AND is_active = TRUE AND deleted_at IS NULL"
       );
       
       for (const master of examMasters) {

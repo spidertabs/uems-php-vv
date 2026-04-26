@@ -91,7 +91,7 @@ export async function GET(request: NextRequest) {
     const countQuery = `
       SELECT COUNT(*) as total
       FROM audit_logs al
-      LEFT JOIN users u ON al.user_id = u.id
+      LEFT JOIN staff u ON al.user_id = u.id
       WHERE ${whereClause}
     `;
 
@@ -117,7 +117,7 @@ export async function GET(request: NextRequest) {
         COALESCE(u.email, 'deleted@user.com') as user_email,
         COALESCE(u.role, 'unknown') as user_role
       FROM audit_logs al
-      LEFT JOIN users u ON al.user_id = u.id
+      LEFT JOIN staff u ON al.user_id = u.id
       WHERE ${whereClause}
       ORDER BY al.created_at DESC
       LIMIT ? OFFSET ?

@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
         (SELECT COUNT(*) FROM exam_papers WHERE status IN ('hod_approved', 'dean_approved', 'ready_for_print') AND deleted_at IS NULL) as approved_papers,
         (SELECT COUNT(*) FROM exam_papers WHERE status = 'printed' AND deleted_at IS NULL) as printed_papers,
         (SELECT COUNT(*) FROM questions WHERE deleted_at IS NULL) as total_questions,
-        (SELECT COUNT(*) FROM users WHERE is_active = TRUE AND deleted_at IS NULL) as active_users,
+        (SELECT COUNT(*) FROM staff WHERE is_active = TRUE AND deleted_at IS NULL) as active_staff,
         (SELECT COUNT(*) FROM courses WHERE is_active = TRUE AND deleted_at IS NULL) as active_courses
     `);
 
@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
       LIMIT 30
     `);
 
-    // Top performers (users with most papers)
+    // Top performers (staff with most papers)
     const topCreators = await query<any[]>(`
       SELECT 
         u.id,
@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
         u.role,
         COUNT(ep.id) as total_papers,
         SUM(CASE WHEN ep.status IN ('hod_approved', 'dean_approved', 'ready_for_print', 'printed') THEN 1 ELSE 0 END) as approved_papers
-      FROM users u
+      FROM staff u
       JOIN exam_papers ep ON u.id = ep.created_by
       WHERE u.deleted_at IS NULL 
         AND ep.deleted_at IS NULL

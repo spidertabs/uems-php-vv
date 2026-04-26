@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
         CONCAT(creator.first_name, ' ', creator.last_name) AS lecturer_name
       FROM exam_papers ep
       JOIN courses c ON ep.course_id = c.id
-      LEFT JOIN users creator ON ep.created_by = creator.id
+      LEFT JOIN staff creator ON ep.created_by = creator.id
       WHERE ep.deleted_at IS NULL
     `;
 

@@ -36,9 +36,9 @@ export async function GET(
       JOIN courses c ON ep.course_id = c.id
       LEFT JOIN colleges col ON c.college_id = col.id
       LEFT JOIN departments dept ON c.department_id = dept.id
-      LEFT JOIN users creator ON ep.created_by = creator.id
-      LEFT JOIN users hod ON ep.hod_id = hod.id
-      LEFT JOIN users dean ON ep.dean_id = dean.id
+      LEFT JOIN staff creator ON ep.created_by = creator.id
+      LEFT JOIN staff hod ON ep.hod_id = hod.id
+      LEFT JOIN staff dean ON ep.dean_id = dean.id
       WHERE ep.id = ?
     `;
 

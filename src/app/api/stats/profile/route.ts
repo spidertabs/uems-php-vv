@@ -108,7 +108,7 @@ export async function GET(request: NextRequest) {
         `SELECT 
           COUNT(*) as total,
           SUM(CASE WHEN is_active = TRUE THEN 1 ELSE 0 END) as active
-        FROM users
+        FROM staff
         WHERE deleted_at IS NULL`
       );
 
@@ -116,8 +116,8 @@ export async function GET(request: NextRequest) {
       stats.pendingPapers = paperStats[0]?.pending || 0;
       stats.readyForPrint = paperStats[0]?.ready_print || 0;
       stats.printedPapers = paperStats[0]?.printed || 0;
-      stats.totalUsers = userStats[0]?.total || 0;
-      stats.activeUsers = userStats[0]?.active || 0;
+      stats.totalStaff = userStats[0]?.total || 0;
+      stats.activeStaff = userStats[0]?.active || 0;
     }
 
     return NextResponse.json({

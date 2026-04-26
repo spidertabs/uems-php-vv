@@ -387,7 +387,7 @@ Enrolled
 
 ### 👥 User Management
 
-*Manage users, roles, and permissions including Viva Coordinator accounts*
+*Manage staff, roles, and permissions including Viva Coordinator accounts*
 
 ![User Management](./public/screenshots/user-management.png)
 
@@ -459,7 +459,7 @@ Enrolled
    -- Core schema (all sections including PhD Viva Voce)
    SOURCE sql/schema.sql;
 
-   -- Organisational seed data (colleges, departments, programmes, users)
+   -- Organisational seed data (colleges, departments, programmes, staff)
    SOURCE sql/seed.sql;
 
    -- PhD Viva Voce seed data (candidates, schedules, evaluations)
@@ -484,7 +484,7 @@ Enrolled
 
 ### Registration & Authentication
 
-**All user types (lecturers, HODs, admins, exam masters, deans, viva coordinators, and PhD candidates) use a unified authentication system.** Registration creates a user account, and role assignment determines which modules and features they can access. PhD candidates are registered as users with the appropriate role and have immediate access to the PhD Viva Voce module alongside other users.
+**All user types (lecturers, HODs, admins, exam masters, deans, viva coordinators, and PhD candidates) use a unified authentication system.** Registration creates a user account, and role assignment determines which modules and features they can access. PhD candidates are registered as staff with the appropriate role and have immediate access to the PhD Viva Voce module alongside other staff.
 
 ### Default Login Credentials
 
@@ -607,7 +607,7 @@ The schema is organised into 15 sections in a single `schema.sql` file.
 | `colleges` | Academic colleges / schools (SOMAC, SONAS, CEM, SOL, etc.) |
 | `departments` | Departments nested under colleges |
 | `programmes` | Academic programmes (BIT, DIT, LLB, MPH, PhD CS, etc.) |
-| `users` | All user accounts — role determined by `role` ENUM |
+| `staff` | All user accounts — role determined by `role` ENUM |
 | `sessions` | PHP/Node session token tracking |
 | `courses` | Individual courses with HOD ownership |
 | `study_units` | Modules / topics inside a course |
@@ -657,7 +657,7 @@ The schema is organised into 15 sections in a single `schema.sql` file.
 
 ### Key Design Decisions
 
-- **Unified schema**: Both UEMS and Viva Voce share `users`, `programmes`, `departments`, and `colleges` — no duplication
+- **Unified schema**: Both UEMS and Viva Voce share `staff`, `programmes`, `departments`, and `colleges` — no duplication
 - **Generated column**: `viva_evaluations.overall_score` is always computed from the four criteria scores — never manually writable
 - **Soft deletes**: `deleted_at` present on all major tables
 - **JSON validation**: `CHECK` constraints on all `JSON` columns (no triggers needed)

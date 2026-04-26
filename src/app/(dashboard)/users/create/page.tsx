@@ -1,4 +1,4 @@
-// src/app/users/create/page.tsx
+// src/app/staff/create/page.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -143,7 +143,7 @@ export default function CreateUserPage() {
         phone: formData.phone || null,
       };
 
-      const response = await fetch('/api/users', {
+      const response = await fetch('/api/staff', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -153,7 +153,7 @@ export default function CreateUserPage() {
 
       if (response.ok) {
         alert('User created successfully!');
-        router.push('/users');
+        router.push('/staff');
       } else {
         alert(data.error || 'Failed to create user');
       }
@@ -188,10 +188,10 @@ export default function CreateUserPage() {
           </p>
         </div>
         <Link
-          href="/users"
+          href="/staff"
           className="rounded-lg bg-gray-600 px-4 py-2 text-white transition-colors hover:bg-gray-700"
         >
-          ← Back to Users
+          ← Back to Staff
         </Link>
       </div>
 
@@ -435,7 +435,7 @@ export default function CreateUserPage() {
         {/* Submit Buttons */}
         <div className="flex justify-end gap-4">
           <Link
-            href="/users"
+            href="/staff"
             className="rounded-lg border border-gray-300 px-6 py-2 text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
           >
             Cancel

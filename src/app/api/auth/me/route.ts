@@ -21,7 +21,7 @@ export async function GET() {
         u.*,
         d.name as department_name,
         c.name as college_name
-      FROM users u
+      FROM staff u
       LEFT JOIN departments d ON u.department_id = d.id
       LEFT JOIN colleges c ON u.college_id = c.id
       WHERE u.id = ?`,
@@ -104,7 +104,7 @@ export async function PUT(request: NextRequest) {
 
     // Get old values before update
     const oldUserData = await query(
-      'SELECT first_name, last_name, phone FROM users WHERE id = ?',
+      'SELECT first_name, last_name, phone FROM staff WHERE id = ?',
       [user.id]
     );
     const oldUser = Array.isArray(oldUserData) && oldUserData.length > 0 
@@ -113,7 +113,7 @@ export async function PUT(request: NextRequest) {
 
     // Update user profile
     await query(
-      `UPDATE users 
+      `UPDATE staff 
        SET first_name = ?, 
            last_name = ?, 
            phone = ?,
@@ -146,7 +146,7 @@ export async function PUT(request: NextRequest) {
         u.*,
         d.name as department_name,
         c.name as college_name
-      FROM users u
+      FROM staff u
       LEFT JOIN departments d ON u.department_id = d.id
       LEFT JOIN colleges c ON u.college_id = c.id
       WHERE u.id = ?`,

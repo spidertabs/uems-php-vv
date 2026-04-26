@@ -53,17 +53,17 @@ export default function RegisterCandidatePage() {
     const fetchOptions = async () => {
       try {
         const [uRes, sRes, pRes] = await Promise.all([
-          fetch('/api/phd/available-users'),
+          fetch('/api/phd/available-staff'),
           fetch('/api/phd/eligible-supervisors'),
           fetch('/api/phd/programmes'),
         ]);
         if (uRes.ok) {
           const d = await uRes.json();
-          setStudents(d.users || []);
+          setStudents(d.staff || []);
         }
         if (sRes.ok) {
           const d = await sRes.json();
-          setSupervisors(d.users || []);
+          setSupervisors(d.staff || []);
         }
         if (pRes.ok) {
           const d = await pRes.json();

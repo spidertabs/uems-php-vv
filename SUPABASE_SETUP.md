@@ -46,7 +46,7 @@ npm run dev
 Visit: http://localhost:3000
 
 ## 🔐 Authentication
-- Credentials are stored in Supabase `users` table
+- Credentials are stored in Supabase `staff` table
 - Sessions are managed in `sessions` table
 - Use JWT tokens for API authentication
 

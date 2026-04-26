@@ -162,7 +162,7 @@ export async function getAuditLogsForEntity(
         u.email,
         u.role
       FROM audit_logs al
-      LEFT JOIN users u ON al.user_id = u.id
+      LEFT JOIN staff u ON al.user_id = u.id
       WHERE al.entity_type = ? AND al.entity_id = ?
       ORDER BY al.created_at DESC
       LIMIT ?`,
@@ -198,7 +198,7 @@ export async function getAuditLogs(filters?: {
         u.email,
         u.role
       FROM audit_logs al
-      LEFT JOIN users u ON al.user_id = u.id
+      LEFT JOIN staff u ON al.user_id = u.id
       WHERE 1=1
     `;
     const params: any[] = [];
@@ -303,7 +303,7 @@ export async function getAuditStats(filters?: {
         CONCAT(u.first_name, ' ', u.last_name) as name,
         COUNT(*) as count
        FROM audit_logs al
-       LEFT JOIN users u ON al.user_id = u.id
+       LEFT JOIN staff u ON al.user_id = u.id
        ${whereClause}
        GROUP BY al.user_id, u.first_name, u.last_name
        ORDER BY count DESC

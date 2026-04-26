@@ -70,10 +70,10 @@ export async function POST(
       );
 
       // Notify paper creator and HOD
-      const notifyUsers = [paper.created_by];
-      if (paper.hod_id) notifyUsers.push(paper.hod_id);
+      const notifyStaff = [paper.created_by];
+      if (paper.hod_id) notifyStaff.push(paper.hod_id);
 
-      for (const userId of notifyUsers) {
+      for (const userId of notifyStaff) {
         await connection.execute(
           `INSERT INTO notifications 
            (user_id, type, title, message, related_paper_id, priority, action_url)

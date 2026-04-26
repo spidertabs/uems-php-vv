@@ -48,7 +48,7 @@ export async function getScheduleById(vivaId: number): Promise<any | null> {
      JOIN phd_candidates pc ON vs.candidate_id = pc.id
      JOIN students st ON pc.registration_number = st.registration_number
      JOIN programmes p ON pc.programme_id = p.id
-     LEFT JOIN users sup ON pc.supervisor_id = sup.id
+     LEFT JOIN staff sup ON pc.supervisor_id = sup.id
      WHERE vs.id = ?
      LIMIT 1`,
     [vivaId]

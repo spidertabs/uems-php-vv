@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
       FROM paper_comments pc
       JOIN exam_papers ep ON pc.exam_paper_id = ep.id
       JOIN courses c ON ep.course_id = c.id
-      JOIN users u ON pc.user_id = u.id
+      JOIN staff u ON pc.user_id = u.id
       WHERE ep.created_by = ? 
         AND ep.deleted_at IS NULL
       ORDER BY pc.created_at DESC`,

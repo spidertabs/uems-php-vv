@@ -39,7 +39,7 @@ export async function GET(
        JOIN phd_candidates pc ON vs.candidate_id = pc.id
        LEFT JOIN students st ON pc.registration_number = st.registration_number
        JOIN programmes p ON pc.programme_id = p.id
-       LEFT JOIN users sup ON pc.supervisor_id = sup.id
+       LEFT JOIN staff sup ON pc.supervisor_id = sup.id
        LEFT JOIN viva_recommendations vr ON vs.id = vr.viva_id
        WHERE vs.id = ?`,
       [vivaId]
@@ -73,7 +73,7 @@ export async function GET(
          ve.general_comments,
          ve.submitted_at
        FROM viva_evaluations ve
-       JOIN users u ON ve.examiner_id = u.id
+       JOIN staff u ON ve.examiner_id = u.id
        JOIN viva_examiners vex ON ve.viva_id = vex.viva_id AND ve.examiner_id = vex.examiner_id
        WHERE ve.viva_id = ?
        ORDER BY ve.submitted_at ASC`,

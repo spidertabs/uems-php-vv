@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-// src/app/(dashboard)/users/page.tsx
+// src/app/(dashboard)/staff/page.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -30,10 +30,10 @@ const roleColors: Record<string, string> = {
   lecturer: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
 };
 
-export default function UsersPage() {
+export default function StaffPage() {
   const router = useRouter();
-  const [users, setUsers] = useState<User[]>([]);
-  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
+  const [staff, setStaff] = useState<User[]>([]);
+  const [filteredStaff, setFilteredStaff] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRole, setFilterRole] = useState('all');
@@ -41,31 +41,31 @@ export default function UsersPage() {
   const [filterCollege, setFilterCollege] = useState('all');
 
   useEffect(() => {
-    fetchUsers();
+    fetchStaff();
   }, []);
 
   useEffect(() => {
-    filterUsers();
-  }, [searchTerm, filterRole, filterStatus, filterCollege, users]);
+    filterStaff();
+  }, [searchTerm, filterRole, filterStatus, filterCollege, staff]);
 
-  const fetchUsers = async () => {
+  const fetchStaff = async () => {
     try {
-      const response = await fetch('/api/users');
+      const response = await fetch('/api/staff');
       if (response.ok) {
         const data = await response.json();
-        setUsers(data.data || data.users || []);
+        setStaff(data.data || data.staff || []);
       } else if (response.status === 401) {
         router.push('/auth/login');
       }
     } catch (error) {
-      console.error('Error fetching users:', error);
+      console.error('Error fetching staff:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const filterUsers = () => {
-    let filtered = [...users];
+  const filterStaff = () => {
+    let filtered = [...staff];
 
     if (searchTerm) {
       filtered = filtered.filter(
@@ -92,19 +92,19 @@ export default function UsersPage() {
       );
     }
 
-    setFilteredUsers(filtered);
+    setFilteredStaff(filtered);
   };
 
   const toggleStatus = async (id: number, currentStatus: boolean) => {
     try {
-      const response = await fetch(`/api/users/${id}`, {
+      const response = await fetch(`/api/staff/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ is_active: !currentStatus }),
       });
 
       if (response.ok) {
-        fetchUsers();
+        fetchStaff();
       }
     } catch (error) {
       console.error('Error updating user status:', error);
@@ -115,13 +115,13 @@ export default function UsersPage() {
     if (!confirm('Are you sure you want to delete this user?')) return;
 
     try {
-      const response = await fetch(`/api/users/${id}`, {
+      const response = await fetch(`/api/staff/${id}`, {
         method: 'DELETE',
       });
 
       if (response.ok) {
         alert('User deleted successfully');
-        fetchUsers();
+        fetchStaff();
       } else {
         const data = await response.json();
         alert(data.error || 'Failed to delete user');
@@ -141,7 +141,7 @@ export default function UsersPage() {
   }
 
   const uniqueColleges = Array.from(
-    new Set(users.map((u) => u.college_id).filter(Boolean))
+    new Set(staff.map((u) => u.college_id).filter(Boolean))
   );
 
   return (
@@ -153,18 +153,18 @@ export default function UsersPage() {
             👥 User Management
           </h1>
           <p className="mt-2 text-gray-600 dark:text-gray-400">
-            Manage system users and their roles
+            Manage system staff and their roles
           </p>
         </div>
         <div className="flex gap-3">
           <Link
-            href="/users/import"
+            href="/staff/import"
             className="rounded-lg bg-green-600 px-4 py-2 text-white transition-colors hover:bg-green-700"
           >
-            📥 Import Users
+            📥 Import Staff
           </Link>
           <Link
-            href="/users/create"
+            href="/staff/create"
             className="rounded-lg bg-blue-600 px-4 py-2 text-white transition-colors hover:bg-blue-700"
           >
             ➕ Add User
@@ -232,7 +232,7 @@ export default function UsersPage() {
             >
               <option value="all">All Colleges</option>
               {uniqueColleges.map((collegeId) => {
-                const user = users.find((u) => u.college_id === collegeId);
+                const user = staff.find((u) => u.college_id === collegeId);
                 return (
                   <option key={collegeId} value={collegeId?.toString()}>
                     {user?.college_name || `College ${collegeId}`}
@@ -247,20 +247,20 @@ export default function UsersPage() {
       {/* Stats */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-5">
         <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
-          <div className="text-2xl font-bold text-blue-600">{users.length}</div>
+          <div className="text-2xl font-bold text-blue-600">{staff.length}</div>
           <div className="text-sm text-gray-600 dark:text-gray-400">
-            Total Users
+            Total Staff
           </div>
         </div>
         <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
           <div className="text-2xl font-bold text-green-600">
-            {users.filter((u) => u.is_active).length}
+            {staff.filter((u) => u.is_active).length}
           </div>
           <div className="text-sm text-gray-600 dark:text-gray-400">Active</div>
         </div>
         <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
           <div className="text-2xl font-bold text-purple-600">
-            {users.filter((u) => u.role === 'lecturer').length}
+            {staff.filter((u) => u.role === 'lecturer').length}
           </div>
           <div className="text-sm text-gray-600 dark:text-gray-400">
             Lecturers
@@ -268,13 +268,13 @@ export default function UsersPage() {
         </div>
         <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
           <div className="text-2xl font-bold text-cyan-600">
-            {users.filter((u) => u.role === 'hod').length}
+            {staff.filter((u) => u.role === 'hod').length}
           </div>
           <div className="text-sm text-gray-600 dark:text-gray-400">HODs</div>
         </div>
         <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
           <div className="text-2xl font-bold text-orange-600">
-            {filteredUsers.length}
+            {filteredStaff.length}
           </div>
           <div className="text-sm text-gray-600 dark:text-gray-400">
             Filtered
@@ -282,7 +282,7 @@ export default function UsersPage() {
         </div>
       </div>
 
-      {/* Users Table */}
+      {/* Staff Table */}
       <div className="rounded-xl border border-gray-200 bg-white shadow-md dark:border-gray-700 dark:bg-gray-800">
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -312,15 +312,15 @@ export default function UsersPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-              {filteredUsers.length > 0 ? (
-                filteredUsers.map((user) => (
+              {filteredStaff.length > 0 ? (
+                filteredStaff.map((user) => (
                   <tr
                     key={user.id}
                     className="transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50"
                   >
                     <td className="px-6 py-4">
                       <Link
-                        href={`/users/${user.id}`}
+                        href={`/staff/${user.id}`}
                         className="font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400"
                       >
                         {user.first_name} {user.last_name}
@@ -366,13 +366,13 @@ export default function UsersPage() {
                     <td className="px-6 py-4 text-right">
                       <div className="flex justify-end gap-2">
                         <Link
-                          href={`/users/${user.id}`}
+                          href={`/staff/${user.id}`}
                           className="rounded-lg bg-blue-100 px-3 py-1 text-sm text-blue-700 transition-colors hover:bg-blue-200 dark:bg-blue-900 dark:text-blue-200"
                         >
                           View
                         </Link>
                         <Link
-                          href={`/users/${user.id}/edit`}
+                          href={`/staff/${user.id}/edit`}
                           className="rounded-lg bg-yellow-100 px-3 py-1 text-sm text-yellow-700 transition-colors hover:bg-yellow-200 dark:bg-yellow-900 dark:text-yellow-200"
                         >
                           Edit
@@ -392,7 +392,7 @@ export default function UsersPage() {
                   <td colSpan={7} className="px-6 py-12 text-center">
                     <div className="text-5xl">👥</div>
                     <p className="mt-4 text-gray-600 dark:text-gray-400">
-                      No users found
+                      No staff found
                     </p>
                   </td>
                 </tr>

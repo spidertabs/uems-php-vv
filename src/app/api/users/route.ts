@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// src/app/api/users/route.ts
+// src/app/api/staff/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { verifyAuth } from '@/lib/auth';
 import bcrypt from 'bcryptjs';
 
-// GET /api/users - List all users
+// GET /api/staff - List all staff
 export async function GET(req: NextRequest) {
   try {
     const user = await verifyAuth(req);
@@ -13,12 +13,12 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Only admins can view all users
+    // Only admins can view all staff
     if (user.role !== 'admin') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const users = await query<any[]>(
+    const staff = await query<any[]>(
       `SELECT 
         u.id,
         u.email,
@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
         u.last_login,
         u.created_at,
         u.updated_at
-      FROM users u
+      FROM staff u
       LEFT JOIN departments d ON u.department_id = d.id
       LEFT JOIN colleges c ON u.college_id = c.id
       WHERE u.deleted_at IS NULL
@@ -44,18 +44,18 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      data: users,
+      data: staff,
     });
   } catch (error) {
-    console.error('Error fetching users:', error);
+    console.error('Error fetching staff:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch users' },
+      { error: 'Failed to fetch staff' },
       { status: 500 }
     );
   }
 }
 
-// POST /api/users - Create new user
+// POST /api/staff - Create new user
 export async function POST(req: NextRequest) {
   try {
     const user = await verifyAuth(req);
@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Only admins can create users
+    // Only admins can create staff
     if (user.role !== 'admin') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
 
     // Check if email already exists
     const existing = await query<any[]>(
-      'SELECT id FROM users WHERE email = ? AND deleted_at IS NULL',
+      'SELECT id FROM staff WHERE email = ? AND deleted_at IS NULL',
       [email]
     );
 
@@ -106,7 +106,7 @@ export async function POST(req: NextRequest) {
 
     // Insert user
     const result = await query<any>(
-      `INSERT INTO users (
+      `INSERT INTO staff (
         email,
         password_hash,
         first_name,
@@ -144,7 +144,7 @@ export async function POST(req: NextRequest) {
         u.phone,
         u.is_active,
         u.created_at
-      FROM users u
+      FROM staff u
       LEFT JOIN departments d ON u.department_id = d.id
       LEFT JOIN colleges c ON u.college_id = c.id
       WHERE u.id = ?`,

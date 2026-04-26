@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
       FROM questions q
       JOIN courses c ON q.course_id = c.id
       LEFT JOIN study_units su ON q.study_unit_id = su.id
-      LEFT JOIN users creator ON q.created_by = creator.id
+      LEFT JOIN staff creator ON q.created_by = creator.id
       WHERE q.is_active = TRUE
     `;
 

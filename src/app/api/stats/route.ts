@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
         break;
     }
 
-    // Get unread notifications for all users
+    // Get unread notifications for all staff
     const notifications = await query<any[]>(
       'SELECT COUNT(*) as count FROM notifications WHERE user_id = ? AND is_read = FALSE AND archived_at IS NULL',
       [user.id]
@@ -221,7 +221,7 @@ async function getHODStats(userId: number, stats: Record<string, number>) {
     `SELECT COUNT(DISTINCT pc.id) as count 
      FROM phd_candidates pc
      JOIN programmes p ON pc.programme_id = p.id
-     JOIN users u ON u.id = ?
+     JOIN staff u ON u.id = ?
      LEFT JOIN viva_schedules vs ON pc.id = vs.candidate_id
      LEFT JOIN viva_examiners ve ON vs.id = ve.viva_id
      WHERE (pc.supervisor_id = ? OR pc.co_supervisor_id = ? OR ve.examiner_id = ? OR p.department_id = u.department_id)
@@ -393,22 +393,22 @@ async function getAdminStats(stats: Record<string, number>) {
   stats.myQuestions = allQuestions[0]?.count || 0;
   stats.totalQuestions = allQuestions[0]?.count || 0;
 
-  // Total users
-  const totalUsers = await query<any[]>(
-    'SELECT COUNT(*) as count FROM users WHERE deleted_at IS NULL',
+  // Total staff
+  const totalStaff = await query<any[]>(
+    'SELECT COUNT(*) as count FROM staff WHERE deleted_at IS NULL',
     []
   );
-  stats.totalUsers = totalUsers[0]?.count || 0;
+  stats.totalStaff = totalStaff[0]?.count || 0;
 
-  // Active users (logged in within last 30 days)
-  const activeUsers = await query<any[]>(
+  // Active staff (logged in within last 30 days)
+  const activeStaff = await query<any[]>(
     `SELECT COUNT(*) as count 
-     FROM users 
+     FROM staff 
      WHERE last_login >= DATE_SUB(NOW(), INTERVAL 30 DAY) 
        AND deleted_at IS NULL`,
     []
   );
-  stats.activeUsers = activeUsers[0]?.count || 0;
+  stats.activeStaff = activeStaff[0]?.count || 0;
 
   // Total colleges
   const colleges = await query<any[]>(

@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
       FROM courses c
       LEFT JOIN departments d ON c.department_id = d.id
       LEFT JOIN colleges col ON c.college_id = col.id
-      LEFT JOIN users u ON c.hod_id = u.id
+      LEFT JOIN staff u ON c.hod_id = u.id
       ORDER BY c.code ASC
     `);
 

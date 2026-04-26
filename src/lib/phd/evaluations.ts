@@ -10,7 +10,7 @@ export async function getEvaluationsByVivaId(vivaId: number): Promise<VivaEvalua
        CONCAT(u.first_name, ' ', u.last_name) AS examiner_name,
        ve.role AS examiner_panel_role
      FROM viva_evaluations ev
-     JOIN users u ON ev.examiner_id = u.id
+     JOIN staff u ON ev.examiner_id = u.id
      JOIN viva_examiners ve ON ve.viva_id = ev.viva_id AND ve.examiner_id = ev.examiner_id
      WHERE ev.viva_id = ?
      ORDER BY ev.id`,
@@ -25,7 +25,7 @@ export async function getEvaluationByExaminer(
   const rows = await query<any[]>(
     `SELECT ev.*, CONCAT(u.first_name, ' ', u.last_name) AS examiner_name
      FROM viva_evaluations ev
-     JOIN users u ON ev.examiner_id = u.id
+     JOIN staff u ON ev.examiner_id = u.id
      WHERE ev.viva_id = ? AND ev.examiner_id = ?
      LIMIT 1`,
     [vivaId, examinerId]

@@ -124,7 +124,7 @@ CREATE INDEX idx_programmes_deleted    ON programmes (deleted_at);
 --  SECTION 2 — USER MANAGEMENT & AUTHENTICATION (staff)
 -- ============================================================
 
-CREATE TABLE users (
+CREATE TABLE staff (
     id            SERIAL      PRIMARY KEY,
     email         VARCHAR(255) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
@@ -141,16 +141,16 @@ CREATE TABLE users (
     created_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     updated_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );
-CREATE INDEX idx_users_email      ON users (email);
-CREATE INDEX idx_users_role       ON users (role);
-CREATE INDEX idx_users_department ON users (department_id);
-CREATE INDEX idx_users_deleted    ON users (deleted_at);
+CREATE INDEX idx_staff_email      ON staff (email);
+CREATE INDEX idx_staff_role       ON staff (role);
+CREATE INDEX idx_staff_department ON staff (department_id);
+CREATE INDEX idx_staff_deleted    ON staff (deleted_at);
 
 
 CREATE TABLE sessions (
     id         SERIAL       PRIMARY KEY,
     session_id VARCHAR(255) NOT NULL UNIQUE,
-    user_id    INT          REFERENCES users(id) ON DELETE CASCADE,
+    user_id    INT          REFERENCES staff(id) ON DELETE CASCADE,
     student_id INT,
     expires_at TIMESTAMPTZ  NOT NULL,
     created_at TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
@@ -218,7 +218,7 @@ CREATE TABLE courses (
     credit_units  INT,
     college_id    INT REFERENCES colleges(id)    ON DELETE RESTRICT,
     department_id INT REFERENCES departments(id) ON DELETE RESTRICT,
-    hod_id        INT REFERENCES users(id)       ON DELETE SET NULL,
+    hod_id        INT REFERENCES staff(id)       ON DELETE SET NULL,
     description   TEXT,
     is_active     BOOLEAN      NOT NULL DEFAULT TRUE,
     deleted_at    TIMESTAMPTZ,
@@ -240,7 +240,7 @@ CREATE TABLE study_units (
     description       TEXT,
     sequence_order    INT          NOT NULL DEFAULT 0,
     learning_outcomes TEXT,
-    created_by        INT REFERENCES users(id) ON DELETE RESTRICT,
+    created_by        INT REFERENCES staff(id) ON DELETE RESTRICT,
     is_active         BOOLEAN      NOT NULL DEFAULT TRUE,
     deleted_at        TIMESTAMPTZ,
     deleted_by        INT,
@@ -261,7 +261,7 @@ CREATE TABLE questions (
     id               SERIAL           PRIMARY KEY,
     course_id        INT              NOT NULL REFERENCES courses(id)     ON DELETE RESTRICT,
     study_unit_id    INT              REFERENCES study_units(id)          ON DELETE SET NULL,
-    created_by       INT              NOT NULL REFERENCES users(id)       ON DELETE RESTRICT,
+    created_by       INT              NOT NULL REFERENCES staff(id)       ON DELETE RESTRICT,
     question_type    question_type    NOT NULL,
     difficulty_level difficulty_level NOT NULL DEFAULT 'medium',
     question_text    TEXT             NOT NULL,
@@ -275,7 +275,7 @@ CREATE TABLE questions (
     tags             JSONB,
     usage_count      INT              NOT NULL DEFAULT 0,
     is_active        BOOLEAN          NOT NULL DEFAULT TRUE,
-    approved_by      INT              REFERENCES users(id)                ON DELETE SET NULL,
+    approved_by      INT              REFERENCES staff(id)                ON DELETE SET NULL,
     approved_at      TIMESTAMPTZ,
     deleted_at       TIMESTAMPTZ,
     deleted_by       INT,
@@ -303,7 +303,7 @@ CREATE TABLE exam_papers (
     id               SERIAL        PRIMARY KEY,
     paper_code       VARCHAR(50)   NOT NULL UNIQUE,
     course_id        INT           NOT NULL REFERENCES courses(id) ON DELETE RESTRICT,
-    created_by       INT           NOT NULL REFERENCES users(id)   ON DELETE RESTRICT,
+    created_by       INT           NOT NULL REFERENCES staff(id)   ON DELETE RESTRICT,
     exam_type        exam_type     NOT NULL,
     academic_year    INT           NOT NULL,
     semester         INT           NOT NULL,
@@ -313,11 +313,11 @@ CREATE TABLE exam_papers (
     instructions     TEXT,
     footer_text      VARCHAR(255),
     status           paper_status  NOT NULL DEFAULT 'draft',
-    hod_id           INT REFERENCES users(id) ON DELETE SET NULL,
+    hod_id           INT REFERENCES staff(id) ON DELETE SET NULL,
     hod_approved_at  TIMESTAMPTZ,
-    dean_id          INT REFERENCES users(id) ON DELETE SET NULL,
+    dean_id          INT REFERENCES staff(id) ON DELETE SET NULL,
     dean_approved_at TIMESTAMPTZ,
-    exam_master_id   INT REFERENCES users(id) ON DELETE SET NULL,
+    exam_master_id   INT REFERENCES staff(id) ON DELETE SET NULL,
     printed_at       TIMESTAMPTZ,
     print_quantity   INT           NOT NULL DEFAULT 0,
     submitted_at     TIMESTAMPTZ,
@@ -347,7 +347,7 @@ CREATE TABLE exam_paper_versions (
     version_number INT         NOT NULL,
     snapshot       JSONB       NOT NULL,
     changes_summary TEXT,
-    created_by     INT         NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+    created_by     INT         NOT NULL REFERENCES staff(id) ON DELETE RESTRICT,
     created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE (exam_paper_id, version_number)
 );
@@ -410,9 +410,9 @@ CREATE UNIQUE INDEX idx_epq_uniq_question_parent
 
 CREATE TABLE lecturer_permissions (
     id                 SERIAL      PRIMARY KEY,
-    lecturer_id        INT         NOT NULL REFERENCES users(id)   ON DELETE CASCADE,
+    lecturer_id        INT         NOT NULL REFERENCES staff(id)   ON DELETE CASCADE,
     course_id          INT         NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
-    granted_by         INT         NOT NULL REFERENCES users(id)   ON DELETE RESTRICT,
+    granted_by         INT         NOT NULL REFERENCES staff(id)   ON DELETE RESTRICT,
     can_add_questions  BOOLEAN     NOT NULL DEFAULT TRUE,
     can_create_papers  BOOLEAN     NOT NULL DEFAULT TRUE,
     can_edit_questions BOOLEAN     NOT NULL DEFAULT FALSE,
@@ -438,7 +438,7 @@ CREATE TABLE workflow_history (
     action        workflow_action  NOT NULL,
     from_status   VARCHAR(50),
     to_status     VARCHAR(50)      NOT NULL,
-    actor_id      INT              NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+    actor_id      INT              NOT NULL REFERENCES staff(id) ON DELETE RESTRICT,
     actor_role    VARCHAR(50)      NOT NULL,
     comments      TEXT,
     metadata      JSONB,
@@ -454,7 +454,7 @@ CREATE INDEX idx_wh_paper_date       ON workflow_history (exam_paper_id, created
 CREATE TABLE paper_comments (
     id                SERIAL        PRIMARY KEY,
     exam_paper_id     INT           NOT NULL REFERENCES exam_papers(id)    ON DELETE CASCADE,
-    user_id           INT           NOT NULL REFERENCES users(id)          ON DELETE RESTRICT,
+    user_id           INT           NOT NULL REFERENCES staff(id)          ON DELETE RESTRICT,
     comment_type      comment_type  NOT NULL DEFAULT 'general',
     comment           TEXT          NOT NULL,
     is_resolved       BOOLEAN       NOT NULL DEFAULT FALSE,
@@ -473,7 +473,7 @@ CREATE INDEX idx_pc_resolved   ON paper_comments (is_resolved);
 
 CREATE TABLE notifications (
     id                  SERIAL                 PRIMARY KEY,
-    user_id             INT                    NOT NULL REFERENCES users(id)       ON DELETE CASCADE,
+    user_id             INT                    NOT NULL REFERENCES staff(id)       ON DELETE CASCADE,
     type                notification_type      NOT NULL,
     title               VARCHAR(255)           NOT NULL,
     message             TEXT                   NOT NULL,
@@ -497,7 +497,7 @@ CREATE INDEX idx_notif_archived    ON notifications (archived_at);
 
 CREATE TABLE audit_logs (
     id          SERIAL       PRIMARY KEY,
-    user_id     INT          REFERENCES users(id) ON DELETE SET NULL,
+    user_id     INT          REFERENCES staff(id) ON DELETE SET NULL,
     action      VARCHAR(100) NOT NULL,
     entity_type VARCHAR(50)  NOT NULL,
     entity_id   INT,
@@ -524,8 +524,8 @@ CREATE TABLE phd_candidates (
     registration_number VARCHAR(50)      NOT NULL UNIQUE REFERENCES students(registration_number) ON DELETE RESTRICT,
     thesis_title        VARCHAR(500)     NOT NULL,
     programme_id        INT              NOT NULL REFERENCES programmes(id) ON DELETE RESTRICT,
-    supervisor_id       INT              REFERENCES users(id)               ON DELETE SET NULL,
-    co_supervisor_id    INT              REFERENCES users(id)               ON DELETE SET NULL,
+    supervisor_id       INT              REFERENCES staff(id)               ON DELETE SET NULL,
+    co_supervisor_id    INT              REFERENCES staff(id)               ON DELETE SET NULL,
     enrolment_year      SMALLINT,
     status              candidate_status NOT NULL DEFAULT 'enrolled',
     deleted_at          TIMESTAMPTZ,
@@ -564,7 +564,7 @@ CREATE TABLE viva_schedules (
     duration_minutes   INT         NOT NULL DEFAULT 90,
     status             viva_status NOT NULL DEFAULT 'scheduled',
     postponement_reason TEXT,
-    created_by         INT         NOT NULL REFERENCES users(id)             ON DELETE RESTRICT,
+    created_by         INT         NOT NULL REFERENCES staff(id)             ON DELETE RESTRICT,
     created_at         TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at         TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -577,7 +577,7 @@ CREATE INDEX idx_vs_created_by ON viva_schedules (created_by);
 CREATE TABLE viva_examiners (
     id           SERIAL        PRIMARY KEY,
     viva_id      INT           NOT NULL REFERENCES viva_schedules(id) ON DELETE CASCADE,
-    examiner_id  INT           NOT NULL REFERENCES users(id)          ON DELETE RESTRICT,
+    examiner_id  INT           NOT NULL REFERENCES staff(id)          ON DELETE RESTRICT,
     role         examiner_role NOT NULL,
     confirmed    BOOLEAN       NOT NULL DEFAULT FALSE,
     confirmed_at TIMESTAMPTZ,
@@ -592,7 +592,7 @@ CREATE INDEX idx_ve_role     ON viva_examiners (role);
 CREATE TABLE viva_evaluations (
     id                      SERIAL      PRIMARY KEY,
     viva_id                 INT         NOT NULL REFERENCES viva_schedules(id) ON DELETE CASCADE,
-    examiner_id             INT         NOT NULL REFERENCES users(id)          ON DELETE RESTRICT,
+    examiner_id             INT         NOT NULL REFERENCES staff(id)          ON DELETE RESTRICT,
     originality_score       SMALLINT    CHECK (originality_score   BETWEEN 0 AND 25),
     methodology_score       SMALLINT    CHECK (methodology_score   BETWEEN 0 AND 25),
     presentation_score      SMALLINT    CHECK (presentation_score  BETWEEN 0 AND 25),
@@ -623,7 +623,7 @@ CREATE TABLE viva_recommendations (
     outcome             viva_outcome NOT NULL,
     correction_deadline DATE,
     final_comments      TEXT,
-    issued_by           INT          NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+    issued_by           INT          NOT NULL REFERENCES staff(id) ON DELETE RESTRICT,
     issued_at           TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );
 CREATE INDEX idx_vrec_viva    ON viva_recommendations (viva_id);
@@ -639,7 +639,7 @@ CREATE INDEX idx_vrec_outcome ON viva_recommendations (outcome);
 CREATE TABLE phd_candidate_supervisors (
     id             SERIAL           PRIMARY KEY,
     candidate_id   INT              NOT NULL REFERENCES phd_candidates(id) ON DELETE CASCADE,
-    supervisor_id  INT              NOT NULL REFERENCES users(id)          ON DELETE RESTRICT,
+    supervisor_id  INT              NOT NULL REFERENCES staff(id)          ON DELETE RESTRICT,
     role           supervisor_role  NOT NULL DEFAULT 'main',
     is_active      BOOLEAN          NOT NULL DEFAULT TRUE,
     assigned_at    TIMESTAMPTZ      NOT NULL DEFAULT NOW(),
@@ -679,7 +679,7 @@ SELECT
     pcs.notes
 FROM phd_candidate_supervisors pcs
 JOIN phd_candidates pc ON pcs.candidate_id   = pc.id
-JOIN users          u  ON pcs.supervisor_id  = u.id
+JOIN staff          u  ON pcs.supervisor_id  = u.id
 JOIN students       s  ON pc.registration_number = s.registration_number
 JOIN programmes     p  ON pc.programme_id    = p.id
 WHERE pc.deleted_at IS NULL
@@ -727,7 +727,7 @@ JOIN viva_examiners    vxe ON ve.viva_id = vxe.viva_id AND ve.examiner_id = vxe.
 JOIN phd_candidates    pc  ON vs.candidate_id = pc.id
 JOIN students          s   ON pc.registration_number = s.registration_number
 JOIN programmes        p   ON pc.programme_id = p.id
-JOIN users             u   ON ve.examiner_id  = u.id
+JOIN staff             u   ON ve.examiner_id  = u.id
 LEFT JOIN viva_recommendations vr ON vs.id = vr.viva_id
 ORDER BY vs.scheduled_date, pc.registration_number, vxe.role;
 
@@ -772,7 +772,7 @@ JOIN students           s   ON pc.registration_number = s.registration_number
 JOIN programmes         p   ON pc.programme_id   = p.id
 LEFT JOIN departments   d   ON p.department_id   = d.id
 LEFT JOIN colleges      col ON d.college_id      = col.id
-JOIN users              u   ON vxe.examiner_id   = u.id
+JOIN staff              u   ON vxe.examiner_id   = u.id
 LEFT JOIN viva_evaluations      ve ON vxe.viva_id = ve.viva_id AND vxe.examiner_id = ve.examiner_id
 LEFT JOIN viva_recommendations  vr ON vs.id = vr.viva_id
 LEFT JOIN thesis_submissions    ts ON vs.thesis_id = ts.id
@@ -794,7 +794,7 @@ SELECT
     STRING_AGG(DISTINCT p.code, ', ' ORDER BY p.code) AS programmes
 FROM exam_papers ep
 JOIN  courses     c   ON ep.course_id    = c.id
-JOIN  users       u   ON ep.created_by   = u.id
+JOIN  staff       u   ON ep.created_by   = u.id
 LEFT JOIN departments d ON c.department_id = d.id
 LEFT JOIN exam_paper_programmes epp ON ep.id = epp.exam_paper_id
 LEFT JOIN programmes  p ON epp.programme_id = p.id
@@ -856,7 +856,7 @@ JOIN  questions   q   ON epq.question_id    = q.id
 JOIN  exam_papers ep  ON epq.exam_paper_id  = ep.id
 JOIN  courses     c   ON ep.course_id       = c.id
 LEFT JOIN study_units su ON q.study_unit_id  = su.id
-LEFT JOIN users       u  ON q.created_by     = u.id
+LEFT JOIN staff       u  ON q.created_by     = u.id
 WHERE ep.deleted_at IS NULL
   AND q.deleted_at  IS NULL
 ORDER BY epq.exam_paper_id, epq.section, epq.sequence_order, epq.indentation_level;
@@ -882,7 +882,7 @@ SELECT
 FROM viva_schedules vs
 JOIN  phd_candidates pc ON vs.candidate_id          = pc.id
 JOIN  students       s  ON pc.registration_number   = s.registration_number
-LEFT JOIN users      su ON pc.supervisor_id         = su.id
+LEFT JOIN staff      su ON pc.supervisor_id         = su.id
 JOIN  programmes     p  ON pc.programme_id          = p.id
 LEFT JOIN viva_examiners vi ON vs.id = vi.viva_id
 LEFT JOIN viva_evaluations ve ON vs.id = ve.viva_id AND ve.is_submitted = TRUE
@@ -905,9 +905,9 @@ SELECT
     lp.expires_at,
     hod.first_name || ' ' || hod.last_name     AS granted_by_name
 FROM lecturer_permissions lp
-JOIN users   u   ON lp.lecturer_id = u.id
+JOIN staff   u   ON lp.lecturer_id = u.id
 JOIN courses c   ON lp.course_id   = c.id
-JOIN users   hod ON lp.granted_by  = hod.id
+JOIN staff   hod ON lp.granted_by  = hod.id
 WHERE lp.is_active  = TRUE
   AND u.deleted_at  IS NULL
   AND c.deleted_at  IS NULL;
@@ -922,7 +922,7 @@ DO $$ DECLARE
     tbl TEXT;
 BEGIN
     FOREACH tbl IN ARRAY ARRAY[
-        'colleges','departments','programmes','users','courses',
+        'colleges','departments','programmes','staff','courses',
         'study_units','exam_papers','exam_paper_questions',
         'paper_comments','phd_candidates','viva_schedules',
         'phd_candidate_supervisors','viva_evaluations'
@@ -1127,8 +1127,8 @@ LANGUAGE plpgsql AS $$ BEGIN
         ep.published_at
     FROM exam_papers ep
     JOIN  courses c       ON ep.course_id  = c.id
-    JOIN  users   creator ON ep.created_by = creator.id
-    LEFT JOIN users hod   ON ep.hod_id     = hod.id
+    JOIN  staff   creator ON ep.created_by = creator.id
+    LEFT JOIN staff hod   ON ep.hod_id     = hod.id
     LEFT JOIN exam_paper_programmes epp ON ep.id = epp.exam_paper_id
     LEFT JOIN programmes p ON epp.programme_id = p.id
     WHERE ep.id         = p_paper_id
@@ -1181,7 +1181,7 @@ LANGUAGE plpgsql AS $$ BEGIN
     FROM viva_schedules vs
     JOIN  phd_candidates pc ON vs.candidate_id        = pc.id
     JOIN  students       s  ON pc.registration_number = s.registration_number
-    LEFT JOIN users      su ON pc.supervisor_id       = su.id
+    LEFT JOIN staff      su ON pc.supervisor_id       = su.id
     JOIN  programmes     pr ON pc.programme_id        = pr.id
     LEFT JOIN viva_recommendations vr ON vs.id        = vr.viva_id
     WHERE vs.id = p_viva_id;
@@ -1221,7 +1221,7 @@ LANGUAGE plpgsql AS $$ BEGIN
         ve.submitted_at
     FROM viva_evaluations ve
     JOIN viva_examiners vi ON ve.viva_id = vi.viva_id AND ve.examiner_id = vi.examiner_id
-    JOIN users u           ON ve.examiner_id = u.id
+    JOIN staff u           ON ve.examiner_id = u.id
     WHERE ve.viva_id = p_viva_id
     ORDER BY vi.role;
 END;

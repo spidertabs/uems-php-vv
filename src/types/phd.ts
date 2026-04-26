@@ -119,7 +119,7 @@ export interface VivaRecommendation {
 
 /** Full candidate row joined with user, programme, and supervisor names */
 export interface CandidateWithDetails extends PhdCandidate {
-  // from users JOIN
+  // from staff JOIN
   candidate_name: string;
   candidate_email: string;
   // from programmes JOIN

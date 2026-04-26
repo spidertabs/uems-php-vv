@@ -122,7 +122,7 @@ export default function CandidateDetailPage() {
       const res = await fetch('/api/phd/eligible-supervisors');
       if (res.ok) {
         const d = await res.json();
-        const raw = d.users || [];
+        const raw = d.staff || [];
         setSupervisors(
           raw.map((u: {
             id: number;

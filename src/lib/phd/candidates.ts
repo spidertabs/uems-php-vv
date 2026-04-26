@@ -33,8 +33,8 @@ export async function getAllCandidates(filters?: CandidateFilters): Promise<Cand
     FROM phd_candidates pc
     LEFT JOIN students s ON pc.registration_number = s.registration_number
     JOIN programmes p ON pc.programme_id = p.id
-    LEFT JOIN users sup ON pc.supervisor_id = sup.id
-    LEFT JOIN users cs ON pc.co_supervisor_id = cs.id
+    LEFT JOIN staff sup ON pc.supervisor_id = sup.id
+    LEFT JOIN staff cs ON pc.co_supervisor_id = cs.id
     WHERE pc.deleted_at IS NULL
   `;
   const params: (string | number)[] = [];
@@ -82,8 +82,8 @@ export async function getCandidateById(id: number): Promise<CandidateWithDetails
     FROM phd_candidates pc
     LEFT JOIN students s ON pc.registration_number = s.registration_number
     JOIN programmes p ON pc.programme_id = p.id
-    LEFT JOIN users sup ON pc.supervisor_id = sup.id
-    LEFT JOIN users cs ON pc.co_supervisor_id = cs.id
+    LEFT JOIN staff sup ON pc.supervisor_id = sup.id
+    LEFT JOIN staff cs ON pc.co_supervisor_id = cs.id
     WHERE pc.id = ? AND pc.deleted_at IS NULL
     LIMIT 1
   `, [id]);
@@ -140,7 +140,7 @@ export async function getEligibleSupervisors(deptId?: number): Promise<any[]> {
   let sql = `
     SELECT DISTINCT u.id, u.first_name, u.last_name, u.email, u.role,
            d.name AS department_name
-    FROM users u
+    FROM staff u
     LEFT JOIN departments d ON u.department_id = d.id
     WHERE u.role NOT IN ('exam_master') 
       AND u.is_active = TRUE 

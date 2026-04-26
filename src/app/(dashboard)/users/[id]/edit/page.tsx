@@ -1,4 +1,4 @@
-// src/app/users/[id]/edit/page.tsx
+// src/app/staff/[id]/edit/page.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -62,7 +62,7 @@ export default function EditUserPage() {
 
   const fetchUser = async () => {
     try {
-      const response = await fetch(`/api/users/${userId}`);
+      const response = await fetch(`/api/staff/${userId}`);
       if (response.ok) {
         const data = await response.json();
         const user = data.data || data.user;
@@ -81,7 +81,7 @@ export default function EditUserPage() {
         });
       } else if (response.status === 404) {
         alert('User not found');
-        router.push('/users');
+        router.push('/staff');
       }
     } catch (error) {
       console.error('Error fetching user:', error);
@@ -180,7 +180,7 @@ export default function EditUserPage() {
         payload.password = formData.new_password;
       }
 
-      const response = await fetch(`/api/users/${userId}`, {
+      const response = await fetch(`/api/staff/${userId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -190,7 +190,7 @@ export default function EditUserPage() {
 
       if (response.ok) {
         alert('User updated successfully!');
-        router.push(`/users/${userId}`);
+        router.push(`/staff/${userId}`);
       } else {
         alert(data.error || 'Failed to update user');
       }
@@ -239,7 +239,7 @@ export default function EditUserPage() {
           </p>
         </div>
         <Link
-          href={`/users/${userId}`}
+          href={`/staff/${userId}`}
           className="rounded-lg bg-gray-600 px-4 py-2 text-white transition-colors hover:bg-gray-700"
         >
           ← Back
@@ -480,7 +480,7 @@ export default function EditUserPage() {
         {/* Submit Buttons */}
         <div className="flex justify-end gap-4">
           <Link
-            href={`/users/${userId}`}
+            href={`/staff/${userId}`}
             className="rounded-lg border border-gray-300 px-6 py-2 text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
           >
             Cancel

@@ -24,7 +24,7 @@ export async function GET(
         CONCAT(u.first_name, ' ', u.last_name) as user_name,
         u.role as user_role
       FROM paper_comments pc
-      JOIN users u ON pc.user_id = u.id
+      JOIN staff u ON pc.user_id = u.id
       WHERE pc.exam_paper_id = ?
       ORDER BY pc.created_at DESC`,
       [paperId]
@@ -91,7 +91,7 @@ export async function POST(
         CONCAT(u.first_name, ' ', u.last_name) as user_name,
         u.role as user_role
       FROM paper_comments pc
-      JOIN users u ON pc.user_id = u.id
+      JOIN staff u ON pc.user_id = u.id
       WHERE pc.id = ?`,
       [(result as any).insertId]
     );

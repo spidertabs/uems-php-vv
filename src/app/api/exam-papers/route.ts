@@ -53,9 +53,9 @@ export async function GET(request: NextRequest) {
         GROUP_CONCAT(DISTINCT p.code ORDER BY p.code SEPARATOR ', ') as programmes
       FROM exam_papers ep
       JOIN courses c ON ep.course_id = c.id
-      LEFT JOIN users creator ON ep.created_by = creator.id
-      LEFT JOIN users hod ON ep.hod_id = hod.id
-      LEFT JOIN users dean ON ep.dean_id = dean.id
+      LEFT JOIN staff creator ON ep.created_by = creator.id
+      LEFT JOIN staff hod ON ep.hod_id = hod.id
+      LEFT JOIN staff dean ON ep.dean_id = dean.id
       LEFT JOIN exam_paper_programmes epp ON ep.id = epp.exam_paper_id
       LEFT JOIN programmes p ON epp.programme_id = p.id
       WHERE ep.deleted_at IS NULL
@@ -158,7 +158,7 @@ export async function POST(request: NextRequest) {
     // Get HOD for the course's department
     const hodResult = await query<{ id: number }[]>(
       `SELECT id 
-       FROM users 
+       FROM staff 
        WHERE role = 'hod' 
        AND department_id = ? 
        AND is_active = TRUE
@@ -172,7 +172,7 @@ export async function POST(request: NextRequest) {
     // Get Dean for the course's college
     const deanResult = await query<{ id: number }[]>(
       `SELECT id 
-       FROM users 
+       FROM staff 
        WHERE role = 'dean' 
        AND college_id = ? 
        AND is_active = TRUE

@@ -33,10 +33,10 @@ export async function GET(req: NextRequest) {
         lp.is_active,
         lp.notes
       FROM lecturer_permissions lp
-      JOIN users u ON lp.lecturer_id = u.id
+      JOIN staff u ON lp.lecturer_id = u.id
       JOIN courses c ON lp.course_id = c.id
       LEFT JOIN departments d ON c.department_id = d.id
-      JOIN users hod ON lp.granted_by = hod.id
+      JOIN staff hod ON lp.granted_by = hod.id
       WHERE u.deleted_at IS NULL 
         AND c.deleted_at IS NULL
     `;

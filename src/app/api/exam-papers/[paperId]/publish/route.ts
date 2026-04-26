@@ -65,12 +65,12 @@ export async function POST(
         [paperId, paper.status, session.id, session.role, 'Paper published']
       );
 
-      // Notify relevant users (creator, HOD, Dean)
-      const notifyUsers = [paper.created_by];
-      if (paper.hod_id) notifyUsers.push(paper.hod_id);
-      if (paper.dean_id) notifyUsers.push(paper.dean_id);
+      // Notify relevant staff (creator, HOD, Dean)
+      const notifyStaff = [paper.created_by];
+      if (paper.hod_id) notifyStaff.push(paper.hod_id);
+      if (paper.dean_id) notifyStaff.push(paper.dean_id);
 
-      for (const userId of notifyUsers) {
+      for (const userId of notifyStaff) {
         await connection.execute(
           `INSERT INTO notifications 
            (user_id, type, title, message, related_paper_id, priority, action_url)

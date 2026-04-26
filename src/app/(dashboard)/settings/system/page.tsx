@@ -380,7 +380,7 @@ export default function SystemSettingsPage() {
                       Enable User Registrations
                     </div>
                     <div className="text-sm text-gray-600 dark:text-gray-400">
-                      Allow new users to register
+                      Allow new staff to register
                     </div>
                   </div>
                   <button
@@ -408,7 +408,7 @@ export default function SystemSettingsPage() {
                       Require Email Verification
                     </div>
                     <div className="text-sm text-gray-600 dark:text-gray-400">
-                      New users must verify email
+                      New staff must verify email
                     </div>
                   </div>
                   <button
@@ -449,7 +449,7 @@ export default function SystemSettingsPage() {
                       Maintenance Mode
                     </div>
                     <div className="text-sm text-red-700 dark:text-red-500">
-                      Disable system access for all users except admins
+                      Disable system access for all staff except admins
                     </div>
                   </div>
                   <button
@@ -556,7 +556,7 @@ export default function SystemSettingsPage() {
               ⚠️ Important
             </h3>
             <p className="text-sm text-blue-700 dark:text-blue-500">
-              System settings affect all users. Test changes in a development environment first when possible.
+              System settings affect all staff. Test changes in a development environment first when possible.
             </p>
           </div>
         </div>

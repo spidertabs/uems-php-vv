@@ -1,4 +1,4 @@
-// src/app/users/[id]/page.tsx
+// src/app/staff/[id]/page.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -47,13 +47,13 @@ export default function UserDetailPage() {
 
   const fetchUser = async () => {
     try {
-      const response = await fetch(`/api/users/${userId}`);
+      const response = await fetch(`/api/staff/${userId}`);
       if (response.ok) {
         const data = await response.json();
         setUser(data.data || data.user);
       } else if (response.status === 404) {
         alert('User not found');
-        router.push('/users');
+        router.push('/staff');
       }
     } catch (error) {
       console.error('Error fetching user:', error);
@@ -64,7 +64,7 @@ export default function UserDetailPage() {
 
   const fetchUserStats = async () => {
     try {
-      const response = await fetch(`/api/users/${userId}/stats`);
+      const response = await fetch(`/api/staff/${userId}/stats`);
       if (response.ok) {
         const data = await response.json();
         setStats(data.data || data.stats);
@@ -80,13 +80,13 @@ export default function UserDetailPage() {
     }
 
     try {
-      const response = await fetch(`/api/users/${userId}`, {
+      const response = await fetch(`/api/staff/${userId}`, {
         method: 'DELETE',
       });
 
       if (response.ok) {
         alert('User deleted successfully');
-        router.push('/users');
+        router.push('/staff');
       } else {
         const data = await response.json();
         alert(data.error || 'Failed to delete user');
@@ -101,7 +101,7 @@ export default function UserDetailPage() {
     if (!user) return;
 
     try {
-      const response = await fetch(`/api/users/${userId}`, {
+      const response = await fetch(`/api/staff/${userId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ is_active: !user.is_active }),
@@ -154,13 +154,13 @@ export default function UserDetailPage() {
         </div>
         <div className="flex gap-3">
           <Link
-            href="/users"
+            href="/staff"
             className="rounded-lg bg-gray-600 px-4 py-2 text-white transition-colors hover:bg-gray-700"
           >
             ← Back
           </Link>
           <Link
-            href={`/users/${userId}/edit`}
+            href={`/staff/${userId}/edit`}
             className="rounded-lg bg-blue-600 px-4 py-2 text-white transition-colors hover:bg-blue-700"
           >
             ✏️ Edit

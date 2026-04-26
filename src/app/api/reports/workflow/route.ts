@@ -110,7 +110,7 @@ export async function GET(request: NextRequest) {
         FROM exam_papers ep
         JOIN courses c ON ep.course_id = c.id
         LEFT JOIN departments d ON c.department_id = d.id
-        LEFT JOIN users creator ON ep.created_by = creator.id
+        LEFT JOIN staff creator ON ep.created_by = creator.id
         WHERE ep.deleted_at IS NULL
           AND ep.status NOT IN ('draft', 'printed', 'published')
       `;
@@ -156,7 +156,7 @@ export async function GET(request: NextRequest) {
           COUNT(DISTINCT CASE WHEN wh.action IN ('hod_rejected', 'dean_rejected') THEN wh.exam_paper_id END) as rejected_papers,
           (COUNT(DISTINCT CASE WHEN wh.action IN ('hod_approved', 'dean_approved') THEN wh.exam_paper_id END) * 100.0 / 
            NULLIF(COUNT(DISTINCT CASE WHEN wh.action IN ('hod_approved', 'dean_approved', 'hod_rejected', 'dean_rejected') THEN wh.exam_paper_id END), 0)) as approval_rate
-        FROM users u
+        FROM staff u
         LEFT JOIN workflow_history wh ON wh.actor_id = u.id
         LEFT JOIN exam_papers ep ON wh.exam_paper_id = ep.id
         WHERE u.role IN ('hod', 'dean', 'exam_master')

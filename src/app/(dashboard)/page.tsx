@@ -15,7 +15,7 @@ interface DashboardStats {
   papersToReview?: number;
   printQueue?: number;
   activeCourses?: number;
-  totalUsers?: number;
+  totalStaff?: number;
   departmentCourses?: number;
   collegePapers?: number;
   myCandidates?: number;
@@ -199,10 +199,10 @@ export default function DashboardPage() {
     const cardsByRole: Record<string, any[]> = {
       admin: [
         {
-          title: 'Total Users',
-          value: stats.totalUsers || 0,
+          title: 'Total Staff',
+          value: stats.totalStaff || 0,
           icon: '👥',
-          href: '/users',
+          href: '/staff',
           color: 'bg-indigo-500',
         },
         {
@@ -402,10 +402,10 @@ export default function DashboardPage() {
     const actionsByRole: Record<string, any[]> = {
       admin: [
         {
-          title: 'Manage Users',
-          description: 'Add or edit system users',
+          title: 'Manage Staff',
+          description: 'Add or edit system staff',
           icon: '👥',
-          href: '/users',
+          href: '/staff',
           color: 'text-indigo-600 dark:text-indigo-400',
         },
         {
@@ -587,7 +587,7 @@ export default function DashboardPage() {
 
   const getRoleWelcomeMessage = () => {
     const messages: Record<string, string> = {
-      admin: "You have full system access. Monitor users, papers, and system health.",
+      admin: "You have full system access. Monitor staff, papers, and system health.",
       exam_master: "Manage the print queue and ensure exams are ready for distribution.",
       dean: "Oversee college operations and approve papers from your departments.",
       hod: "Manage your department's courses, approve papers, and grant permissions.",

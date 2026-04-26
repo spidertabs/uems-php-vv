@@ -97,7 +97,7 @@ export default function ProfileSettingsPage() {
     setMessage(null);
 
     try {
-      const response = await fetch(`/api/users/${user?.id}`, {
+      const response = await fetch(`/api/staff/${user?.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),

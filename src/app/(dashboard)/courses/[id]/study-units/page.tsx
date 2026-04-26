@@ -63,7 +63,7 @@ export default function StudyUnitsPage() {
           units.map(async (unit) => {
             if (!creatorsMap[unit.created_by]) {
               try {
-                const res = await fetch(`/api/users/${unit.created_by}`);
+                const res = await fetch(`/api/staff/${unit.created_by}`);
                 if (res.ok) {
                   const user = await res.json();
                   creatorsMap[unit.created_by] = user.name;

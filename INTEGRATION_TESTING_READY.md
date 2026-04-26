@@ -74,7 +74,7 @@ Once setup is complete, you'll have:
 | Suite | Tests | Status |
 |-------|-------|--------|
 | Auth | 7 | Ready |
-| Users | 12 | Ready |
+| staff | 12 | Ready |
 | Approvals | 2 | Ready |
 | PhD Viva | 9 | Ready |
 | Exam Papers | 6 | Ready |

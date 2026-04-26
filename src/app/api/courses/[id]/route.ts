@@ -24,7 +24,7 @@ export async function GET(
        FROM courses c
        LEFT JOIN departments d ON c.department_id = d.id
        LEFT JOIN colleges col ON d.college_id = col.id
-       LEFT JOIN users u ON u.department_id = d.id AND u.role = 'hod'
+       LEFT JOIN staff u ON u.department_id = d.id AND u.role = 'hod'
        WHERE c.id = ?
        LIMIT 1`,
       [courseId]

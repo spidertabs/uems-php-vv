@@ -29,7 +29,7 @@
 ✗ POST /api/auth/logout - logs out
 ```
 
-### ⏭️ Users Tests (12 tests all skipped)
+### ⏭️ staff Tests (12 tests all skipped)
 ```
 Waiting for auth to work before running user permission tests
 ```
@@ -154,7 +154,7 @@ Once the RPC function and schema are in place:
 - GET `/api/auth/me`
 - POST `/api/auth/change-password`
 - POST `/api/auth/logout`
-- GET/POST `/api/users/*`
+- GET/POST `/api/staff/*`
 - GET/POST `/api/approvals/*`
 - GET/POST `/api/phd/*`
 - GET/POST `/api/exam-papers/*`
@@ -178,7 +178,7 @@ Once the RPC function and schema are in place:
 
 1. ✅ Create `execute_query` RPC function in Supabase SQL Editor
 2. ✅ Import all SQL migration files
-3. ✅ Verify seed data exists (test users, etc.)
+3. ✅ Verify seed data exists (test staff, etc.)
 4. ✅ Re-run integration tests
 5. ✅ Fix any remaining test failures
 6. ✅ Document any environment-specific issues

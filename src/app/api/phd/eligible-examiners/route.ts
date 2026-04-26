@@ -12,8 +12,8 @@ export async function GET(req: NextRequest) {
     }
 
     const deptId = req.nextUrl.searchParams.get('dept_id');
-    const users = await getEligibleExaminers(deptId ? parseInt(deptId) : undefined);
-    return NextResponse.json({ users });
+    const staff = await getEligibleExaminers(deptId ? parseInt(deptId) : undefined);
+    return NextResponse.json({ staff });
   } catch (error) {
     console.error('Error fetching eligible examiners:', error);
     return NextResponse.json({ error: 'Failed to fetch examiners' }, { status: 500 });

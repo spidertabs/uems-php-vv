@@ -1,4 +1,4 @@
-// src/app/users/import/page.tsx
+// src/app/staff/import/page.tsx
 'use client';
 
 import { useState } from 'react';
@@ -11,7 +11,7 @@ interface ImportResult {
   errors: Array<{ row: number; error: string }>;
 }
 
-export default function ImportUsersPage() {
+export default function ImportStaffPage() {
   const router = useRouter();
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
@@ -46,7 +46,7 @@ export default function ImportUsersPage() {
       const formData = new FormData();
       formData.append('file', file);
 
-      const response = await fetch('/api/users/import', {
+      const response = await fetch('/api/staff/import', {
         method: 'POST',
         body: formData,
       });
@@ -56,14 +56,14 @@ export default function ImportUsersPage() {
       if (response.ok) {
         setResult(data);
         if (data.failed === 0) {
-          setTimeout(() => router.push('/users'), 2000);
+          setTimeout(() => router.push('/staff'), 2000);
         }
       } else {
-        alert(data.error || 'Failed to import users');
+        alert(data.error || 'Failed to import staff');
       }
     } catch (error) {
-      console.error('Error importing users:', error);
-      alert('Failed to import users');
+      console.error('Error importing staff:', error);
+      alert('Failed to import staff');
     } finally {
       setLoading(false);
     }
@@ -78,7 +78,7 @@ jane.smith@example.com,Jane,Smith,hod,2,1,+256700000001,password123`;
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'users_import_template.csv';
+    a.download = 'staff_import_template.csv';
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -89,17 +89,17 @@ jane.smith@example.com,Jane,Smith,hod,2,1,+256700000001,password123`;
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            📥 Import Users
+            📥 Import Staff
           </h1>
           <p className="mt-2 text-gray-600 dark:text-gray-400">
-            Bulk import users from CSV or Excel file
+            Bulk import staff from CSV or Excel file
           </p>
         </div>
         <Link
-          href="/users"
+          href="/staff"
           className="rounded-lg bg-gray-600 px-4 py-2 text-white transition-colors hover:bg-gray-700"
         >
-          ← Back to Users
+          ← Back to Staff
         </Link>
       </div>
 
@@ -237,7 +237,7 @@ jane.smith@example.com,Jane,Smith,hod,2,1,+256700000001,password123`;
             disabled={loading}
             className="rounded-lg bg-blue-600 px-6 py-3 text-white transition-colors hover:bg-blue-700 disabled:bg-blue-400"
           >
-            {loading ? '⏳ Importing...' : '📥 Import Users'}
+            {loading ? '⏳ Importing...' : '📥 Import Staff'}
           </button>
         </div>
       )}
@@ -298,7 +298,7 @@ jane.smith@example.com,Jane,Smith,hod,2,1,+256700000001,password123`;
 
           {result.failed === 0 && (
             <p className="mt-4 text-sm text-green-700 dark:text-green-300">
-              Redirecting to users list...
+              Redirecting to staff list...
             </p>
           )}
         </div>

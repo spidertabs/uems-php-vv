@@ -35,8 +35,8 @@ export async function GET(
       FROM phd_candidates pc
       LEFT JOIN students st ON pc.registration_number = st.registration_number
       JOIN programmes p ON pc.programme_id = p.id
-      LEFT JOIN users s ON pc.supervisor_id = s.id
-      LEFT JOIN users cs ON pc.co_supervisor_id = cs.id
+      LEFT JOIN staff s ON pc.supervisor_id = s.id
+      LEFT JOIN staff cs ON pc.co_supervisor_id = cs.id
       WHERE pc.id = ? AND pc.deleted_at IS NULL`,
       [candidateId]
     );
@@ -134,7 +134,7 @@ export async function PUT(
 
     if (supsToValidate.length > 0) {
       const ineligible = await query<any[]>(
-        `SELECT u.id FROM users u 
+        `SELECT u.id FROM staff u 
          WHERE u.id IN (${supsToValidate.map(() => '?').join(',')}) 
            AND u.role = 'hod'`,
         supsToValidate

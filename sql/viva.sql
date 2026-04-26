@@ -31,143 +31,143 @@ VALUES
     ('KIU/2020/1001',
      'Machine Learning Approaches for Predicting Crop Yields in Sub-Saharan Africa',
      (SELECT id FROM programmes WHERE code IN ('PHD-COMPSCI','PHDCOMPSCI') LIMIT 1),
-     (SELECT id FROM users WHERE email = 'lect.cs1@uems.ac.ug'),
-     (SELECT id FROM users WHERE email = 'lect.cs2@uems.ac.ug'),
+     (SELECT id FROM staff WHERE email = 'lect.cs1@uems.ac.ug'),
+     (SELECT id FROM staff WHERE email = 'lect.cs2@uems.ac.ug'),
      2020, 'viva_scheduled'),
 
     ('KIU/2020/1002',
      'Enhancing Cybersecurity Frameworks for Ugandan Financial Institutions',
      (SELECT id FROM programmes WHERE code IN ('PHD-COMPSCI','PHDCOMPSCI') LIMIT 1),
-     (SELECT id FROM users WHERE email = 'lect.cs3@uems.ac.ug'),
+     (SELECT id FROM staff WHERE email = 'lect.cs3@uems.ac.ug'),
      NULL,
      2020, 'viva_scheduled'),
 
     ('KIU/2019/P001',
      'Deep Learning Models for Low-Resource Language Processing in East Africa',
      (SELECT id FROM programmes WHERE code IN ('PHD-COMPSCI','PHDCOMPSCI') LIMIT 1),
-     (SELECT id FROM users WHERE email = 'lect.cs1@uems.ac.ug'),
-     (SELECT id FROM users WHERE email = 'lect.cs2@uems.ac.ug'),
+     (SELECT id FROM staff WHERE email = 'lect.cs1@uems.ac.ug'),
+     (SELECT id FROM staff WHERE email = 'lect.cs2@uems.ac.ug'),
      2019, 'corrections_submitted'),
 
     ('KIU/2019/P002',
      'Blockchain-Based Land Registry Systems for Developing Nations',
      (SELECT id FROM programmes WHERE code IN ('PHD-COMPSCI','PHDCOMPSCI') LIMIT 1),
-     (SELECT id FROM users WHERE email = 'lect.cs2@uems.ac.ug'),
+     (SELECT id FROM staff WHERE email = 'lect.cs2@uems.ac.ug'),
      NULL,
      2019, 'thesis_submitted'),
 
     ('KIU/2019/P003',
      'Edge Computing Architectures for IoT in Resource-Constrained Environments',
      (SELECT id FROM programmes WHERE code IN ('PHD-COMPSCI','PHDCOMPSCI') LIMIT 1),
-     (SELECT id FROM users WHERE email = 'lect.cs3@uems.ac.ug'),
-     (SELECT id FROM users WHERE email = 'lect.cs1@uems.ac.ug'),
+     (SELECT id FROM staff WHERE email = 'lect.cs3@uems.ac.ug'),
+     (SELECT id FROM staff WHERE email = 'lect.cs1@uems.ac.ug'),
      2019, 'awarded'),
 
     -- PHD-PH
     ('KIU/2019/2001',
      'Epidemiology of Malaria Resistance in Northern Uganda',
      (SELECT id FROM programmes WHERE code IN ('PHD-PH','PHDPH') LIMIT 1),
-     (SELECT id FROM users WHERE email = 'lect.ph1@uems.ac.ug'),
-     (SELECT id FROM users WHERE email = 'lect.epid1@uems.ac.ug'),
+     (SELECT id FROM staff WHERE email = 'lect.ph1@uems.ac.ug'),
+     (SELECT id FROM staff WHERE email = 'lect.epid1@uems.ac.ug'),
      2019, 'viva_scheduled'),
 
     ('KIU/2019/2002',
      'Impact of Maternal Nutrition Interventions on Infant Mortality Rates',
      (SELECT id FROM programmes WHERE code IN ('PHD-PH','PHDPH') LIMIT 1),
-     (SELECT id FROM users WHERE email = 'lect.ph2@uems.ac.ug'),
+     (SELECT id FROM staff WHERE email = 'lect.ph2@uems.ac.ug'),
      NULL,
      2019, 'viva_scheduled'),
 
     ('KIU/2019/P004',
      'Community Health Worker Effectiveness in Rural Uganda: A Mixed-Methods Study',
      (SELECT id FROM programmes WHERE code IN ('PHD-PH','PHDPH') LIMIT 1),
-     (SELECT id FROM users WHERE email = 'lect.ph1@uems.ac.ug'),
-     (SELECT id FROM users WHERE email = 'lect.ph2@uems.ac.ug'),
+     (SELECT id FROM staff WHERE email = 'lect.ph1@uems.ac.ug'),
+     (SELECT id FROM staff WHERE email = 'lect.ph2@uems.ac.ug'),
      2019, 'corrections_submitted'),
 
     ('KIU/2020/P005',
      'HIV/AIDS Treatment Adherence Patterns Among Adolescents in Western Uganda',
      (SELECT id FROM programmes WHERE code IN ('PHD-PH','PHDPH') LIMIT 1),
-     (SELECT id FROM users WHERE email = 'lect.epid1@uems.ac.ug'),
+     (SELECT id FROM staff WHERE email = 'lect.epid1@uems.ac.ug'),
      NULL,
      2020, 'thesis_submitted'),
 
     ('KIU/2020/P006',
      'Tobacco Smoking Prevalence and Cessation Strategies in Urban Ugandan Communities',
      (SELECT id FROM programmes WHERE code IN ('PHD-PH','PHDPH') LIMIT 1),
-     (SELECT id FROM users WHERE email = 'lect.ph2@uems.ac.ug'),
-     (SELECT id FROM users WHERE email = 'lect.ph1@uems.ac.ug'),
+     (SELECT id FROM staff WHERE email = 'lect.ph2@uems.ac.ug'),
+     (SELECT id FROM staff WHERE email = 'lect.ph1@uems.ac.ug'),
      2020, 'enrolled'),
 
     -- PHD-LAW
     ('KIU/2021/3001',
      'Jurisprudential Analysis of Land Rights and Evictions in Urban Uganda',
      (SELECT id FROM programmes WHERE code IN ('PHD-LAW','PHDLAW') LIMIT 1),
-     (SELECT id FROM users WHERE email = 'lect.law1@uems.ac.ug'),
-     (SELECT id FROM users WHERE email = 'lect.law2@uems.ac.ug'),
+     (SELECT id FROM staff WHERE email = 'lect.law1@uems.ac.ug'),
+     (SELECT id FROM staff WHERE email = 'lect.law2@uems.ac.ug'),
      2021, 'viva_scheduled'),
 
     ('KIU/2021/P007',
      'International Human Rights Law and Refugee Protection in the Great Lakes Region',
      (SELECT id FROM programmes WHERE code IN ('PHD-LAW','PHDLAW') LIMIT 1),
-     (SELECT id FROM users WHERE email = 'lect.law2@uems.ac.ug'),
+     (SELECT id FROM staff WHERE email = 'lect.law2@uems.ac.ug'),
      NULL,
      2021, 'thesis_submitted'),
 
     ('KIU/2021/P008',
      'Corporate Governance and Accountability Under Ugandan Company Law',
      (SELECT id FROM programmes WHERE code IN ('PHD-LAW','PHDLAW') LIMIT 1),
-     (SELECT id FROM users WHERE email = 'lect.law1@uems.ac.ug'),
-     (SELECT id FROM users WHERE email = 'lect.law2@uems.ac.ug'),
+     (SELECT id FROM staff WHERE email = 'lect.law1@uems.ac.ug'),
+     (SELECT id FROM staff WHERE email = 'lect.law2@uems.ac.ug'),
      2021, 'corrections_submitted'),
 
     ('KIU/2022/P009',
      'Environmental Law and Climate Change Liability in East Africa',
      (SELECT id FROM programmes WHERE code IN ('PHD-LAW','PHDLAW') LIMIT 1),
-     (SELECT id FROM users WHERE email = 'lect.law2@uems.ac.ug'),
+     (SELECT id FROM staff WHERE email = 'lect.law2@uems.ac.ug'),
      NULL,
      2022, 'enrolled'),
 
     ('KIU/2022/P010',
      'Constitutional Mechanisms for Protecting Electoral Rights in Uganda',
      (SELECT id FROM programmes WHERE code IN ('PHD-LAW','PHDLAW') LIMIT 1),
-     (SELECT id FROM users WHERE email = 'lect.law1@uems.ac.ug'),
-     (SELECT id FROM users WHERE email = 'lect.law2@uems.ac.ug'),
+     (SELECT id FROM staff WHERE email = 'lect.law1@uems.ac.ug'),
+     (SELECT id FROM staff WHERE email = 'lect.law2@uems.ac.ug'),
      2022, 'enrolled'),
 
     -- PHD-BA
     ('KIU/2020/4001',
      'Strategic Leadership and Organisational Performance in Ugandan SMEs',
      (SELECT id FROM programmes WHERE code = 'PHD-BA'),
-     (SELECT id FROM users WHERE email = 'lect.bus1@uems.ac.ug'),
+     (SELECT id FROM staff WHERE email = 'lect.bus1@uems.ac.ug'),
      NULL,
      2020, 'viva_scheduled'),
 
     ('KIU/2020/P011',
      'Supply Chain Resilience and Digital Transformation in Ugandan Manufacturing',
      (SELECT id FROM programmes WHERE code = 'PHD-BA'),
-     (SELECT id FROM users WHERE email = 'lect.bus1@uems.ac.ug'),
-     (SELECT id FROM users WHERE email = 'lect.bus2@uems.ac.ug'),
+     (SELECT id FROM staff WHERE email = 'lect.bus1@uems.ac.ug'),
+     (SELECT id FROM staff WHERE email = 'lect.bus2@uems.ac.ug'),
      2020, 'corrections_submitted'),
 
     ('KIU/2021/P012',
      'Financial Inclusion Through Mobile Banking: Evidence from Rural Uganda',
      (SELECT id FROM programmes WHERE code = 'PHD-BA'),
-     (SELECT id FROM users WHERE email = 'lect.bus2@uems.ac.ug'),
+     (SELECT id FROM staff WHERE email = 'lect.bus2@uems.ac.ug'),
      NULL,
      2021, 'thesis_submitted'),
 
     ('KIU/2021/P013',
      'Entrepreneurial Ecosystems and Start-Up Survival Rates in Kampala',
      (SELECT id FROM programmes WHERE code = 'PHD-BA'),
-     (SELECT id FROM users WHERE email = 'lect.bus1@uems.ac.ug'),
-     (SELECT id FROM users WHERE email = 'lect.bus2@uems.ac.ug'),
+     (SELECT id FROM staff WHERE email = 'lect.bus1@uems.ac.ug'),
+     (SELECT id FROM staff WHERE email = 'lect.bus2@uems.ac.ug'),
      2021, 'enrolled'),
 
     ('KIU/2022/P014',
      'Corporate Social Responsibility and Brand Equity in the Ugandan Telecom Sector',
      (SELECT id FROM programmes WHERE code = 'PHD-BA'),
-     (SELECT id FROM users WHERE email = 'lect.bus2@uems.ac.ug'),
+     (SELECT id FROM staff WHERE email = 'lect.bus2@uems.ac.ug'),
      NULL,
      2022, 'enrolled'),
 
@@ -175,35 +175,35 @@ VALUES
     ('KIU/2021/5001',
      'Teacher Professional Development and Learner Outcomes in Ugandan Secondary Schools',
      (SELECT id FROM programmes WHERE code IN ('PHD-MSEA','PHDMSEA') LIMIT 1),
-     (SELECT id FROM users WHERE email = 'lect.edu1@uems.ac.ug'),
+     (SELECT id FROM staff WHERE email = 'lect.edu1@uems.ac.ug'),
      NULL,
      2021, 'viva_scheduled'),
 
     ('KIU/2021/P015',
      'Inclusive Education Policies and Implementation Gaps for Learners with Disabilities',
      (SELECT id FROM programmes WHERE code IN ('PHD-MSEA','PHDMSEA') LIMIT 1),
-     (SELECT id FROM users WHERE email = 'lect.edu2@uems.ac.ug'),
-     (SELECT id FROM users WHERE email = 'lect.edu1@uems.ac.ug'),
+     (SELECT id FROM staff WHERE email = 'lect.edu2@uems.ac.ug'),
+     (SELECT id FROM staff WHERE email = 'lect.edu1@uems.ac.ug'),
      2021, 'thesis_submitted'),
 
     ('KIU/2021/P016',
      'Technology Integration in Primary Education in Post-COVID Uganda',
      (SELECT id FROM programmes WHERE code IN ('PHD-MSEA','PHDMSEA') LIMIT 1),
-     (SELECT id FROM users WHERE email = 'lect.edu1@uems.ac.ug'),
+     (SELECT id FROM staff WHERE email = 'lect.edu1@uems.ac.ug'),
      NULL,
      2021, 'corrections_submitted'),
 
     ('KIU/2022/P017',
      'Early Childhood Education Quality Indicators in Northern Uganda',
      (SELECT id FROM programmes WHERE code IN ('PHD-MSEA','PHDMSEA') LIMIT 1),
-     (SELECT id FROM users WHERE email = 'lect.edu2@uems.ac.ug'),
-     (SELECT id FROM users WHERE email = 'lect.edu1@uems.ac.ug'),
+     (SELECT id FROM staff WHERE email = 'lect.edu2@uems.ac.ug'),
+     (SELECT id FROM staff WHERE email = 'lect.edu1@uems.ac.ug'),
      2022, 'enrolled'),
 
     ('KIU/2022/P018',
      'Parental Involvement and Student Academic Achievement in Rural Schools',
      (SELECT id FROM programmes WHERE code IN ('PHD-MSEA','PHDMSEA') LIMIT 1),
-     (SELECT id FROM users WHERE email = 'lect.edu1@uems.ac.ug'),
+     (SELECT id FROM staff WHERE email = 'lect.edu1@uems.ac.ug'),
      NULL,
      2022, 'enrolled'),
 
@@ -211,36 +211,36 @@ VALUES
     ('KIU/2020/P019',
      'Structural Performance of Bamboo-Reinforced Concrete Beams in Tropical Climates',
      (SELECT id FROM programmes WHERE code IN ('PHD-ENG','PHDENG') LIMIT 1),
-     (SELECT id FROM users WHERE email = 'lect.civ1@uems.ac.ug'),
-     (SELECT id FROM users WHERE email = 'lect.civ2@uems.ac.ug'),
+     (SELECT id FROM staff WHERE email = 'lect.civ1@uems.ac.ug'),
+     (SELECT id FROM staff WHERE email = 'lect.civ2@uems.ac.ug'),
      2020, 'viva_scheduled'),
 
     ('KIU/2020/P020',
      'Road Pavement Deterioration Models for Low-Traffic Rural Roads in Uganda',
      (SELECT id FROM programmes WHERE code IN ('PHD-ENG','PHDENG') LIMIT 1),
-     (SELECT id FROM users WHERE email = 'lect.civ2@uems.ac.ug'),
+     (SELECT id FROM staff WHERE email = 'lect.civ2@uems.ac.ug'),
      NULL,
      2020, 'thesis_submitted'),
 
     ('KIU/2021/P021',
      'Sustainable Urban Drainage Systems for Flooding Mitigation in Kampala',
      (SELECT id FROM programmes WHERE code IN ('PHD-ENG','PHDENG') LIMIT 1),
-     (SELECT id FROM users WHERE email = 'lect.civ1@uems.ac.ug'),
-     (SELECT id FROM users WHERE email = 'lect.civ2@uems.ac.ug'),
+     (SELECT id FROM staff WHERE email = 'lect.civ1@uems.ac.ug'),
+     (SELECT id FROM staff WHERE email = 'lect.civ2@uems.ac.ug'),
      2021, 'corrections_submitted'),
 
     -- PHD-ENG (Electrical)
     ('KIU/2021/P022',
      'Renewable Energy Integration and Grid Stability in Rural Electrification Projects',
      (SELECT id FROM programmes WHERE code IN ('PHD-ENG','PHDENG') LIMIT 1),
-     (SELECT id FROM users WHERE email = 'lect.ele1@uems.ac.ug'),
-     (SELECT id FROM users WHERE email = 'lect.ele2@uems.ac.ug'),
+     (SELECT id FROM staff WHERE email = 'lect.ele1@uems.ac.ug'),
+     (SELECT id FROM staff WHERE email = 'lect.ele2@uems.ac.ug'),
      2021, 'enrolled'),
 
     ('KIU/2022/P023',
      'Smart Metering and Demand-Side Management for Sub-Saharan Africa Power Utilities',
      (SELECT id FROM programmes WHERE code IN ('PHD-ENG','PHDENG') LIMIT 1),
-     (SELECT id FROM users WHERE email = 'lect.ele1@uems.ac.ug'),
+     (SELECT id FROM staff WHERE email = 'lect.ele1@uems.ac.ug'),
      NULL,
      2022, 'enrolled');
 
@@ -404,86 +404,86 @@ VALUES
      (SELECT id FROM thesis_submissions WHERE candidate_id = (SELECT id FROM phd_candidates WHERE registration_number = 'KIU/2020/1001') LIMIT 1),
      CURRENT_DATE + INTERVAL '7 days', '09:00',
      'ICT Building, Room 101', 120, 'scheduled', NULL,
-     (SELECT id FROM users WHERE email = 'admin@uems.ac.ug')),
+     (SELECT id FROM staff WHERE email = 'admin@uems.ac.ug')),
 
     ((SELECT id FROM phd_candidates WHERE registration_number = 'KIU/2020/1002'),
      (SELECT id FROM thesis_submissions WHERE candidate_id = (SELECT id FROM phd_candidates WHERE registration_number = 'KIU/2020/1002') LIMIT 1),
      CURRENT_DATE + INTERVAL '7 days', '14:00',
      'ICT Building, Room 101', 90, 'scheduled', NULL,
-     (SELECT id FROM users WHERE email = 'admin@uems.ac.ug')),
+     (SELECT id FROM staff WHERE email = 'admin@uems.ac.ug')),
 
     ((SELECT id FROM phd_candidates WHERE registration_number = 'KIU/2019/P001'),
      (SELECT id FROM thesis_submissions WHERE candidate_id = (SELECT id FROM phd_candidates WHERE registration_number = 'KIU/2019/P001') LIMIT 1),
      CURRENT_DATE - INTERVAL '45 days', '10:00',
      'ICT Building, Room 102', 120, 'completed', NULL,
-     (SELECT id FROM users WHERE email = 'admin@uems.ac.ug')),
+     (SELECT id FROM staff WHERE email = 'admin@uems.ac.ug')),
 
     ((SELECT id FROM phd_candidates WHERE registration_number = 'KIU/2019/2001'),
      (SELECT id FROM thesis_submissions WHERE candidate_id = (SELECT id FROM phd_candidates WHERE registration_number = 'KIU/2019/2001') LIMIT 1),
      CURRENT_DATE + INTERVAL '14 days', '10:00',
      'School of Health Sciences, Boardroom', 120, 'scheduled', NULL,
-     (SELECT id FROM users WHERE email = 'dean.sph@uems.ac.ug')),
+     (SELECT id FROM staff WHERE email = 'dean.sph@uems.ac.ug')),
 
     ((SELECT id FROM phd_candidates WHERE registration_number = 'KIU/2019/2002'),
      (SELECT id FROM thesis_submissions WHERE candidate_id = (SELECT id FROM phd_candidates WHERE registration_number = 'KIU/2019/2002') LIMIT 1),
      CURRENT_DATE - INTERVAL '5 days', '10:00',
      'School of Health Sciences, Boardroom', 90, 'postponed',
      'Lead external examiner fell ill; pending reschedule.',
-     (SELECT id FROM users WHERE email = 'dean.sph@uems.ac.ug')),
+     (SELECT id FROM staff WHERE email = 'dean.sph@uems.ac.ug')),
 
     ((SELECT id FROM phd_candidates WHERE registration_number = 'KIU/2019/P004'),
      (SELECT id FROM thesis_submissions WHERE candidate_id = (SELECT id FROM phd_candidates WHERE registration_number = 'KIU/2019/P004') LIMIT 1),
      CURRENT_DATE - INTERVAL '40 days', '09:00',
      'School of Health Sciences, Seminar Room', 90, 'completed', NULL,
-     (SELECT id FROM users WHERE email = 'dean.sph@uems.ac.ug')),
+     (SELECT id FROM staff WHERE email = 'dean.sph@uems.ac.ug')),
 
     ((SELECT id FROM phd_candidates WHERE registration_number = 'KIU/2021/3001'),
      (SELECT id FROM thesis_submissions WHERE candidate_id = (SELECT id FROM phd_candidates WHERE registration_number = 'KIU/2021/3001') LIMIT 1),
      CURRENT_DATE + INTERVAL '21 days', '09:30',
      'Faculty of Law, Moot Court Room', 120, 'scheduled', NULL,
-     (SELECT id FROM users WHERE email = 'dean.sol@uems.ac.ug')),
+     (SELECT id FROM staff WHERE email = 'dean.sol@uems.ac.ug')),
 
     ((SELECT id FROM phd_candidates WHERE registration_number = 'KIU/2021/P008'),
      (SELECT id FROM thesis_submissions WHERE candidate_id = (SELECT id FROM phd_candidates WHERE registration_number = 'KIU/2021/P008') LIMIT 1),
      CURRENT_DATE - INTERVAL '35 days', '14:00',
      'Faculty of Law, Conference Room', 90, 'completed', NULL,
-     (SELECT id FROM users WHERE email = 'dean.sol@uems.ac.ug')),
+     (SELECT id FROM staff WHERE email = 'dean.sol@uems.ac.ug')),
 
     ((SELECT id FROM phd_candidates WHERE registration_number = 'KIU/2020/4001'),
      (SELECT id FROM thesis_submissions WHERE candidate_id = (SELECT id FROM phd_candidates WHERE registration_number = 'KIU/2020/4001') LIMIT 1),
      CURRENT_DATE + INTERVAL '10 days', '11:00',
      'College of Business, Boardroom A', 120, 'scheduled', NULL,
-     (SELECT id FROM users WHERE email = 'admin@uems.ac.ug')),
+     (SELECT id FROM staff WHERE email = 'admin@uems.ac.ug')),
 
     ((SELECT id FROM phd_candidates WHERE registration_number = 'KIU/2020/P011'),
      (SELECT id FROM thesis_submissions WHERE candidate_id = (SELECT id FROM phd_candidates WHERE registration_number = 'KIU/2020/P011') LIMIT 1),
      CURRENT_DATE - INTERVAL '50 days', '10:00',
      'College of Business, Boardroom B', 90, 'completed', NULL,
-     (SELECT id FROM users WHERE email = 'admin@uems.ac.ug')),
+     (SELECT id FROM staff WHERE email = 'admin@uems.ac.ug')),
 
     ((SELECT id FROM phd_candidates WHERE registration_number = 'KIU/2021/5001'),
      (SELECT id FROM thesis_submissions WHERE candidate_id = (SELECT id FROM phd_candidates WHERE registration_number = 'KIU/2021/5001') LIMIT 1),
      CURRENT_DATE + INTERVAL '18 days', '09:00',
      'College of Education, Seminar Hall', 120, 'scheduled', NULL,
-     (SELECT id FROM users WHERE email = 'admin@uems.ac.ug')),
+     (SELECT id FROM staff WHERE email = 'admin@uems.ac.ug')),
 
     ((SELECT id FROM phd_candidates WHERE registration_number = 'KIU/2021/P016'),
      (SELECT id FROM thesis_submissions WHERE candidate_id = (SELECT id FROM phd_candidates WHERE registration_number = 'KIU/2021/P016') LIMIT 1),
      CURRENT_DATE - INTERVAL '55 days', '14:30',
      'College of Education, Room 201', 90, 'completed', NULL,
-     (SELECT id FROM users WHERE email = 'admin@uems.ac.ug')),
+     (SELECT id FROM staff WHERE email = 'admin@uems.ac.ug')),
 
     ((SELECT id FROM phd_candidates WHERE registration_number = 'KIU/2020/P019'),
      (SELECT id FROM thesis_submissions WHERE candidate_id = (SELECT id FROM phd_candidates WHERE registration_number = 'KIU/2020/P019') LIMIT 1),
      CURRENT_DATE + INTERVAL '12 days', '10:00',
      'College of Engineering, Workshop Hall', 120, 'scheduled', NULL,
-     (SELECT id FROM users WHERE email = 'admin@uems.ac.ug')),
+     (SELECT id FROM staff WHERE email = 'admin@uems.ac.ug')),
 
     ((SELECT id FROM phd_candidates WHERE registration_number = 'KIU/2021/P021'),
      (SELECT id FROM thesis_submissions WHERE candidate_id = (SELECT id FROM phd_candidates WHERE registration_number = 'KIU/2021/P021') LIMIT 1),
      CURRENT_DATE - INTERVAL '60 days', '09:30',
      'College of Engineering, Conference Room', 90, 'completed', NULL,
-     (SELECT id FROM users WHERE email = 'admin@uems.ac.ug'));
+     (SELECT id FROM staff WHERE email = 'admin@uems.ac.ug'));
 
 
 -- ============================================================
@@ -503,11 +503,11 @@ SELECT vs.id, u.id, ex.role, ex.confirmed,
 FROM viva_schedules vs
 JOIN phd_candidates pc ON vs.candidate_id = pc.id
 CROSS JOIN LATERAL (VALUES
-    ((SELECT id FROM users WHERE email = 'lect.cs1@uems.ac.ug'),   'chairperson'::examiner_role,      TRUE),
-    ((SELECT id FROM users WHERE email = 'lect.cs2@uems.ac.ug'),   'internal_examiner'::examiner_role, TRUE),
-    ((SELECT id FROM users WHERE email = 'lect.math1@uems.ac.ug'), 'external_examiner'::examiner_role, TRUE)
+    ((SELECT id FROM staff WHERE email = 'lect.cs1@uems.ac.ug'),   'chairperson'::examiner_role,      TRUE),
+    ((SELECT id FROM staff WHERE email = 'lect.cs2@uems.ac.ug'),   'internal_examiner'::examiner_role, TRUE),
+    ((SELECT id FROM staff WHERE email = 'lect.math1@uems.ac.ug'), 'external_examiner'::examiner_role, TRUE)
 ) AS ex(id, role, confirmed)
-JOIN users u ON u.id = ex.id
+JOIN staff u ON u.id = ex.id
 WHERE pc.registration_number IN ('KIU/2020/1001','KIU/2020/1002','KIU/2019/P001')
 
 UNION ALL
@@ -519,11 +519,11 @@ SELECT vs.id, u.id, ex.role, ex.confirmed,
 FROM viva_schedules vs
 JOIN phd_candidates pc ON vs.candidate_id = pc.id
 CROSS JOIN LATERAL (VALUES
-    ((SELECT id FROM users WHERE email = 'lect.ph1@uems.ac.ug'),   'chairperson'::examiner_role,      TRUE),
-    ((SELECT id FROM users WHERE email = 'lect.ph2@uems.ac.ug'),   'internal_examiner'::examiner_role, TRUE),
-    ((SELECT id FROM users WHERE email = 'lect.epid1@uems.ac.ug'), 'external_examiner'::examiner_role, FALSE)
+    ((SELECT id FROM staff WHERE email = 'lect.ph1@uems.ac.ug'),   'chairperson'::examiner_role,      TRUE),
+    ((SELECT id FROM staff WHERE email = 'lect.ph2@uems.ac.ug'),   'internal_examiner'::examiner_role, TRUE),
+    ((SELECT id FROM staff WHERE email = 'lect.epid1@uems.ac.ug'), 'external_examiner'::examiner_role, FALSE)
 ) AS ex(id, role, confirmed)
-JOIN users u ON u.id = ex.id
+JOIN staff u ON u.id = ex.id
 WHERE pc.registration_number IN ('KIU/2019/2001','KIU/2019/2002','KIU/2019/P004')
 
 UNION ALL
@@ -535,11 +535,11 @@ SELECT vs.id, u.id, ex.role, ex.confirmed,
 FROM viva_schedules vs
 JOIN phd_candidates pc ON vs.candidate_id = pc.id
 CROSS JOIN LATERAL (VALUES
-    ((SELECT id FROM users WHERE email = 'lect.law1@uems.ac.ug'),  'chairperson'::examiner_role,      TRUE),
-    ((SELECT id FROM users WHERE email = 'lect.law2@uems.ac.ug'),  'internal_examiner'::examiner_role, TRUE),
-    ((SELECT id FROM users WHERE email = 'lect.math1@uems.ac.ug'), 'external_examiner'::examiner_role, TRUE)
+    ((SELECT id FROM staff WHERE email = 'lect.law1@uems.ac.ug'),  'chairperson'::examiner_role,      TRUE),
+    ((SELECT id FROM staff WHERE email = 'lect.law2@uems.ac.ug'),  'internal_examiner'::examiner_role, TRUE),
+    ((SELECT id FROM staff WHERE email = 'lect.math1@uems.ac.ug'), 'external_examiner'::examiner_role, TRUE)
 ) AS ex(id, role, confirmed)
-JOIN users u ON u.id = ex.id
+JOIN staff u ON u.id = ex.id
 WHERE pc.registration_number IN ('KIU/2021/3001','KIU/2021/P008')
 
 UNION ALL
@@ -551,11 +551,11 @@ SELECT vs.id, u.id, ex.role, ex.confirmed,
 FROM viva_schedules vs
 JOIN phd_candidates pc ON vs.candidate_id = pc.id
 CROSS JOIN LATERAL (VALUES
-    ((SELECT id FROM users WHERE email = 'lect.bus1@uems.ac.ug'),  'chairperson'::examiner_role,      TRUE),
-    ((SELECT id FROM users WHERE email = 'lect.bus2@uems.ac.ug'),  'internal_examiner'::examiner_role, TRUE),
-    ((SELECT id FROM users WHERE email = 'lect.epid1@uems.ac.ug'), 'external_examiner'::examiner_role, TRUE)
+    ((SELECT id FROM staff WHERE email = 'lect.bus1@uems.ac.ug'),  'chairperson'::examiner_role,      TRUE),
+    ((SELECT id FROM staff WHERE email = 'lect.bus2@uems.ac.ug'),  'internal_examiner'::examiner_role, TRUE),
+    ((SELECT id FROM staff WHERE email = 'lect.epid1@uems.ac.ug'), 'external_examiner'::examiner_role, TRUE)
 ) AS ex(id, role, confirmed)
-JOIN users u ON u.id = ex.id
+JOIN staff u ON u.id = ex.id
 WHERE pc.registration_number IN ('KIU/2020/4001','KIU/2020/P011')
 
 UNION ALL
@@ -567,11 +567,11 @@ SELECT vs.id, u.id, ex.role, ex.confirmed,
 FROM viva_schedules vs
 JOIN phd_candidates pc ON vs.candidate_id = pc.id
 CROSS JOIN LATERAL (VALUES
-    ((SELECT id FROM users WHERE email = 'lect.edu1@uems.ac.ug'),  'chairperson'::examiner_role,      TRUE),
-    ((SELECT id FROM users WHERE email = 'lect.edu2@uems.ac.ug'),  'internal_examiner'::examiner_role, TRUE),
-    ((SELECT id FROM users WHERE email = 'lect.math1@uems.ac.ug'), 'external_examiner'::examiner_role, TRUE)
+    ((SELECT id FROM staff WHERE email = 'lect.edu1@uems.ac.ug'),  'chairperson'::examiner_role,      TRUE),
+    ((SELECT id FROM staff WHERE email = 'lect.edu2@uems.ac.ug'),  'internal_examiner'::examiner_role, TRUE),
+    ((SELECT id FROM staff WHERE email = 'lect.math1@uems.ac.ug'), 'external_examiner'::examiner_role, TRUE)
 ) AS ex(id, role, confirmed)
-JOIN users u ON u.id = ex.id
+JOIN staff u ON u.id = ex.id
 WHERE pc.registration_number IN ('KIU/2021/5001','KIU/2021/P016')
 
 UNION ALL
@@ -583,11 +583,11 @@ SELECT vs.id, u.id, ex.role, ex.confirmed,
 FROM viva_schedules vs
 JOIN phd_candidates pc ON vs.candidate_id = pc.id
 CROSS JOIN LATERAL (VALUES
-    ((SELECT id FROM users WHERE email = 'lect.civ1@uems.ac.ug'),  'chairperson'::examiner_role,      TRUE),
-    ((SELECT id FROM users WHERE email = 'lect.civ2@uems.ac.ug'),  'internal_examiner'::examiner_role, TRUE),
-    ((SELECT id FROM users WHERE email = 'lect.epid1@uems.ac.ug'), 'external_examiner'::examiner_role, TRUE)
+    ((SELECT id FROM staff WHERE email = 'lect.civ1@uems.ac.ug'),  'chairperson'::examiner_role,      TRUE),
+    ((SELECT id FROM staff WHERE email = 'lect.civ2@uems.ac.ug'),  'internal_examiner'::examiner_role, TRUE),
+    ((SELECT id FROM staff WHERE email = 'lect.epid1@uems.ac.ug'), 'external_examiner'::examiner_role, TRUE)
 ) AS ex(id, role, confirmed)
-JOIN users u ON u.id = ex.id
+JOIN staff u ON u.id = ex.id
 WHERE pc.registration_number IN ('KIU/2020/P019','KIU/2021/P021');
 
 
@@ -606,9 +606,9 @@ INSERT INTO viva_evaluations (
 -- PHD-COMPSCI: Sekitto Adam (KIU/2019/P001)
 SELECT vs.id,
        unnest(ARRAY[
-           (SELECT id FROM users WHERE email = 'lect.cs1@uems.ac.ug'),
-           (SELECT id FROM users WHERE email = 'lect.cs2@uems.ac.ug'),
-           (SELECT id FROM users WHERE email = 'lect.math1@uems.ac.ug')
+           (SELECT id FROM staff WHERE email = 'lect.cs1@uems.ac.ug'),
+           (SELECT id FROM staff WHERE email = 'lect.cs2@uems.ac.ug'),
+           (SELECT id FROM staff WHERE email = 'lect.math1@uems.ac.ug')
        ]),
        unnest(ARRAY[20, 18, 19]),
        unnest(ARRAY[21, 19, 20]),
@@ -644,9 +644,9 @@ UNION ALL
 -- PHD-PH: Oryem Nicholas (KIU/2019/P004)
 SELECT vs.id,
        unnest(ARRAY[
-           (SELECT id FROM users WHERE email = 'lect.ph1@uems.ac.ug'),
-           (SELECT id FROM users WHERE email = 'lect.ph2@uems.ac.ug'),
-           (SELECT id FROM users WHERE email = 'lect.epid1@uems.ac.ug')
+           (SELECT id FROM staff WHERE email = 'lect.ph1@uems.ac.ug'),
+           (SELECT id FROM staff WHERE email = 'lect.ph2@uems.ac.ug'),
+           (SELECT id FROM staff WHERE email = 'lect.epid1@uems.ac.ug')
        ]),
        unnest(ARRAY[19, 17, 18]),
        unnest(ARRAY[20, 19, 21]),
@@ -682,9 +682,9 @@ UNION ALL
 -- PHD-LAW: Mugabi Richard (KIU/2021/P008)
 SELECT vs.id,
        unnest(ARRAY[
-           (SELECT id FROM users WHERE email = 'lect.law1@uems.ac.ug'),
-           (SELECT id FROM users WHERE email = 'lect.law2@uems.ac.ug'),
-           (SELECT id FROM users WHERE email = 'lect.math1@uems.ac.ug')
+           (SELECT id FROM staff WHERE email = 'lect.law1@uems.ac.ug'),
+           (SELECT id FROM staff WHERE email = 'lect.law2@uems.ac.ug'),
+           (SELECT id FROM staff WHERE email = 'lect.math1@uems.ac.ug')
        ]),
        unnest(ARRAY[22, 20, 21]),
        unnest(ARRAY[20, 21, 20]),
@@ -720,9 +720,9 @@ UNION ALL
 -- PHD-BA: Barigye Felix (KIU/2020/P011)
 SELECT vs.id,
        unnest(ARRAY[
-           (SELECT id FROM users WHERE email = 'lect.bus1@uems.ac.ug'),
-           (SELECT id FROM users WHERE email = 'lect.bus2@uems.ac.ug'),
-           (SELECT id FROM users WHERE email = 'lect.epid1@uems.ac.ug')
+           (SELECT id FROM staff WHERE email = 'lect.bus1@uems.ac.ug'),
+           (SELECT id FROM staff WHERE email = 'lect.bus2@uems.ac.ug'),
+           (SELECT id FROM staff WHERE email = 'lect.epid1@uems.ac.ug')
        ]),
        unnest(ARRAY[18, 19, 17]),
        unnest(ARRAY[19, 20, 18]),
@@ -758,9 +758,9 @@ UNION ALL
 -- PHD-MSEA: Kirunda Andrew (KIU/2021/P016)
 SELECT vs.id,
        unnest(ARRAY[
-           (SELECT id FROM users WHERE email = 'lect.edu1@uems.ac.ug'),
-           (SELECT id FROM users WHERE email = 'lect.edu2@uems.ac.ug'),
-           (SELECT id FROM users WHERE email = 'lect.math1@uems.ac.ug')
+           (SELECT id FROM staff WHERE email = 'lect.edu1@uems.ac.ug'),
+           (SELECT id FROM staff WHERE email = 'lect.edu2@uems.ac.ug'),
+           (SELECT id FROM staff WHERE email = 'lect.math1@uems.ac.ug')
        ]),
        unnest(ARRAY[21, 20, 19]),
        unnest(ARRAY[20, 22, 20]),
@@ -796,9 +796,9 @@ UNION ALL
 -- PHD-ENG: Tumusiime Caroline (KIU/2021/P021)
 SELECT vs.id,
        unnest(ARRAY[
-           (SELECT id FROM users WHERE email = 'lect.civ1@uems.ac.ug'),
-           (SELECT id FROM users WHERE email = 'lect.civ2@uems.ac.ug'),
-           (SELECT id FROM users WHERE email = 'lect.epid1@uems.ac.ug')
+           (SELECT id FROM staff WHERE email = 'lect.civ1@uems.ac.ug'),
+           (SELECT id FROM staff WHERE email = 'lect.civ2@uems.ac.ug'),
+           (SELECT id FROM staff WHERE email = 'lect.epid1@uems.ac.ug')
        ]),
        unnest(ARRAY[22, 21, 20]),
        unnest(ARRAY[23, 22, 21]),
@@ -842,7 +842,7 @@ SELECT vs.id,
        rec.outcome::viva_outcome,
        rec.correction_deadline,
        rec.final_comments,
-       (SELECT id FROM users WHERE email = rec.issued_by_email),
+       (SELECT id FROM staff WHERE email = rec.issued_by_email),
        rec.issued_at
 FROM viva_schedules vs
 JOIN phd_candidates pc ON vs.candidate_id = pc.id

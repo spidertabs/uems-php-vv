@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
         u.role as actor_role
       FROM workflow_history wh
       JOIN exam_papers ep ON wh.exam_paper_id = ep.id
-      JOIN users u ON wh.actor_id = u.id
+      JOIN staff u ON wh.actor_id = u.id
       WHERE ep.deleted_at IS NULL
     `;
 

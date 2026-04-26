@@ -53,8 +53,8 @@ export async function GET(req: NextRequest) {
       FROM questions q
       LEFT JOIN courses c ON q.course_id = c.id
       LEFT JOIN study_units su ON q.study_unit_id = su.id
-      LEFT JOIN users u ON q.created_by = u.id
-      LEFT JOIN users approver ON q.approved_by = approver.id
+      LEFT JOIN staff u ON q.created_by = u.id
+      LEFT JOIN staff approver ON q.approved_by = approver.id
       WHERE 1=1
     `;
 

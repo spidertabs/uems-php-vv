@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
         (SELECT COUNT(*) FROM questions WHERE study_unit_id = su.id AND is_active = TRUE) as questions_count
       FROM study_units su
       LEFT JOIN courses c ON c.id = su.course_id
-      LEFT JOIN users u ON su.created_by = u.id
+      LEFT JOIN staff u ON su.created_by = u.id
       WHERE 1=1
     `;
 

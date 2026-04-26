@@ -108,7 +108,7 @@ export async function GET(request: NextRequest) {
           COUNT(CASE WHEN q.is_active = TRUE THEN 1 END) as active_questions,
           SUM(q.usage_count) as total_usage,
           AVG(q.marks) as avg_marks
-        FROM users u
+        FROM staff u
         LEFT JOIN departments d ON u.department_id = d.id
         LEFT JOIN questions q ON u.id = q.created_by AND q.deleted_at IS NULL
         WHERE u.deleted_at IS NULL AND u.role IN ('lecturer', 'hod')
@@ -136,7 +136,7 @@ export async function GET(request: NextRequest) {
           CONCAT(u.first_name, ' ', u.last_name) as created_by
         FROM questions q
         JOIN courses c ON q.course_id = c.id
-        LEFT JOIN users u ON q.created_by = u.id
+        LEFT JOIN staff u ON q.created_by = u.id
         WHERE q.deleted_at IS NULL AND q.is_active = TRUE
       `;
 

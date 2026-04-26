@@ -28,7 +28,7 @@ export async function GET(
       FROM questions q
       LEFT JOIN courses c ON c.id = q.course_id
       LEFT JOIN study_units su ON su.id = q.study_unit_id
-      LEFT JOIN users u ON u.id = q.created_by
+      LEFT JOIN staff u ON u.id = q.created_by
       WHERE q.id = ? AND q.is_active = TRUE`,
       [questionId]
     );

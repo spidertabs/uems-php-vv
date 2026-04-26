@@ -88,8 +88,8 @@ const headerNavLinks: NavLink[] = [
 
   // Management & Reports
   {
-    title: '👥 Users',
-    href: '/users',
+    title: '👥 Staff',
+    href: '/staff',
     roles: ['admin'],
   },
   {

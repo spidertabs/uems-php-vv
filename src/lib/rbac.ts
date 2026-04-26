@@ -24,12 +24,12 @@ export type UserRole = 'admin' | 'exam_master' | 'dean' | 'hod' | 'lecturer';
 export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
   admin: [
     // User Management
-    'manage_users',
-    'create_users',
-    'edit_users',
-    'delete_users',
-    'view_all_users',
-    'import_users',
+    'manage_staff',
+    'create_staff',
+    'edit_staff',
+    'delete_staff',
+    'view_all_staff',
+    'import_staff',
     
     // Organization Management
     'manage_colleges',
@@ -283,13 +283,13 @@ export function hasRole(user: UserPayload | null, roles: UserRole[]): boolean {
  */
 export async function canAccessCollege(userId: number, collegeId: number): Promise<boolean> {
   try {
-    const users = await query<any[]>(
-      `SELECT role, college_id FROM users WHERE id = ? LIMIT 1`,
+    const staff = await query<any[]>(
+      `SELECT role, college_id FROM staff WHERE id = ? LIMIT 1`,
       [userId]
     );
 
-    if (!users || users.length === 0) return false;
-    const user = users[0];
+    if (!staff || staff.length === 0) return false;
+    const user = staff[0];
     const userRole = user.role as UserRole;
 
     // Admin can access everything
@@ -317,13 +317,13 @@ export async function canAccessCollege(userId: number, collegeId: number): Promi
  */
 export async function canAccessDepartment(userId: number, departmentId: number): Promise<boolean> {
   try {
-    const users = await query<any[]>(
-      `SELECT role, department_id, college_id FROM users WHERE id = ? LIMIT 1`,
+    const staff = await query<any[]>(
+      `SELECT role, department_id, college_id FROM staff WHERE id = ? LIMIT 1`,
       [userId]
     );
 
-    if (!users || users.length === 0) return false;
-    const user = users[0];
+    if (!staff || staff.length === 0) return false;
+    const user = staff[0];
     const userRole = user.role as UserRole;
 
     // Admin can access everything
@@ -360,13 +360,13 @@ export async function canAccessDepartment(userId: number, departmentId: number):
  */
 export async function canAccessProgramme(userId: number, programmeId: number): Promise<boolean> {
   try {
-    const users = await query<any[]>(
-      `SELECT role, department_id, college_id FROM users WHERE id = ? LIMIT 1`,
+    const staff = await query<any[]>(
+      `SELECT role, department_id, college_id FROM staff WHERE id = ? LIMIT 1`,
       [userId]
     );
 
-    if (!users || users.length === 0) return false;
-    const user = users[0];
+    if (!staff || staff.length === 0) return false;
+    const user = staff[0];
     const userRole = user.role as UserRole;
 
     // Admin can access everything
@@ -404,13 +404,13 @@ export async function canAccessProgramme(userId: number, programmeId: number): P
 export async function canAccessCourse(userId: number, courseId: number): Promise<boolean> {
   try {
     // Get user details
-    const users = await query<any[]>(
-      `SELECT role, department_id, college_id FROM users WHERE id = ? LIMIT 1`,
+    const staff = await query<any[]>(
+      `SELECT role, department_id, college_id FROM staff WHERE id = ? LIMIT 1`,
       [userId]
     );
 
-    if (!users || users.length === 0) return false;
-    const user = users[0];
+    if (!staff || staff.length === 0) return false;
+    const user = staff[0];
     const userRole = user.role as UserRole;
 
     // Admin can access everything
@@ -464,8 +464,8 @@ export async function canAccessCourse(userId: number, courseId: number): Promise
  */
 export async function canViewPaper(userId: number, paperId: number): Promise<boolean> {
   try {
-    const [users, papers] = await Promise.all([
-      query<any[]>(`SELECT role, department_id, college_id FROM users WHERE id = ? LIMIT 1`, [
+    const [staff, papers] = await Promise.all([
+      query<any[]>(`SELECT role, department_id, college_id FROM staff WHERE id = ? LIMIT 1`, [
         userId,
       ]),
       query<any[]>(
@@ -477,11 +477,11 @@ export async function canViewPaper(userId: number, paperId: number): Promise<boo
       ),
     ]);
 
-    if (!users || users.length === 0 || !papers || papers.length === 0) {
+    if (!staff || staff.length === 0 || !papers || papers.length === 0) {
       return false;
     }
 
-    const user = users[0];
+    const user = staff[0];
     const paper = papers[0];
     const userRole = user.role as UserRole;
 
@@ -514,8 +514,8 @@ export async function canViewPaper(userId: number, paperId: number): Promise<boo
 export async function canApprovePaper(userId: number, paperId: number): Promise<boolean> {
   try {
     // Get user and paper details
-    const [users, papers] = await Promise.all([
-      query<any[]>(`SELECT role, department_id, college_id FROM users WHERE id = ? LIMIT 1`, [
+    const [staff, papers] = await Promise.all([
+      query<any[]>(`SELECT role, department_id, college_id FROM staff WHERE id = ? LIMIT 1`, [
         userId,
       ]),
       query<any[]>(
@@ -527,11 +527,11 @@ export async function canApprovePaper(userId: number, paperId: number): Promise<
       ),
     ]);
 
-    if (!users || users.length === 0 || !papers || papers.length === 0) {
+    if (!staff || staff.length === 0 || !papers || papers.length === 0) {
       return false;
     }
 
-    const user = users[0];
+    const user = staff[0];
     const paper = papers[0];
     const userRole = user.role as UserRole;
 
@@ -590,16 +590,16 @@ export async function canEditPaper(userId: number, paperId: number): Promise<boo
  */
 export async function canPrintPaper(userId: number, paperId: number): Promise<boolean> {
   try {
-    const [users, papers] = await Promise.all([
-      query<any[]>(`SELECT role FROM users WHERE id = ? LIMIT 1`, [userId]),
+    const [staff, papers] = await Promise.all([
+      query<any[]>(`SELECT role FROM staff WHERE id = ? LIMIT 1`, [userId]),
       query<any[]>(`SELECT status FROM exam_papers WHERE id = ? LIMIT 1`, [paperId]),
     ]);
 
-    if (!users || users.length === 0 || !papers || papers.length === 0) {
+    if (!staff || staff.length === 0 || !papers || papers.length === 0) {
       return false;
     }
 
-    const user = users[0];
+    const user = staff[0];
     const paper = papers[0];
     const userRole = user.role as UserRole;
 
@@ -628,10 +628,10 @@ export async function hasQuestionPermission(
 ): Promise<boolean> {
   try {
     // Check if lecturer or higher role
-    const users = await query<any[]>(`SELECT role FROM users WHERE id = ? LIMIT 1`, [lecturerId]);
+    const staff = await query<any[]>(`SELECT role FROM staff WHERE id = ? LIMIT 1`, [lecturerId]);
 
-    if (!users || users.length === 0) return false;
-    const user = users[0];
+    if (!staff || staff.length === 0) return false;
+    const user = staff[0];
     const userRole = user.role as UserRole;
 
     // HOD, Dean, Admin can add questions to any course in their scope
@@ -662,18 +662,18 @@ export async function hasQuestionPermission(
  */
 export async function canEditQuestion(userId: number, questionId: number): Promise<boolean> {
   try {
-    const [users, questions] = await Promise.all([
-      query<any[]>(`SELECT role FROM users WHERE id = ? LIMIT 1`, [userId]),
+    const [staff, questions] = await Promise.all([
+      query<any[]>(`SELECT role FROM staff WHERE id = ? LIMIT 1`, [userId]),
       query<any[]>(`SELECT created_by, course_id FROM questions WHERE id = ? LIMIT 1`, [
         questionId,
       ]),
     ]);
 
-    if (!users || users.length === 0 || !questions || questions.length === 0) {
+    if (!staff || staff.length === 0 || !questions || questions.length === 0) {
       return false;
     }
 
-    const user = users[0];
+    const user = staff[0];
     const question = questions[0];
     const userRole = user.role as UserRole;
 
@@ -703,7 +703,7 @@ export async function canEditQuestion(userId: number, questionId: number): Promi
 export async function getDepartmentHOD(departmentId: number): Promise<number | null> {
   try {
     const hods = await query<any[]>(
-      `SELECT id FROM users 
+      `SELECT id FROM staff 
        WHERE department_id = ? AND role = 'hod' AND is_active = TRUE
        LIMIT 1`,
       [departmentId]
@@ -722,7 +722,7 @@ export async function getDepartmentHOD(departmentId: number): Promise<number | n
 export async function getCollegeDean(collegeId: number): Promise<number | null> {
   try {
     const deans = await query<any[]>(
-      `SELECT id FROM users 
+      `SELECT id FROM staff 
        WHERE college_id = ? AND role = 'dean' AND is_active = TRUE
        LIMIT 1`,
       [collegeId]
@@ -736,22 +736,22 @@ export async function getCollegeDean(collegeId: number): Promise<number | null> 
 }
 
 /**
- * Get all users with a specific role in a department
+ * Get all staff with a specific role in a department
  */
-export async function getDepartmentUsersByRole(
+export async function getDepartmentStaffByRole(
   departmentId: number,
   role: UserRole
 ): Promise<number[]> {
   try {
-    const users = await query<any[]>(
-      `SELECT id FROM users 
+    const staff = await query<any[]>(
+      `SELECT id FROM staff 
        WHERE department_id = ? AND role = ? AND is_active = TRUE`,
       [departmentId, role]
     );
 
-    return users ? users.map((u) => u.id) : [];
+    return staff ? staff.map((u) => u.id) : [];
   } catch (error) {
-    console.error('Error getting department users by role:', error);
+    console.error('Error getting department staff by role:', error);
     return [];
   }
 }
@@ -763,11 +763,11 @@ export async function canManageUser(managerId: number, targetUserId: number): Pr
   try {
     const [managers, targets] = await Promise.all([
       query<any[]>(
-        `SELECT role, department_id, college_id FROM users WHERE id = ? LIMIT 1`,
+        `SELECT role, department_id, college_id FROM staff WHERE id = ? LIMIT 1`,
         [managerId]
       ),
       query<any[]>(
-        `SELECT role, department_id, college_id FROM users WHERE id = ? LIMIT 1`,
+        `SELECT role, department_id, college_id FROM staff WHERE id = ? LIMIT 1`,
         [targetUserId]
       ),
     ]);
@@ -784,7 +784,7 @@ export async function canManageUser(managerId: number, targetUserId: number): Pr
     // Admin can manage everyone
     if (managerRole === 'admin') return true;
 
-    // Can't manage users of equal or higher role
+    // Can't manage staff of equal or higher role
     const roleHierarchy: UserRole[] = ['lecturer', 'hod', 'dean', 'exam_master', 'admin'];
     const managerLevel = roleHierarchy.indexOf(managerRole);
     const targetLevel = roleHierarchy.indexOf(targetRole);

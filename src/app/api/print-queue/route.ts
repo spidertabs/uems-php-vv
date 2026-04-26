@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
       JOIN courses c ON ep.course_id = c.id
       LEFT JOIN departments d ON c.department_id = d.id
       LEFT JOIN colleges col ON c.college_id = col.id
-      LEFT JOIN users creator ON ep.created_by = creator.id
+      LEFT JOIN staff creator ON ep.created_by = creator.id
       LEFT JOIN exam_paper_programmes epp ON ep.id = epp.exam_paper_id
       LEFT JOIN programmes p ON epp.programme_id = p.id
       WHERE ep.deleted_at IS NULL

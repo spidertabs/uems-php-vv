@@ -83,7 +83,7 @@ async function getLecturerActivities(userId: number): Promise<RecentActivity[]> 
     FROM workflow_history wh
     JOIN exam_papers ep ON wh.exam_paper_id = ep.id
     JOIN courses c ON ep.course_id = c.id
-    JOIN users u ON wh.actor_id = u.id
+    JOIN staff u ON wh.actor_id = u.id
     WHERE ep.created_by = ? AND ep.deleted_at IS NULL
     ORDER BY wh.created_at DESC
     LIMIT 8`,
@@ -116,7 +116,7 @@ async function getLecturerActivities(userId: number): Promise<RecentActivity[]> 
     FROM paper_comments pc
     JOIN exam_papers ep ON pc.exam_paper_id = ep.id
     JOIN courses c ON ep.course_id = c.id
-    JOIN users u ON pc.user_id = u.id
+    JOIN staff u ON pc.user_id = u.id
     WHERE ep.created_by = ? AND pc.user_id != ? AND ep.deleted_at IS NULL
     ORDER BY pc.created_at DESC
     LIMIT 5`,
@@ -154,7 +154,7 @@ async function getHODActivities(userId: number): Promise<RecentActivity[]> {
       CONCAT(u.first_name, ' ', u.last_name) as lecturer_name
     FROM exam_papers ep
     JOIN courses c ON ep.course_id = c.id
-    JOIN users u ON ep.created_by = u.id
+    JOIN staff u ON ep.created_by = u.id
     WHERE c.hod_id = ? 
       AND ep.status IN ('submitted', 'hod_review')
       AND ep.deleted_at IS NULL
@@ -191,7 +191,7 @@ async function getHODActivities(userId: number): Promise<RecentActivity[]> {
     FROM workflow_history wh
     JOIN exam_papers ep ON wh.exam_paper_id = ep.id
     JOIN courses c ON ep.course_id = c.id
-    JOIN users u ON wh.actor_id = u.id
+    JOIN staff u ON wh.actor_id = u.id
     WHERE c.hod_id = ? AND ep.deleted_at IS NULL
     ORDER BY wh.created_at DESC
     LIMIT 8`,
@@ -220,7 +220,7 @@ async function getHODActivities(userId: number): Promise<RecentActivity[]> {
       CONCAT(u.first_name, ' ', u.last_name) as lecturer_name
     FROM lecturer_permissions lp
     JOIN courses c ON lp.course_id = c.id
-    JOIN users u ON lp.lecturer_id = u.id
+    JOIN staff u ON lp.lecturer_id = u.id
     WHERE lp.granted_by = ? AND lp.is_active = TRUE
     ORDER BY lp.granted_at DESC
     LIMIT 3`,
@@ -260,7 +260,7 @@ async function getDeanActivities(collegeId: number): Promise<RecentActivity[]> {
     FROM exam_papers ep
     JOIN courses c ON ep.course_id = c.id
     LEFT JOIN departments d ON c.department_id = d.id
-    LEFT JOIN users hod ON c.hod_id = hod.id
+    LEFT JOIN staff hod ON c.hod_id = hod.id
     WHERE c.college_id = ? 
       AND ep.status IN ('hod_approved', 'dean_review')
       AND ep.deleted_at IS NULL
@@ -297,7 +297,7 @@ async function getDeanActivities(collegeId: number): Promise<RecentActivity[]> {
     JOIN exam_papers ep ON wh.exam_paper_id = ep.id
     JOIN courses c ON ep.course_id = c.id
     LEFT JOIN departments d ON c.department_id = d.id
-    JOIN users u ON wh.actor_id = u.id
+    JOIN staff u ON wh.actor_id = u.id
     WHERE c.college_id = ? AND ep.deleted_at IS NULL
     ORDER BY wh.created_at DESC
     LIMIT 8`,
@@ -409,7 +409,7 @@ async function getAdminActivities(): Promise<RecentActivity[]> {
     FROM workflow_history wh
     JOIN exam_papers ep ON wh.exam_paper_id = ep.id
     JOIN courses c ON ep.course_id = c.id
-    JOIN users u ON wh.actor_id = u.id
+    JOIN staff u ON wh.actor_id = u.id
     WHERE ep.deleted_at IS NULL
     ORDER BY wh.created_at DESC
     LIMIT 10`,
@@ -429,21 +429,21 @@ async function getAdminActivities(): Promise<RecentActivity[]> {
   }
 
   // Recent user registrations
-  const newUsers = await query<any[]>(
+  const newStaff = await query<any[]>(
     `SELECT 
       id,
       CONCAT(first_name, ' ', last_name) as name,
       email,
       role,
       created_at
-    FROM users
+    FROM staff
     WHERE deleted_at IS NULL
     ORDER BY created_at DESC
     LIMIT 5`,
     []
   );
 
-  for (const user of newUsers) {
+  for (const user of newStaff) {
     activities.push({
       id: user.id + 600000,
       type: 'user_registered',
@@ -451,7 +451,7 @@ async function getAdminActivities(): Promise<RecentActivity[]> {
       description: `${user.email} (${user.role.replace('_', ' ').toUpperCase()})`,
       timestamp: user.created_at,
       icon: '👤',
-      link: `/users/${user.id}`,
+      link: `/staff/${user.id}`,
     });
   }
 

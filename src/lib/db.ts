@@ -145,7 +145,7 @@ export async function query<T = any>(
 export async function testConnection(): Promise<boolean> {
   try {
     const client = getClient();
-    const { error } = await client.from('users').select('count', { count: 'exact', head: true });
+    const { error } = await client.from('staff').select('count', { count: 'exact', head: true });
     if (error) { console.error('❌ DB connection failed:', error); return false; }
     console.log('✅ DB connection successful');
     return true;

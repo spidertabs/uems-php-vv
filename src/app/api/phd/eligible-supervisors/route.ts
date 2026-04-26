@@ -12,8 +12,8 @@ export async function GET(req: NextRequest) {
 
     const deptIdParam = req.nextUrl.searchParams.get('dept_id');
     const deptId = user.role === 'hod' ? (user.department_id ?? undefined) : (deptIdParam ? parseInt(deptIdParam) : undefined);
-    const users = await getEligibleSupervisors(deptId as number | undefined);
-    return NextResponse.json({ users });
+    const staff = await getEligibleSupervisors(deptId as number | undefined);
+    return NextResponse.json({ staff });
   } catch (error) {
     console.error('Error fetching eligible supervisors:', error);
     return NextResponse.json({ error: 'Failed to fetch supervisors' }, { status: 500 });

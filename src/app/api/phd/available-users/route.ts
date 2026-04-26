@@ -12,9 +12,9 @@ export async function GET(req: NextRequest) {
 
     const deptId = user.role === 'hod' ? (user.department_id ?? undefined) : undefined;
     const students = await getStudentsForCandidateRegistration(deptId as number | undefined);
-    return NextResponse.json({ users: students });
+    return NextResponse.json({ staff: students });
   } catch (error) {
-    console.error('Error fetching available users:', error);
-    return NextResponse.json({ error: 'Failed to fetch users' }, { status: 500 });
+    console.error('Error fetching available staff:', error);
+    return NextResponse.json({ error: 'Failed to fetch staff' }, { status: 500 });
   }
 }

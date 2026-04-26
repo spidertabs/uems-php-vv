@@ -54,7 +54,7 @@ export async function getUserFromSession(): Promise<UserPayload | null> {
       `SELECT u.id, u.email, u.first_name, u.last_name, u.role, 
               u.department_id, u.college_id
        FROM sessions s
-       JOIN users u ON s.user_id = u.id
+       JOIN staff u ON s.user_id = u.id
        WHERE s.session_id = ? AND s.expires_at > NOW() AND u.is_active = TRUE
        LIMIT 1`,
       [sessionId]
@@ -104,19 +104,19 @@ export async function loginUser(
     const rows = await query<User[]>(
       `SELECT id, email, password_hash, first_name, last_name, role, 
               department_id, college_id, is_active 
-       FROM users 
+       FROM staff 
        WHERE email = ? LIMIT 1`,
       [email]
     );
 
-    const users = Array.isArray(rows) ? rows : [];
-    console.log('📊 Users found:', users.length);
+    const staff = Array.isArray(rows) ? rows : [];
+    console.log('📊 Staff found:', staff.length);
 
-    if (users.length === 0) {
+    if (staff.length === 0) {
       return { success: false, error: 'Invalid email or password' };
     }
 
-    const user = users[0];
+    const user = staff[0];
 
     if (!user.is_active) {
       return { success: false, error: 'Account is inactive' };
@@ -128,7 +128,7 @@ export async function loginUser(
       return { success: false, error: 'Invalid email or password' };
     }
 
-    await query('UPDATE users SET last_login = NOW() WHERE id = ?::int', [user.id]);
+    await query('UPDATE staff SET last_login = NOW() WHERE id = ?::int', [user.id]);
 
     const payload: UserPayload = {
       id: user.id,
@@ -159,7 +159,7 @@ export async function registerUser(data: {
   phone?: string;
 }): Promise<{ success: boolean; user?: UserPayload; sessionId?: string; error?: string }> {
   try {
-    const existing = await query<User[]>('SELECT id FROM users WHERE email = ? LIMIT 1', [
+    const existing = await query<User[]>('SELECT id FROM staff WHERE email = ? LIMIT 1', [
       data.email,
     ]);
 
@@ -172,7 +172,7 @@ export async function registerUser(data: {
     const passwordHash = await hashPassword(data.password);
 
     const result = await query<any>(
-      `INSERT INTO users (email, password_hash, first_name, last_name, role, department_id, phone) 
+      `INSERT INTO staff (email, password_hash, first_name, last_name, role, department_id, phone) 
        VALUES (?, ?, ?, ?, ?, ?, ?)`,
       [
         data.email,
@@ -222,7 +222,7 @@ export async function verifyAuth(request: NextRequest): Promise<UserPayload | nu
       `SELECT u.id, u.email, u.first_name, u.last_name, u.role, 
               u.department_id, u.college_id
        FROM sessions s
-       JOIN users u ON s.user_id = u.id
+       JOIN staff u ON s.user_id = u.id
        WHERE s.session_id = ? AND s.expires_at > NOW() AND u.is_active = TRUE
        LIMIT 1`,
       [sessionId]

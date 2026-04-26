@@ -31,7 +31,7 @@ Everything below is **done and shipped**. Listed here for reference only.
 
 ### Database
 - [x] Schema: all 10 core sections (colleges → audit_logs)
-- [x] Seed: colleges, departments, programmes, users (226 records)
+- [x] Seed: colleges, departments, programmes, staff (226 records)
 - [x] Triggers: marks recalculation, sub-question guard, usage counts
 - [x] Views: `hod_pending_approvals`, `papers_ready_for_print`, `vw_paper_questions_hierarchy`, `lecturer_permissions_summary`
 - [x] Stored procedures: `sp_get_paper_full_details`, `cleanup_expired_sessions`, `archive_old_notifications`
@@ -99,9 +99,9 @@ Everything below is **done and shipped**. Listed here for reference only.
 - [x] Schema Section 12 — `vw_viva_schedule_overview` view created
 - [x] Schema Section 13 — 3 viva triggers created (`trg_candidate_status_on_viva_schedule`, `trg_candidate_status_on_viva_complete`, `trg_thesis_version_increment`)
 - [x] Schema Section 14 — `sp_get_viva_report` stored procedure created
-- [x] Seed — `seed_phd_vivavoce.sql` (14 users, 10 candidates, 12 thesis submissions, 9 schedules, 27 examiners, 18 evaluations, 6 recommendations)
+- [x] Seed — `seed_phd_vivavoce.sql` (14 staff, 10 candidates, 12 thesis submissions, 9 schedules, 27 examiners, 18 evaluations, 6 recommendations)
 - [x] Notifications table already has viva types: `viva_scheduled`, `viva_reminder`, `viva_result`, `thesis_uploaded`, `examiner_assigned`
-- [x] `users` table already has `viva_coordinator` role in ENUM
+- [x] `staff` table already has `viva_coordinator` role in ENUM
 
 ---
 
@@ -158,7 +158,7 @@ ExaminerRole
 
 | Function | SQL target | Returns |
 |----------|-----------|---------|
-| `getAllCandidates(filters?)` | `phd_candidates` JOIN users, programmes | `CandidateWithDetails[]` |
+| `getAllCandidates(filters?)` | `phd_candidates` JOIN staff, programmes | `CandidateWithDetails[]` |
 | `getCandidateById(id)` | same + supervisor user | `CandidateWithDetails` |
 | `getCandidateByUserId(userId)` | | `PhdCandidate` |
 | `createCandidate(data)` | INSERT `phd_candidates` | `number` (new id) |
@@ -186,17 +186,17 @@ ExaminerRole
 
 | Function | SQL target | Returns |
 |----------|-----------|---------|
-| `getExaminersByVivaId(vivaId)` | `viva_examiners` JOIN users | `VivaExaminer[]` |
+| `getExaminersByVivaId(vivaId)` | `viva_examiners` JOIN staff | `VivaExaminer[]` |
 | `assignExaminer(data)` | INSERT `viva_examiners` | `number` |
 | `confirmExaminer(vivaId, examinerId)` | UPDATE confirmed, confirmed_at | `void` |
 | `removeExaminer(vivaId, examinerId)` | DELETE | `void` |
-| `getEligibleExaminers(deptId?)` | users WHERE role IN (hod, lecturer) | `User[]` |
+| `getEligibleExaminers(deptId?)` | staff WHERE role IN (hod, lecturer) | `User[]` |
 
 **File**: `src/lib/phd/evaluations.ts`
 
 | Function | SQL target | Returns |
 |----------|-----------|---------|
-| `getEvaluationsByVivaId(vivaId)` | `viva_evaluations` JOIN users | `VivaEvaluation[]` |
+| `getEvaluationsByVivaId(vivaId)` | `viva_evaluations` JOIN staff | `VivaEvaluation[]` |
 | `getEvaluationByExaminer(vivaId, examinerId)` | | `VivaEvaluation` |
 | `upsertEvaluation(data)` | INSERT … ON DUPLICATE KEY UPDATE | `number` |
 | `submitEvaluation(vivaId, examinerId)` | UPDATE is_submitted=TRUE, submitted_at=NOW() | `void` |
@@ -451,7 +451,7 @@ GET  /api/phd/report/[vivaId]
 
 > All pages live under `src/app/(dashboard)/phd/`.  
 > Reuse existing Shadcn components. Follow the same layout shell as UEMS pages.  
-> Role guard: redirect non-coordinator/admin users away from coordinator-only pages.
+> Role guard: redirect non-coordinator/admin staff away from coordinator-only pages.
 
 ---
 
@@ -556,7 +556,7 @@ Status badge colours:
 
 | Field | Input Type | Source |
 |-------|-----------|--------|
-| Candidate (User) | Searchable select | `users` table |
+| Candidate (User) | Searchable select | `staff` table |
 | Registration Number | Text | Manual |
 | Thesis Title | Textarea | Manual |
 | Programme | Select | PhD programmes only (`level='phd'`) |
@@ -568,7 +568,7 @@ Status badge colours:
 - [ ] Form with validation (all required fields)
 - [ ] Programme dropdown filtered to `level = 'phd'` only
 - [ ] User searchable select (candidate must exist as a user first)
-- [ ] Supervisor searchable select (HOD/lecturer users)
+- [ ] Supervisor searchable select (HOD/lecturer staff)
 - [ ] Duplicate registration number check (client + server)
 - [ ] Success redirect to candidate detail page
 

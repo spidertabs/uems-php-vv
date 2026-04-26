@@ -25,7 +25,7 @@ describe('SQL dialect normaliser (toPostgres)', () => {
   });
 
   it('converts ? placeholders to $1, $2, ...', async () => {
-    await query('SELECT * FROM users WHERE id = ? AND role = ?', [1, 'admin']);
+    await query('SELECT * FROM staff WHERE id = ? AND role = ?', [1, 'admin']);
     const callArgs = mockedRpc.mock.calls.at(-1) as [string, { p_sql: string; p_params: unknown[] }][];
     const { p_sql } = callArgs[1] as unknown as { p_sql: string };
     expect(p_sql).toContain('$1');
@@ -34,13 +34,13 @@ describe('SQL dialect normaliser (toPostgres)', () => {
   });
 
   it('converts is_active = 1 to is_active = TRUE', async () => {
-    await query('SELECT * FROM users WHERE is_active = 1', []);
+    await query('SELECT * FROM staff WHERE is_active = 1', []);
     const callArgs = mockedRpc.mock.calls.at(-1) as unknown as [string, { p_sql: string }];
     expect(callArgs[1].p_sql).toContain('is_active = TRUE');
   });
 
   it('converts is_active = 0 to is_active = FALSE', async () => {
-    await query('SELECT * FROM users WHERE is_active = 0', []);
+    await query('SELECT * FROM staff WHERE is_active = 0', []);
     const callArgs = mockedRpc.mock.calls.at(-1) as unknown as [string, { p_sql: string }];
     expect(callArgs[1].p_sql).toContain('is_active = FALSE');
   });
@@ -53,7 +53,7 @@ describe('SQL dialect normaliser (toPostgres)', () => {
 
   it('appends RETURNING id for INSERT statements and returns insertId', async () => {
     mockedRpc.mockResolvedValueOnce({ data: [{ id: 5 }], error: null });
-    const result = await query<{ insertId: number }>('INSERT INTO users (email) VALUES (?)', ['a@b.com']);
+    const result = await query<{ insertId: number }>('INSERT INTO staff (email) VALUES (?)', ['a@b.com']);
     const callArgs = mockedRpc.mock.calls.at(-1) as unknown as [string, { p_sql: string }];
     expect(callArgs[1].p_sql).toContain('RETURNING id');
     expect(result.insertId).toBe(5);
@@ -61,7 +61,7 @@ describe('SQL dialect normaliser (toPostgres)', () => {
 
   it('returns empty array for SELECT with no results', async () => {
     mockedRpc.mockResolvedValueOnce({ data: [], error: null });
-    const result = await query('SELECT * FROM users WHERE id = ?', [99999]);
+    const result = await query('SELECT * FROM staff WHERE id = ?', [99999]);
     expect(Array.isArray(result)).toBe(true);
     expect(result).toHaveLength(0);
   });

@@ -23,7 +23,7 @@ export async function GET(
               ve.confirmed, ve.confirmed_at, ve.notified_at,
               u.email, u.first_name, u.last_name
        FROM viva_examiners ve
-       JOIN users u ON ve.examiner_id = u.id
+       JOIN staff u ON ve.examiner_id = u.id
        WHERE ve.viva_id = ?
        ORDER BY ve.role, u.last_name`,
       [vivaId]
@@ -85,7 +85,7 @@ export async function POST(
 
     // Check examiner exists and is eligible (not HOD or candidate)
     const eligibleExaminer = await query<any[]>(
-      `SELECT u.id FROM users u 
+      `SELECT u.id FROM staff u 
        LEFT JOIN students st ON u.email = st.email
        LEFT JOIN phd_candidates pc ON st.registration_number = pc.registration_number
        WHERE u.id = ? AND u.role != 'hod' AND pc.id IS NULL AND u.deleted_at IS NULL`,

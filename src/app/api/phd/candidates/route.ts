@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
       FROM phd_candidates pc
       LEFT JOIN students s ON pc.registration_number = s.registration_number
       JOIN programmes p ON pc.programme_id = p.id
-      LEFT JOIN users sup ON pc.supervisor_id = sup.id
+      LEFT JOIN staff sup ON pc.supervisor_id = sup.id
       WHERE pc.deleted_at IS NULL
     `;
 
@@ -111,7 +111,7 @@ export async function POST(req: NextRequest) {
     if (co_supervisor_id) sups.push(co_supervisor_id);
 
     const ineligible = await query<any[]>(
-      `SELECT u.id FROM users u 
+      `SELECT u.id FROM staff u 
        WHERE u.id IN (${sups.map(() => '?').join(',')}) 
          AND u.role = 'hod'`,
       sups

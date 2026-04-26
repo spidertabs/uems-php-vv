@@ -205,4 +205,4 @@ GRANT EXECUTE ON FUNCTION public.execute_write(TEXT, JSONB) TO authenticated;
 -- Run these to test if the functions work:
 -- ============================================================
 -- SELECT public.execute_query('SELECT version()', '[]'::jsonb);
--- SELECT public.execute_write('UPDATE users SET last_login = NOW() WHERE id = $1', '["1"]'::jsonb);
+-- SELECT public.execute_write('UPDATE staff SET last_login = NOW() WHERE id = $1', '["1"]'::jsonb);
