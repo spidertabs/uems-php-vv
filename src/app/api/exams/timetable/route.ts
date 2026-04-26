@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyAuth } from '@/lib/auth';
 import { getDepartmentalTimetables, getStudentTimetable, getLecturerSupervisionSlots } from '@/lib/exams';
 import { query } from '@/lib/db';
+import { notifyEnrolledStudents, notifySupervisorAssigned } from '@/lib/notifications';
 
 export async function GET(request: NextRequest) {
   try {
@@ -78,7 +79,22 @@ export async function POST(request: NextRequest) {
           `INSERT INTO exam_supervisors (timetable_id, lecturer_id) VALUES (?, ?)`,
           [timetableId, lectId]
         );
+        // Notify supervisor
+        await notifySupervisorAssigned(lectId, timetableId);
       }
+    }
+
+    // Notify all enrolled students
+    const [paperInfo]: any = await query(`SELECT course_id, academic_year, semester FROM exam_papers WHERE id = ?`, [exam_paper_id]);
+    if (paperInfo) {
+      await notifyEnrolledStudents(
+        paperInfo.course_id, 
+        paperInfo.academic_year, 
+        paperInfo.semester,
+        'Exam Timetable Update',
+        `The exam schedule for one of your courses has been set or updated. Venue: ${venue}`,
+        '/exams/timetable'
+      );
     }
 
     return NextResponse.json({ success: true, message: 'Timetable and supervisors updated' });

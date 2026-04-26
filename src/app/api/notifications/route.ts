@@ -12,28 +12,25 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const notifications = await query<any[]>(
-      `SELECT 
-        id,
-        type,
-        title,
-        message,
-        priority,
-        is_read,
-        read_at,
-        created_at,
-        related_paper_id,
-        action_url
+    let queryStr = `SELECT 
+        id, type, title, message, priority, is_read, read_at, created_at,
+        related_paper_id, action_url
       FROM notifications
-      WHERE user_id = ?
-        AND archived_at IS NULL
-      ORDER BY 
-        is_read ASC,
-        priority DESC,
-        created_at DESC
-      LIMIT 100`,
-      [user.id]
-    );
+      WHERE archived_at IS NULL`;
+    
+    const params = [];
+    
+    if (user.role === 'student') {
+      queryStr += ` AND student_id = ?`;
+      params.push(user.id);
+    } else {
+      queryStr += ` AND user_id = ?`;
+      params.push(user.id);
+    }
+    
+    queryStr += ` ORDER BY is_read ASC, priority DESC, created_at DESC LIMIT 100`;
+
+    const notifications = await query<any[]>(queryStr, params);
 
     return NextResponse.json({
       success: true,

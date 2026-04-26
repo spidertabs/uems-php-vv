@@ -473,7 +473,8 @@ CREATE INDEX idx_pc_resolved   ON paper_comments (is_resolved);
 
 CREATE TABLE notifications (
     id                  SERIAL                 PRIMARY KEY,
-    user_id             INT                    NOT NULL REFERENCES staff(id)       ON DELETE CASCADE,
+    user_id             INT                    REFERENCES staff(id)                ON DELETE CASCADE,
+    student_id          INT                    REFERENCES students(id)             ON DELETE CASCADE,
     type                notification_type      NOT NULL,
     title               VARCHAR(255)           NOT NULL,
     message             TEXT                   NOT NULL,
@@ -485,10 +486,15 @@ CREATE TABLE notifications (
     priority            notification_priority  NOT NULL DEFAULT 'medium',
     action_url          VARCHAR(500),
     archived_at         TIMESTAMPTZ,
-    created_at          TIMESTAMPTZ            NOT NULL DEFAULT NOW()
+    created_at          TIMESTAMPTZ            NOT NULL DEFAULT NOW(),
+    CONSTRAINT chk_recipient CHECK (
+        (user_id IS NOT NULL AND student_id IS NULL) OR
+        (user_id IS NULL AND student_id IS NOT NULL)
+    )
 );
-CREATE INDEX idx_notif_user_unread ON notifications (user_id, is_read, created_at);
-CREATE INDEX idx_notif_archived    ON notifications (archived_at);
+CREATE INDEX idx_notif_user_unread    ON notifications (user_id, is_read, created_at) WHERE user_id IS NOT NULL;
+CREATE INDEX idx_notif_student_unread ON notifications (student_id, is_read, created_at) WHERE student_id IS NOT NULL;
+CREATE INDEX idx_notif_archived       ON notifications (archived_at);
 
 
 -- ============================================================

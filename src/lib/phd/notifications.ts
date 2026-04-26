@@ -1,89 +1,58 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-// src/lib/phd/notifications.ts
-// ─────────────────────────────────────────────────────────────────────────────
-//  Helper functions for PhD Viva Voce notification side-effects.
-//  All functions insert rows into the `notifications` table directly.
-// ─────────────────────────────────────────────────────────────────────────────
 import { query } from '@/lib/db';
+import { createNotification } from '@/lib/notifications';
 
-// ── low-level helper ─────────────────────────────────────────────────────────
-
-async function createNotification(data: {
-  user_id: number;
-  type: string;
-  title: string;
-  message: string;
-  action_url?: string;
-  priority?: 'low' | 'medium' | 'high' | 'urgent';
-  related_entity_type?: string;
-  related_entity_id?: number;
-}): Promise<void> {
-  try {
-    await query(
-      `INSERT INTO notifications
-         (user_id, type, title, message, action_url, priority, related_entity_type, related_entity_id, is_read, created_at)
-       VALUES (?, ?::notification_type, ?, ?, ?, ?, ?, ?, FALSE, NOW())`,
-      [
-        data.user_id,
-        data.type,
-        data.title,
-        data.message,
-        data.action_url ?? null,
-        data.priority ?? 'medium',
-        data.related_entity_type ?? null,
-        data.related_entity_id ?? null,
-      ]
-    );
-  } catch (err) {
-    // Notifications must never crash the main request
-    console.error('Notification insert failed:', err);
-  }
-}
-
+/**
+ * Notify candidate and supervisor that a viva has been postponed.
+ */
 export async function notifyVivaPostponed(
   vivaId: number,
   reason: string
 ): Promise<void> {
   const rows = await query<any[]>(
     `SELECT
-       (SELECT u.id FROM staff u JOIN students s ON u.email = s.email WHERE s.registration_number = pc.registration_number LIMIT 1) AS candidate_user_id,
+       s.id AS student_id,
        pc.supervisor_id,
-       CONCAT(st.first_name, ' ', st.last_name) AS candidate_name
+       CONCAT(s.first_name, ' ', s.last_name) AS candidate_name
      FROM viva_schedules vs
      JOIN phd_candidates pc ON vs.candidate_id = pc.id
-     LEFT JOIN students st ON pc.registration_number = st.registration_number
+     JOIN students s ON pc.registration_number = s.registration_number
      WHERE vs.id = ?
      LIMIT 1`,
     [vivaId]
   );
   if (!rows.length) return;
-  const { candidate_user_id, supervisor_id, candidate_name } = rows[0];
+  const { student_id, supervisor_id, candidate_name } = rows[0];
 
   const title = 'Viva Postponed';
   const message = `${candidate_name}'s viva has been postponed. Reason: ${reason}`;
   const actionUrl = `/phd/schedules/${vivaId}`;
 
-  const recipients: number[] = [];
-  if (candidate_user_id) recipients.push(candidate_user_id);
-  if (supervisor_id) recipients.push(supervisor_id);
+  // Notify Candidate (as Student)
+  await createNotification({
+    student_id,
+    type: 'viva_scheduled',
+    title,
+    message,
+    action_url: actionUrl,
+    priority: 'high',
+    related_entity_type: 'viva_schedule',
+    related_entity_id: vivaId
+  });
 
-  await Promise.all(
-    recipients.map((uid) =>
-      createNotification({
-        user_id: uid,
-        type: 'viva_scheduled', // Use viva_scheduled as postponement is a schedule change
-        title,
-        message,
-        action_url: actionUrl,
-        priority: 'high',
-        related_entity_type: 'viva_schedule',
-        related_entity_id: vivaId
-      })
-    )
-  );
+  // Notify Supervisor (as Staff)
+  if (supervisor_id) {
+    await createNotification({
+      user_id: supervisor_id,
+      type: 'viva_scheduled',
+      title,
+      message,
+      action_url: actionUrl,
+      priority: 'high',
+      related_entity_type: 'viva_schedule',
+      related_entity_id: vivaId
+    });
+  }
 }
-
-// ── public API ────────────────────────────────────────────────────────────────
 
 /**
  * Notify viva coordinator(s) that a candidate has uploaded a thesis.
@@ -126,13 +95,13 @@ export async function notifyVivaScheduled(vivaId: number): Promise<void> {
     `SELECT
        vs.scheduled_date, vs.scheduled_time, vs.venue,
        pc.id AS candidate_id,
-       (SELECT u.id FROM staff u JOIN students s ON u.email = s.email WHERE s.registration_number = pc.registration_number LIMIT 1) AS candidate_user_id,
-       CONCAT(st.first_name, ' ', st.last_name) AS candidate_name,
+       s.id AS student_id,
+       CONCAT(s.first_name, ' ', s.last_name) AS candidate_name,
        pc.supervisor_id,
        ve.examiner_id
      FROM viva_schedules vs
      JOIN phd_candidates pc ON vs.candidate_id = pc.id
-     LEFT JOIN students st ON pc.registration_number = st.registration_number
+     JOIN students s ON pc.registration_number = s.registration_number
      LEFT JOIN viva_examiners ve ON ve.viva_id = vs.id
      WHERE vs.id = ?`,
     [vivaId]
@@ -147,14 +116,41 @@ export async function notifyVivaScheduled(vivaId: number): Promise<void> {
   const message = `Your viva has been scheduled for ${dateStr} at ${first.venue}.`;
   const actionUrl = `/phd/schedules/${vivaId}`;
 
-  const recipients = new Set<number>();
-  if (first.candidate_user_id) recipients.add(first.candidate_user_id);
-  if (first.supervisor_id) recipients.add(first.supervisor_id);
-  rows.forEach((r) => { if (r.examiner_id) recipients.add(r.examiner_id); });
+  // Notify Candidate
+  await createNotification({
+    student_id: first.student_id,
+    type: 'viva_scheduled',
+    title,
+    message,
+    action_url: actionUrl,
+    priority: 'high'
+  });
 
+  // Notify Supervisor
+  if (first.supervisor_id) {
+    await createNotification({
+      user_id: first.supervisor_id,
+      type: 'viva_scheduled',
+      title,
+      message,
+      action_url: actionUrl,
+      priority: 'high'
+    });
+  }
+
+  // Notify Examiners
+  const examiners = new Set<number>();
+  rows.forEach((r) => { if (r.examiner_id) examiners.add(r.examiner_id); });
   await Promise.all(
-    [...recipients].map((uid) =>
-      createNotification({ user_id: uid, type: 'viva_scheduled', title, message, action_url: actionUrl, priority: 'high' })
+    [...examiners].map((uid) =>
+      createNotification({
+        user_id: uid,
+        type: 'viva_scheduled',
+        title: `Viva Panel Assignment: ${first.candidate_name}`,
+        message: `You are assigned to the viva panel for ${first.candidate_name} on ${dateStr}.`,
+        action_url: actionUrl,
+        priority: 'high'
+      })
     )
   );
 }
@@ -198,20 +194,20 @@ export async function notifyExaminerAssigned(
 export async function notifyVivaResult(vivaId: number): Promise<void> {
   const rows = await query<any[]>(
     `SELECT
-       (SELECT u.id FROM staff u JOIN students s ON u.email = s.email WHERE s.registration_number = pc.registration_number LIMIT 1) AS candidate_user_id,
+       s.id AS student_id,
        pc.supervisor_id,
-       CONCAT(st.first_name, ' ', st.last_name) AS candidate_name,
+       CONCAT(s.first_name, ' ', s.last_name) AS candidate_name,
        vr.outcome
      FROM viva_schedules vs
      JOIN phd_candidates pc ON vs.candidate_id = pc.id
-     LEFT JOIN students st ON pc.registration_number = st.registration_number
+     JOIN students s ON pc.registration_number = s.registration_number
      LEFT JOIN viva_recommendations vr ON vr.viva_id = vs.id
      WHERE vs.id = ?
      LIMIT 1`,
     [vivaId]
   );
   if (!rows.length) return;
-  const { candidate_user_id, supervisor_id, candidate_name, outcome } = rows[0];
+  const { student_id, supervisor_id, candidate_name, outcome } = rows[0];
 
   const outcomeLabel: Record<string, string> = {
     pass: 'Pass',
@@ -224,13 +220,25 @@ export async function notifyVivaResult(vivaId: number): Promise<void> {
   const message = `The panel recommendation for ${candidate_name}'s viva has been issued: ${label}.`;
   const actionUrl = `/phd/report/${vivaId}`;
 
-  const recipients: number[] = [];
-  if (candidate_user_id) recipients.push(candidate_user_id);
-  if (supervisor_id) recipients.push(supervisor_id);
+  // Notify Candidate
+  await createNotification({
+    student_id,
+    type: 'viva_result',
+    title,
+    message,
+    action_url: actionUrl,
+    priority: 'high'
+  });
 
-  await Promise.all(
-    recipients.map((uid) =>
-      createNotification({ user_id: uid, type: 'viva_result', title, message, action_url: actionUrl, priority: 'high' })
-    )
-  );
+  // Notify Supervisor
+  if (supervisor_id) {
+    await createNotification({
+      user_id: supervisor_id,
+      type: 'viva_result',
+      title,
+      message,
+      action_url: actionUrl,
+      priority: 'high'
+    });
+  }
 }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyAuth } from '@/lib/auth';
 import { enrollInCourse } from '@/lib/exams';
 import { query } from '@/lib/db';
+import { createNotification } from '@/lib/notifications';
 
 export async function GET(request: NextRequest) {
   try {
@@ -49,6 +50,16 @@ export async function POST(request: NextRequest) {
     }
 
     await enrollInCourse(user.id, course_id, academic_year, semester);
+
+    // Notify student
+    const [course]: any = await query(`SELECT title, code FROM courses WHERE id = ?`, [course_id]);
+    await createNotification({
+      student_id: user.id,
+      type: 'info',
+      title: 'Enrollment Confirmed',
+      message: `You have successfully enrolled in ${course.code} - ${course.title} for ${academic_year} Semester ${semester}.`,
+      priority: 'low'
+    });
 
     return NextResponse.json({ success: true, message: 'Enrolled successfully' });
   } catch (error: any) {
