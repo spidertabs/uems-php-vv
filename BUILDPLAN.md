@@ -21,6 +21,7 @@
 | PhD VV — Audit Logging (Phase F) | ✅ Complete | 100% |
 | PhD VV — Panel Structure (v3.1.2) | ✅ Complete | 100% |
 | Student Mobile App — API Supporting (Phase G) | 🏗️ Planned | 0% |
+| Exam Timetable & Course Enrollment (Phase H) | 🏗️ Planned | 0% |
 
 ---
 
@@ -1100,5 +1101,31 @@ F — Audit logging
 
 ### G4 — Document Export
 - [ ] `GET /api/mobile/report/[vivaId]/pdf` (Generate a mobile-friendly results summary)
+
+---
+
+## PHASE H — Exam Timetable & Enrollment
+
+> Implement scheduling and registration for published exam papers.
+
+### H1 — Timetable Management (HOD/Admin)
+- [x] Database tables (`exam_timetables`, `exam_supervisors`, `course_enrollments`)
+- [ ] `POST /api/exams/timetable` (Create/Update schedule)
+- [ ] `GET /api/exams/timetable` (Full view for admins)
+
+### H2 — Course Enrollment
+- [ ] `POST /api/exams/enroll` (Student registers for a specific course/semester)
+- [ ] `GET /api/exams/my-timetable` (Shows exams matching the student's enrolled courses)
+
+### H3 — Supervision (HOD)
+- [ ] `POST /api/exams/supervisors` (Assign lecturers to a timetable slot)
+- [ ] `GET /api/exams/supervision-load` (Lecturer views their assigned slots)
+- [ ] `GET /api/exams/enrolled-count` (Restricted to assigned supervisors/admins)
+
+### H4 — Visibility Logic
+- [ ] Enforcement: Students see schedules ONLY for enrolled papers.
+- [ ] Enforcement: Lecturers see enrollment counts ONLY for supervised papers.
+
+---
 
 *UEMS-PHD-VV v3.1 · Spider Tabs Ltd © 2026*

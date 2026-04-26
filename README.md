@@ -166,6 +166,13 @@ Draft → Submit → HOD Review → HOD Approval → Ready for Print → Printin
 - Correction deadline tracking for non-pass outcomes
 - Final panel comments recorded centrally
 
+#### Examiner & Supervisor Portal
+
+- **Personalized Dashboard**: "My Candidates" view showing only those assigned to the current staff member
+- **Role-specific Badges**: Clearly distinguish between Primary Supervisor, Co-Supervisor, and Examiner roles
+- **Submission Alerts**: Visual cues and "Evaluate" buttons for pending viva scores
+- **Access Control**: Supervisors can view their candidates' thesis history and previous viva reports
+
 ### 👥 User Management
 
 - Role-based permissions (Lecturer, HOD, Dean, Exam Master, Viva Coordinator, Admin)
@@ -181,6 +188,16 @@ Draft → Submit → HOD Review → HOD Approval → Ready for Print → Printin
 - Candidate progress tracking
 - Examiner evaluation summaries
 - Audit logs and activity history
+
+#### Exam Timetable & Enrollment
+
+- **HOD Timetable Control**: Centrally manage exam dates, times, and venues for published papers
+- **Course Enrollment**: Students register for specific courses each semester; this automatically grants them access to the corresponding exam schedules
+- **Supervision Assignments**: HODs assign lecturers to supervise exam slots
+- **Privacy Enforcement**:
+  - Students only see schedules for courses they are enrolled in for the current semester
+  - Lecturers only see enrollment counts for papers they are assigned to supervise
+- **Automated Notifications**: Alert students and supervisors of new schedules and assignments
 
 ### 📱 Student Mobile Application (Flutter) *(Upcoming)*
 
@@ -373,11 +390,19 @@ Enrolled
 
 ---
 
-### 📋 Viva Recommendations *(New)*
+### 📊 Viva Recommendations *(New)*
 
 *Issue and record the panel's binding recommendation and outcome*
 
 ![Viva Recommendations](./public/screenshots/viva-recommendations.png)
+
+---
+
+### 👤 My Candidates (Examiner View) *(New)*
+
+*Personalized dashboard for examiners and supervisors to track and evaluate their assigned candidates*
+
+![My Candidates](./public/screenshots/my-candidates.png)
 
 ---
 

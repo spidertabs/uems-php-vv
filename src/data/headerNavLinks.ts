@@ -57,6 +57,23 @@ const headerNavLinks: NavLink[] = [
     roles: ['admin', 'hod'],
   },
 
+  // Examination
+  {
+    title: '📅 Exam Timetable',
+    href: '/exams/timetable',
+    roles: ['admin', 'hod', 'dean', 'lecturer', 'student'],
+  },
+  {
+    title: '📝 Course Enrollment',
+    href: '/exams/enroll',
+    roles: ['admin', 'hod', 'student'],
+  },
+  {
+    title: '🛡️ Supervision Roster',
+    href: '/exams/supervision',
+    roles: ['lecturer', 'hod', 'admin'],
+  },
+
   // Workflow & Communication
   {
     title: '🖨️ Print Queue',

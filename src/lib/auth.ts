@@ -13,7 +13,7 @@ export interface UserPayload {
   email: string;
   first_name: string;
   last_name: string;
-  role: 'lecturer' | 'hod' | 'dean' | 'exam_master' | 'admin' | 'viva_coordinator';
+  role: 'lecturer' | 'hod' | 'dean' | 'exam_master' | 'admin' | 'viva_coordinator' | 'student';
   department_id: number | null;
   college_id: number | null;
 }
@@ -50,7 +50,8 @@ export async function getUserFromSession(): Promise<UserPayload | null> {
 
     if (!sessionId) return null;
 
-    const rows = await query<User[]>(
+    // Try to find as staff
+    const staffRows = await query<any[]>(
       `SELECT u.id, u.email, u.first_name, u.last_name, u.role, 
               u.department_id, u.college_id
        FROM sessions s
@@ -60,7 +61,21 @@ export async function getUserFromSession(): Promise<UserPayload | null> {
       [sessionId]
     );
 
-    const result = Array.isArray(rows) ? rows[0] : null;
+    let result = Array.isArray(staffRows) && staffRows.length > 0 ? staffRows[0] : null;
+
+    if (!result) {
+      // Try to find as student
+      const studentRows = await query<any[]>(
+        `SELECT u.id, u.email, u.first_name, u.last_name, 'student' as role,
+                u.department_id, u.college_id
+         FROM sessions s
+         JOIN students u ON s.student_id = u.id
+         WHERE s.session_id = ? AND s.expires_at > NOW() AND u.is_active = TRUE
+         LIMIT 1`,
+        [sessionId]
+      );
+      result = Array.isArray(studentRows) && studentRows.length > 0 ? studentRows[0] : null;
+    }
 
     if (!result) return null;
 
@@ -218,7 +233,8 @@ export async function verifyAuth(request: NextRequest): Promise<UserPayload | nu
       return null;
     }
 
-    const rows = await query<User[]>(
+    // Try to find as staff
+    const staffRows = await query<any[]>(
       `SELECT u.id, u.email, u.first_name, u.last_name, u.role, 
               u.department_id, u.college_id
        FROM sessions s
@@ -228,7 +244,21 @@ export async function verifyAuth(request: NextRequest): Promise<UserPayload | nu
       [sessionId]
     );
 
-    const result = Array.isArray(rows) ? rows[0] : null;
+    let result = Array.isArray(staffRows) && staffRows.length > 0 ? staffRows[0] : null;
+
+    if (!result) {
+      // Try to find as student
+      const studentRows = await query<any[]>(
+        `SELECT u.id, u.email, u.first_name, u.last_name, 'student' as role,
+                u.department_id, u.college_id
+         FROM sessions s
+         JOIN students u ON s.student_id = u.id
+         WHERE s.session_id = ? AND s.expires_at > NOW() AND u.is_active = TRUE
+         LIMIT 1`,
+        [sessionId]
+      );
+      result = Array.isArray(studentRows) && studentRows.length > 0 ? studentRows[0] : null;
+    }
 
     if (!result) {
       return null;

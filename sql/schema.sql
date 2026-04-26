@@ -1445,6 +1445,54 @@ END;
  $function$;
 
 
+
+-- ============================================================
+--  SECTION 15 — EXAM TIMETABLE & ENROLLMENT
+-- ============================================================
+
+CREATE TABLE exam_timetables (
+    id               SERIAL      PRIMARY KEY,
+    exam_paper_id    INT         NOT NULL UNIQUE REFERENCES exam_papers(id) ON DELETE CASCADE,
+    exam_date        DATE        NOT NULL,
+    start_time       TIME        NOT NULL,
+    end_time         TIME        NOT NULL,
+    venue            VARCHAR(255) NOT NULL,
+    capacity         INT,
+    created_by       INT         REFERENCES staff(id) ON DELETE SET NULL,
+    created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX idx_et_paper ON exam_timetables (exam_paper_id);
+CREATE INDEX idx_et_date  ON exam_timetables (exam_date);
+
+CREATE TABLE course_enrollments (
+    id               SERIAL      PRIMARY KEY,
+    student_id       INT         NOT NULL REFERENCES students(id)    ON DELETE CASCADE,
+    course_id        INT         NOT NULL REFERENCES courses(id)     ON DELETE CASCADE,
+    academic_year    INT         NOT NULL,
+    semester         INT         NOT NULL,
+    enrolled_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (student_id, course_id, academic_year, semester)
+);
+CREATE INDEX idx_ce_student ON course_enrollments (student_id);
+CREATE INDEX idx_ce_course  ON course_enrollments (course_id);
+
+CREATE TABLE exam_supervisors (
+    id               SERIAL      PRIMARY KEY,
+    timetable_id     INT         NOT NULL REFERENCES exam_timetables(id) ON DELETE CASCADE,
+    lecturer_id      INT         NOT NULL REFERENCES staff(id)          ON DELETE CASCADE,
+    assigned_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (timetable_id, lecturer_id)
+);
+CREATE INDEX idx_es_timetable ON exam_supervisors (timetable_id);
+CREATE INDEX idx_es_lecturer  ON exam_supervisors (lecturer_id);
+
+-- Trigger for timetable updated_at
+CREATE TRIGGER trg_timetable_updated_at
+    BEFORE UPDATE ON exam_timetables
+    FOR EACH ROW EXECUTE FUNCTION fn_set_updated_at();
+
+
 -- ============================================================
 --  END OF SCHEMA — UEMS-PHD-VV v3.2 (PostgreSQL)
 --  Kampala International University | © 2026 Spider Tabs Ltd

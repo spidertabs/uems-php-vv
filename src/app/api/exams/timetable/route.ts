@@ -1,0 +1,72 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { verifyAuth } from '@/lib/auth';
+import { getDepartmentalTimetables, getStudentTimetable, getLecturerSupervisionSlots } from '@/lib/exams';
+import { query } from '@/lib/db';
+
+export async function GET(request: NextRequest) {
+  try {
+    const user = await verifyAuth(request);
+    if (!user) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
+
+    let data;
+    if (user.role === 'admin') {
+      // Admins see everything
+      data = await query(`
+        SELECT et.*, ep.paper_code, c.title as course_title, c.code as course_code
+        FROM exam_timetables et
+        JOIN exam_papers ep ON et.exam_paper_id = ep.id
+        JOIN courses c ON ep.course_id = c.id
+        ORDER BY et.exam_date ASC
+      `);
+    } else if (user.role === 'hod' || user.role === 'dean') {
+      data = await getDepartmentalTimetables(user.department_id!);
+    } else if (user.role === 'lecturer') {
+       // Lecturers see what they supervise
+      data = await getLecturerSupervisionSlots(user.id);
+    } else if (user.role === 'student') {
+      data = await getStudentTimetable(user.id);
+    } else {
+      return NextResponse.json({ success: false, error: 'Access denied' }, { status: 403 });
+    }
+
+    return NextResponse.json({ success: true, data });
+  } catch (error: any) {
+    console.error('❌ GET Timetable error:', error);
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const user = await verifyAuth(request);
+    if (!user || (user.role !== 'hod' && user.role !== 'admin')) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { exam_paper_id, exam_date, start_time, end_time, venue, capacity } = await request.json();
+
+    if (!exam_paper_id || !exam_date || !start_time || !end_time || !venue) {
+      return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 });
+    }
+
+    const result = await query(
+      `INSERT INTO exam_timetables (exam_paper_id, exam_date, start_time, end_time, venue, capacity, created_by)
+       VALUES (?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT (exam_paper_id) DO UPDATE SET
+         exam_date = EXCLUDED.exam_date,
+         start_time = EXCLUDED.start_time,
+         end_time = EXCLUDED.end_time,
+         venue = EXCLUDED.venue,
+         capacity = EXCLUDED.capacity,
+         updated_at = NOW()`,
+      [exam_paper_id, exam_date, start_time, end_time, venue, capacity || null, user.id]
+    );
+
+    return NextResponse.json({ success: true, message: 'Timetable updated successfully' });
+  } catch (error: any) {
+    console.error('❌ POST Timetable error:', error);
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}
