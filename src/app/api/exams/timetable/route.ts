@@ -17,7 +17,13 @@ export async function GET(request: NextRequest) {
       data = await query(`
         SELECT et.*, ep.paper_code, 
                COALESCE(c.title, pc.title) as course_title, 
-               COALESCE(c.code, pc.code) as course_code
+               COALESCE(c.code, pc.code) as course_code,
+               (
+                 SELECT STRING_AGG(s.first_name || ' ' || s.last_name, ', ')
+                 FROM exam_supervisors es
+                 JOIN staff s ON es.lecturer_id = s.id
+                 WHERE es.timetable_id = et.id
+               ) as supervisor_names
         FROM exam_timetables et
         LEFT JOIN exam_papers ep ON et.exam_paper_id = ep.id
         LEFT JOIN courses c ON et.course_id = c.id

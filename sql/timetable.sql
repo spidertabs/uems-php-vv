@@ -51,11 +51,11 @@ AND s.is_active = TRUE
 LIMIT 100
 ON CONFLICT DO NOTHING;
 
--- 4. Sample Supervisor Assignments (Cross-Departmental)
+-- 4. Sample Supervisor Assignments (Invigilators)
 INSERT INTO exam_supervisors (timetable_id, lecturer_id)
 SELECT t.id, l.id
 FROM exam_timetables t, staff l
-WHERE l.role IN ('lecturer', 'hod', 'dean')
+WHERE l.role = 'lecturer'
 AND l.is_active = TRUE
-LIMIT 30
+LIMIT 50
 ON CONFLICT DO NOTHING;

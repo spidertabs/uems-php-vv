@@ -34,6 +34,12 @@ export async function getDepartmentalTimetables(departmentId: number) {
         ep.paper_code,
         COALESCE(c.title, pc.title) as course_title,
         COALESCE(c.code, pc.code) as course_code,
+        (
+          SELECT STRING_AGG(s.first_name || ' ' || s.last_name, ', ')
+          FROM exam_supervisors es
+          JOIN staff s ON es.lecturer_id = s.id
+          WHERE es.timetable_id = et.id
+        ) as supervisor_names,
         (SELECT COUNT(*) FROM course_enrollments ce 
          WHERE ce.course_id = COALESCE(et.course_id, ep.course_id)
          AND ce.academic_year = COALESCE(ep.academic_year, 2026) 

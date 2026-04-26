@@ -200,6 +200,9 @@ export default function TimetablePage() {
                   <th className="pb-4 pt-2 text-sm font-bold text-gray-400 uppercase tracking-wider">Exam Paper</th>
                   <th className="pb-4 pt-2 text-sm font-bold text-gray-400 uppercase tracking-wider">Date & Time</th>
                   <th className="pb-4 pt-2 text-sm font-bold text-gray-400 uppercase tracking-wider">Venue</th>
+                  {(user?.role === 'admin' || user?.role === 'hod') && (
+                     <th className="pb-4 pt-2 text-sm font-bold text-gray-400 uppercase tracking-wider">Supervisors</th>
+                  )}
                   <th className="pb-4 pt-2 text-sm font-bold text-gray-400 uppercase tracking-wider">Enrollment</th>
                   {isHOD && <th className="pb-4 pt-2 text-sm font-bold text-gray-400 uppercase tracking-wider">Actions</th>}
                 </tr>
@@ -226,6 +229,13 @@ export default function TimetablePage() {
                         📍 {slot.venue}
                       </span>
                     </td>
+                    {(user?.role === 'admin' || user?.role === 'hod') && (
+                      <td className="py-4">
+                         <span className="text-xs font-medium text-gray-600 dark:text-gray-400 italic">
+                            {(slot as any).supervisor_names || 'None assigned'}
+                         </span>
+                      </td>
+                    )}
                     <td className="py-4">
                        <div className="flex items-center gap-2">
                           <div className="h-2 w-16 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
