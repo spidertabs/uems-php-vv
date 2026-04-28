@@ -148,8 +148,7 @@ async function getLecturerStats(userId: number, stats: Record<string, number>) {
      JOIN phd_candidates pc ON vs.candidate_id = pc.id
      LEFT JOIN viva_examiners ve ON vs.id = ve.viva_id
      WHERE vs.status IN ('scheduled', 'in_progress')
-       AND (pc.supervisor_id = ? OR pc.co_supervisor_id = ? OR ve.examiner_id = ?)
-       AND vs.deleted_at IS NULL`,
+       AND (pc.supervisor_id = ? OR pc.co_supervisor_id = ? OR ve.examiner_id = ?)`,
     [userId, userId, userId]
   );
   stats.upcomingVivas = Number(upcomingVivasCount[0]?.count || 0);

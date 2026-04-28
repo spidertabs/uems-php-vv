@@ -27,7 +27,9 @@ interface DashboardStats {
 interface User {
   id: number;
   role: string;
-  name: string;
+  first_name: string;
+  last_name: string;
+  name?: string;
   email: string;
   department_id?: number;
   college_id?: number;
