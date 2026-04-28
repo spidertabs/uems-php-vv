@@ -16,6 +16,9 @@ export async function GET(request: NextRequest) {
       pendingApprovals: 0,
       myQuestions: 0,
       notifications: 0,
+      myCandidates: 0,
+      upcomingVivas: 0,
+      papersToReview: 0,
     };
 
     // Get stats based on user role
@@ -73,14 +76,14 @@ async function getLecturerStats(userId: number, stats: Record<string, number>) {
     'SELECT COUNT(*) as count FROM exam_papers WHERE created_by = ? AND deleted_at IS NULL',
     [userId]
   );
-  stats.myPapers = lecturerPapers[0]?.count || 0;
+  stats.myPapers = Number(lecturerPapers[0]?.count || 0);
 
   // Lecturer's questions
   const lecturerQuestions = await query<any[]>(
     'SELECT COUNT(*) as count FROM questions WHERE created_by = ? AND deleted_at IS NULL',
     [userId]
   );
-  stats.myQuestions = lecturerQuestions[0]?.count || 0;
+  stats.myQuestions = Number(lecturerQuestions[0]?.count || 0);
 
   // Papers to review (returned for revision)
   const toReview = await query<any[]>(
@@ -91,7 +94,7 @@ async function getLecturerStats(userId: number, stats: Record<string, number>) {
        AND deleted_at IS NULL`,
     [userId]
   );
-  stats.papersToReview = toReview[0]?.count || 0;
+  stats.papersToReview = Number(toReview[0]?.count || 0);
 
   // Draft papers
   const drafts = await query<any[]>(
@@ -102,7 +105,7 @@ async function getLecturerStats(userId: number, stats: Record<string, number>) {
        AND deleted_at IS NULL`,
     [userId]
   );
-  stats.draftPapers = drafts[0]?.count || 0;
+  stats.draftPapers = Number(drafts[0]?.count || 0);
 
   // Submitted papers (pending HOD review)
   const submitted = await query<any[]>(
@@ -113,7 +116,7 @@ async function getLecturerStats(userId: number, stats: Record<string, number>) {
        AND deleted_at IS NULL`,
     [userId]
   );
-  stats.submittedPapers = submitted[0]?.count || 0;
+  stats.submittedPapers = Number(submitted[0]?.count || 0);
 
   // Approved papers
   const approved = await query<any[]>(
@@ -124,7 +127,7 @@ async function getLecturerStats(userId: number, stats: Record<string, number>) {
        AND deleted_at IS NULL`,
     [userId]
   );
-  stats.approvedPapers = approved[0]?.count || 0;
+  stats.approvedPapers = Number(approved[0]?.count || 0);
 
   // PhD Candidates assigned to this lecturer
   const phdCount = await query<any[]>(
@@ -136,10 +139,10 @@ async function getLecturerStats(userId: number, stats: Record<string, number>) {
        AND pc.deleted_at IS NULL`,
     [userId, userId, userId]
   );
-  stats.myCandidates = phdCount[0]?.count || 0;
+  stats.myCandidates = Number(phdCount[0]?.count || 0);
 
   // Upcoming Vivas for this lecturer/professor
-  const upcomingVivas = await query<any[]>(
+  const upcomingVivasCount = await query<any[]>(
     `SELECT COUNT(DISTINCT vs.id) as count 
      FROM viva_schedules vs
      JOIN phd_candidates pc ON vs.candidate_id = pc.id
@@ -149,7 +152,7 @@ async function getLecturerStats(userId: number, stats: Record<string, number>) {
        AND vs.deleted_at IS NULL`,
     [userId, userId, userId]
   );
-  stats.upcomingVivas = upcomingVivas[0]?.count || 0;
+  stats.upcomingVivas = Number(upcomingVivasCount[0]?.count || 0);
 }
 
 async function getHODStats(userId: number, stats: Record<string, number>) {
