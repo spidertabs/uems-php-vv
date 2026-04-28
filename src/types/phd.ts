@@ -174,6 +174,12 @@ export interface VivaWithFullDetails extends VivaSchedule {
   programme_name: string;
   // panel
   examiners: VivaExaminerWithUser[];
+  supervisors?: Array<{
+    supervisor_id: number;
+    supervisor_name: string;
+    supervisor_email: string;
+    role: string;
+  }>;
   evaluations: VivaEvaluationWithExaminer[];
   evaluation_summary: VivaEvaluationSummary;
   recommendation: VivaRecommendation | null;

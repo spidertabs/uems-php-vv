@@ -215,7 +215,7 @@ export async function PUT(
     );
 
     await query(
-      `INSERT INTO audit_logs (user_id, action, table_name, record_id, new_values, created_at)
+      `INSERT INTO audit_logs (user_id, action, entity_type, entity_id, new_values, created_at)
        VALUES (?, 'UPDATE', 'viva_schedules', ?, ?, NOW())`,
       [user.id, vivaId, JSON.stringify(body)]
     );

@@ -52,16 +52,22 @@ export default function VivaDetailPage() {
   });
   const [recLoading, setRecLoading] = useState(false);
   const [recError, setRecError] = useState('');
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
 
   const fetchAll = useCallback(async () => {
     try {
-      const [vRes, uRes] = await Promise.all([
+      const [vRes, uRes, meRes] = await Promise.all([
         fetch(`/api/phd/schedules/${vivaId}`),
         fetch('/api/phd/eligible-examiners'),
+        fetch('/api/auth/me'),
       ]);
       if (vRes.status === 401) { router.push('/auth/login'); return; }
       if (vRes.ok) { const d = await vRes.json(); setViva(d.viva); }
       if (uRes.ok) { const d = await uRes.json(); setEligibleStaff(d.staff || []); }
+      if (meRes.ok) {
+        const d = await meRes.json();
+        setCurrentUserId(d.user?.id || null);
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -260,6 +266,20 @@ export default function VivaDetailPage() {
                 className="rounded-lg bg-indigo-600 px-4 py-2 text-sm text-white hover:bg-indigo-700"
               >
                 🖨️ View Full Report
+              </Link>
+            </div>
+          )}
+
+          {/* Evaluate Action for Panel Members */}
+          {currentUserId && 
+           (viva.examiners.some(e => e.examiner_id === currentUserId) || 
+            viva.supervisors?.some(s => s.supervisor_id === currentUserId)) && (
+            <div className="flex flex-col gap-2">
+              <Link
+                href={`/phd/evaluations/${vivaId}`}
+                className="flex items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-bold text-white shadow-lg transition-all hover:bg-red-700 hover:scale-105"
+              >
+                📝 GO TO EVALUATION ★
               </Link>
             </div>
           )}

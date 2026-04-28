@@ -8,9 +8,12 @@ import { notifyVivaScheduled } from '@/lib/phd/notifications';
 export async function GET(req: NextRequest) {
   try {
     const user = await verifyAuth(req);
-    if (!user || !['viva_coordinator', 'admin', 'hod'].includes(user.role)) {
+    if (!user || !['viva_coordinator', 'admin', 'hod', 'dean', 'lecturer'].includes(user.role)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
+
+    const isLecturer = user.role === 'lecturer';
+    const userId = user.id;
 
     const searchParams = req.nextUrl.searchParams;
     const status = searchParams.get('status');
@@ -49,6 +52,17 @@ export async function GET(req: NextRequest) {
     if (user.role === 'hod' && user.department_id) {
       sql += ' AND p.department_id = ?';
       params.push(user.department_id);
+    }
+
+    // Filter by assignments for lecturers
+    if (isLecturer) {
+      sql += ` AND (
+        pc.supervisor_id = ? OR 
+        pc.co_supervisor_id = ? OR 
+        pc.id IN (SELECT pcs.candidate_id FROM phd_candidate_supervisors pcs WHERE pcs.supervisor_id = ?) OR
+        vs.id IN (SELECT ve.viva_id FROM viva_examiners ve WHERE ve.examiner_id = ?)
+      )`;
+      params.push(userId, userId, userId, userId);
     }
 
     if (status) {

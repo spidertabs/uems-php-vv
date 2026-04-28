@@ -6,12 +6,22 @@ import { query } from '@/lib/db';
 export async function GET(req: NextRequest) {
   try {
     const user = await verifyAuth(req);
-    if (!user || !['viva_coordinator', 'admin', 'dean', 'hod'].includes(user.role)) {
+    if (!user || !['viva_coordinator', 'admin', 'dean', 'hod', 'lecturer'].includes(user.role)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
     const isHOD = user.role === 'hod';
+    const isLecturer = user.role === 'lecturer';
     const deptId = user.department_id;
+    const userId = user.id;
+
+    // Base assignment filter for lecturers
+    const assignmentSubquery = `(
+      pc.supervisor_id = ? OR pc.co_supervisor_id = ? OR 
+      pc.id IN (SELECT pcs.candidate_id FROM phd_candidate_supervisors pcs WHERE pcs.supervisor_id = ?) OR
+      pc.id IN (SELECT vs_sub.candidate_id FROM viva_schedules vs_sub JOIN viva_examiners ve_sub ON vs_sub.id = ve_sub.viva_id WHERE ve_sub.examiner_id = ?)
+    )`;
+    const assignmentParams = [userId, userId, userId, userId];
 
     // Total candidates
     const totalCandidatesResult = await query<any[]>(
@@ -19,8 +29,9 @@ export async function GET(req: NextRequest) {
        FROM phd_candidates pc
        JOIN programmes p ON pc.programme_id = p.id
        WHERE pc.deleted_at IS NULL
-       ${isHOD ? 'AND p.department_id = ?' : ''}`,
-      isHOD ? [deptId] : []
+       ${isHOD ? 'AND p.department_id = ?' : ''}
+       ${isLecturer ? `AND ${assignmentSubquery}` : ''}`,
+      [...(isHOD ? [deptId] : []), ...(isLecturer ? assignmentParams : [])]
     );
     const total_candidates = totalCandidatesResult[0]?.count || 0;
 
@@ -31,8 +42,9 @@ export async function GET(req: NextRequest) {
        JOIN programmes p ON pc.programme_id = p.id
        WHERE vs.status = 'scheduled' AND vs.scheduled_date >= CURRENT_DATE
        AND pc.deleted_at IS NULL
-       ${isHOD ? 'AND p.department_id = ?' : ''}`,
-      isHOD ? [deptId] : []
+       ${isHOD ? 'AND p.department_id = ?' : ''}
+       ${isLecturer ? `AND ${assignmentSubquery}` : ''}`,
+      [...(isHOD ? [deptId] : []), ...(isLecturer ? assignmentParams : [])]
     );
     const upcoming_vivas = upcomingVivasResult[0]?.count || 0;
 
@@ -44,8 +56,9 @@ export async function GET(req: NextRequest) {
        WHERE vs.status = 'completed' 
        AND NOT EXISTS (SELECT 1 FROM viva_recommendations WHERE viva_id = vs.id)
        AND pc.deleted_at IS NULL
-       ${isHOD ? 'AND p.department_id = ?' : ''}`,
-      isHOD ? [deptId] : []
+       ${isHOD ? 'AND p.department_id = ?' : ''}
+       ${isLecturer ? `AND ${assignmentSubquery}` : ''}`,
+      [...(isHOD ? [deptId] : []), ...(isLecturer ? assignmentParams : [])]
     );
     const pending_outcomes = pendingOutcomesResult[0]?.count || 0;
 
@@ -57,8 +70,9 @@ export async function GET(req: NextRequest) {
        JOIN programmes p ON pc.programme_id = p.id
        WHERE ve.is_submitted = FALSE
        AND pc.deleted_at IS NULL
-       ${isHOD ? 'AND p.department_id = ?' : ''}`,
-      isHOD ? [deptId] : []
+       ${isHOD ? 'AND p.department_id = ?' : ''}
+       ${isLecturer ? `AND ${assignmentSubquery}` : ''}`,
+      [...(isHOD ? [deptId] : []), ...(isLecturer ? assignmentParams : [])]
     );
     const outstanding_evaluations = outstandingEvaluationsResult[0]?.count || 0;
 
@@ -69,9 +83,10 @@ export async function GET(req: NextRequest) {
        JOIN programmes p ON pc.programme_id = p.id
        WHERE pc.deleted_at IS NULL
        ${isHOD ? 'AND p.department_id = ?' : ''}
+       ${isLecturer ? `AND ${assignmentSubquery}` : ''}
        GROUP BY pc.status 
        ORDER BY count DESC`,
-      isHOD ? [deptId] : []
+      [...(isHOD ? [deptId] : []), ...(isLecturer ? assignmentParams : [])]
     );
     const status_breakdown = statusBreakdownResult.map(row => ({
       status: row.status,
@@ -95,9 +110,10 @@ export async function GET(req: NextRequest) {
        JOIN programmes p ON pc.programme_id = p.id
        WHERE pc.deleted_at IS NULL
        ${isHOD ? 'AND p.department_id = ?' : ''}
+       ${isLecturer ? `AND ${assignmentSubquery}` : ''}
        ORDER BY vr.issued_at DESC 
        LIMIT 5`,
-      isHOD ? [deptId] : []
+      [...(isHOD ? [deptId] : []), ...(isLecturer ? assignmentParams : [])]
     );
     const recent_outcomes = recentOutcomesResult.map(row => ({
       viva_id: row.viva_id,
