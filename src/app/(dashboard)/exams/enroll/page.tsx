@@ -12,8 +12,8 @@ interface Course {
 interface Enrollment {
   id: number;
   course_id: number;
-  course_code: string;
-  course_title: string;
+  code: string;
+  title: string;
   academic_year: number;
   semester: number;
   exam_date?: string;
@@ -202,16 +202,16 @@ export default function EnrollmentPage() {
                 </thead>
                 <tbody className="divide-y divide-gray-50 dark:divide-gray-700/50">
                   {enrollments.filter(en => 
-                    en.course_code.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                    en.course_title.toLowerCase().includes(searchQuery.toLowerCase())
+                    en.code.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                    en.title.toLowerCase().includes(searchQuery.toLowerCase())
                   ).map((en) => {
                     const isEnrolled = myEnrollments.some((me: any) => me.course_id === en.id);
                     return (
                     <tr key={en.id} className="group transition hover:bg-gray-50/50">
                       <td className="py-4">
                         <div className="flex flex-col">
-                          <span className="text-sm font-black text-emerald-600 dark:text-emerald-400">{en.course_code}</span>
-                          <span className="text-sm font-medium text-gray-900 dark:text-white">{en.course_title}</span>
+                          <span className="text-sm font-black text-emerald-600 dark:text-emerald-400">{en.code}</span>
+                          <span className="text-sm font-medium text-gray-900 dark:text-white">{en.title}</span>
                         </div>
                       </td>
                       <td className="py-4">
