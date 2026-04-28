@@ -155,8 +155,8 @@ export async function GET(
     const user = await verifyAuth(req);
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    // Allowed: coordinator, admin, hod, dean + assigned examiners
-    const allowedRoles = ['viva_coordinator', 'admin', 'hod', 'dean', 'lecturer'];
+    // Allowed: coordinator, admin, hod, dean + assigned examiners (lecturer, professor, external_examiner)
+    const allowedRoles = ['viva_coordinator', 'admin', 'hod', 'dean', 'lecturer', 'professor', 'external_examiner'];
     if (!allowedRoles.includes(user.role)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }

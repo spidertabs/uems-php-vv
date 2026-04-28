@@ -13,9 +13,20 @@ export const ROLES = {
   DEAN: 'dean',
   HOD: 'hod',
   LECTURER: 'lecturer',
+  PROFESSOR: 'professor',
+  EXTERNAL_EXAMINER: 'external_examiner',
+  VIVA_COORDINATOR: 'viva_coordinator',
 } as const;
 
-export type UserRole = 'admin' | 'exam_master' | 'dean' | 'hod' | 'lecturer';
+export type UserRole = 
+  | 'admin' 
+  | 'exam_master' 
+  | 'dean' 
+  | 'hod' 
+  | 'lecturer' 
+  | 'professor' 
+  | 'external_examiner' 
+  | 'viva_coordinator';
 
 // =====================================================
 // PERMISSIONS BY ROLE
@@ -228,6 +239,40 @@ export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
     'view_feedback',
     
     // Profile
+    'view_own_profile',
+    'edit_own_profile',
+  ],
+  
+  professor: [
+    'view_assigned_candidates',
+    'view_candidate_details',
+    'add_candidate_evaluations',
+    'edit_own_evaluations',
+    'view_candidate_evaluations',
+    'submit_viva_recommendations',
+    'view_notifications',
+    'view_own_profile',
+    'edit_own_profile',
+  ],
+  
+  external_examiner: [
+    'view_assigned_candidates',
+    'view_candidate_details',
+    'add_candidate_evaluations',
+    'edit_own_evaluations',
+    'view_candidate_evaluations',
+    'view_notifications',
+    'view_own_profile',
+    'edit_own_profile',
+  ],
+  
+  viva_coordinator: [
+    'view_assigned_candidates',
+    'view_candidate_details',
+    'view_candidate_evaluations',
+    'manage_viva_schedules',
+    'submit_viva_recommendations',
+    'view_notifications',
     'view_own_profile',
     'edit_own_profile',
   ],

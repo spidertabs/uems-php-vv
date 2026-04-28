@@ -11,7 +11,7 @@ const headerNavLinks: NavLink[] = [
   {
     title: '📊 Dashboard',
     href: '/',
-    roles: ['lecturer', 'hod', 'dean', 'exam_master', 'admin', 'viva_coordinator'],
+    roles: ['lecturer', 'professor', 'external_examiner', 'hod', 'dean', 'exam_master', 'admin', 'viva_coordinator'],
   },
   {
     title: '👤 Profile',
@@ -22,7 +22,7 @@ const headerNavLinks: NavLink[] = [
   {
     title: '📬 Notifications',
     href: '/notifications/',
-    roles: ['lecturer', 'hod', 'dean', 'exam_master', 'admin', 'viva_coordinator'],
+    roles: ['lecturer', 'professor', 'external_examiner', 'hod', 'dean', 'exam_master', 'admin', 'viva_coordinator'],
   },
   {
     title: '✅ Approvals',
@@ -85,7 +85,7 @@ const headerNavLinks: NavLink[] = [
   {
     title: '🎓 PhD Dashboard',
     href: '/phd',
-    roles: ['viva_coordinator', 'admin', 'dean', 'hod'],
+    roles: ['viva_coordinator', 'admin', 'dean', 'hod', 'lecturer', 'professor', 'external_examiner'],
   },
   {
     title: '👨‍🎓 PhD Candidates',
@@ -95,7 +95,7 @@ const headerNavLinks: NavLink[] = [
   {
     title: '📅 Viva Schedules',
     href: '/phd/schedules',
-    roles: ['viva_coordinator', 'admin', 'dean', 'hod'],
+    roles: ['viva_coordinator', 'admin', 'dean', 'hod', 'lecturer', 'professor', 'external_examiner'],
   },
   {
     title: '📋 PhD Reports',
@@ -134,7 +134,7 @@ const headerNavLinks: NavLink[] = [
   {
     title: '🎓 PhD Candidates',
     href: '/phd/my-candidates',
-    roles: ['lecturer'],
+    roles: ['lecturer', 'professor', 'external_examiner'],
   },
 
   // Bottom Section

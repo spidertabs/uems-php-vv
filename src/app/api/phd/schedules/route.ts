@@ -8,11 +8,11 @@ import { notifyVivaScheduled } from '@/lib/phd/notifications';
 export async function GET(req: NextRequest) {
   try {
     const user = await verifyAuth(req);
-    if (!user || !['viva_coordinator', 'admin', 'hod', 'dean', 'lecturer'].includes(user.role)) {
+    if (!user || !['viva_coordinator', 'admin', 'hod', 'dean', 'lecturer', 'professor', 'external_examiner'].includes(user.role)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
-    const isLecturer = user.role === 'lecturer';
+    const isLecturer = ['lecturer', 'professor', 'external_examiner'].includes(user.role);
     const userId = user.id;
 
     const searchParams = req.nextUrl.searchParams;

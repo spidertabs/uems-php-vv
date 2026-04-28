@@ -10,7 +10,7 @@ export async function GET(
 ) {
   try {
     const user = await verifyAuth(req);
-    if (!user || !['viva_coordinator', 'admin', 'hod', 'lecturer'].includes(user.role)) {
+    if (!user || !['viva_coordinator', 'admin', 'hod', 'dean', 'lecturer', 'professor', 'external_examiner'].includes(user.role)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
@@ -50,14 +50,25 @@ export async function GET(
 
     const row = rows[0];
 
-    // Permission check for lecturers: only allow viewing assigned candidates
-    if (user.role === 'lecturer') {
+    // Permission check for examiners: only allow viewing assigned candidates
+    if (['lecturer', 'professor', 'external_examiner'].includes(user.role)) {
       if (!hasPermission(user, 'view_candidate_details')) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
       }
 
-      // Verify lecturer is supervisor or co-supervisor
-      if (row.supervisor_id !== user.id && row.co_supervisor_id !== user.id) {
+      // Verify they are supervisor or co-supervisor or an examiner for a viva
+      const isAssignedResult = await query<any[]>(
+        `SELECT 1 FROM phd_candidates pc 
+         WHERE pc.id = ? AND (
+           pc.supervisor_id = ? OR 
+           pc.co_supervisor_id = ? OR 
+           pc.id IN (SELECT pcs.candidate_id FROM phd_candidate_supervisors pcs WHERE pcs.supervisor_id = ?) OR
+           pc.id IN (SELECT vs.candidate_id FROM viva_schedules vs JOIN viva_examiners ve ON vs.id = ve.viva_id WHERE ve.examiner_id = ?)
+         )`,
+        [candidateId, user.id, user.id, user.id, user.id]
+      );
+
+      if (isAssignedResult.length === 0) {
         return NextResponse.json(
           { error: 'You are not authorized to view this candidate' },
           { status: 403 }

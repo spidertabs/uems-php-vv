@@ -6,12 +6,12 @@ import { query } from '@/lib/db';
 export async function GET(req: NextRequest) {
   try {
     const user = await verifyAuth(req);
-    if (!user || !['viva_coordinator', 'admin', 'dean', 'hod', 'lecturer'].includes(user.role)) {
+    if (!user || !['viva_coordinator', 'admin', 'dean', 'hod', 'lecturer', 'professor', 'external_examiner'].includes(user.role)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
     const isHOD = user.role === 'hod';
-    const isLecturer = user.role === 'lecturer';
+    const isLecturer = ['lecturer', 'professor', 'external_examiner'].includes(user.role);
     const deptId = user.department_id;
     const userId = user.id;
 

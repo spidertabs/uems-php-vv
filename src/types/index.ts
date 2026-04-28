@@ -50,7 +50,7 @@ export interface User {
   password_hash: string;
   first_name: string;
   last_name: string;
-  role: 'lecturer' | 'hod' | 'dean' | 'exam_master' | 'admin';
+  role: 'lecturer' | 'professor' | 'external_examiner' | 'hod' | 'dean' | 'exam_master' | 'admin' | 'viva_coordinator';
   department_id: number | null;
   college_id: number | null;
   phone: string | null;
@@ -588,7 +588,7 @@ export interface UserFormData {
   password?: string;
   first_name: string;
   last_name: string;
-  role: 'lecturer' | 'hod' | 'dean' | 'exam_master' | 'admin';
+  role: 'lecturer' | 'professor' | 'external_examiner' | 'hod' | 'dean' | 'exam_master' | 'admin' | 'viva_coordinator';
   department_id?: number;
   college_id?: number;
   phone?: string;
