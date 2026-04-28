@@ -13,19 +13,20 @@ export async function GET(request: NextRequest) {
 
     const searchParams = request.nextUrl.searchParams;
     const courseId = searchParams.get('course_id');
-    const showStats = searchParams.get('stats') === 'true';
+    const studentOnly = searchParams.get('student_only') === 'true';
 
     let data;
-    if (showStats) {
+    if (courseId) {
+      // Return students in a specific course
       data = await query(
-        `SELECT c.id, c.code, c.title, d.name as department_name, COUNT(ce.id) as student_count
-         FROM courses c
-         LEFT JOIN departments d ON c.department_id = d.id
-         LEFT JOIN course_enrollments ce ON c.id = ce.course_id
-         GROUP BY c.id, c.code, c.title, d.name
-         ORDER BY student_count DESC`
+        `SELECT s.registration_number, s.first_name, s.last_name, s.email, ce.academic_year, ce.semester
+         FROM course_enrollments ce
+         JOIN students s ON ce.student_id = s.id
+         WHERE ce.course_id = ?`,
+        [courseId]
       );
-    } else if (user.role === 'student') {
+    } else if (studentOnly && user.role === 'student') {
+      // My enrollments only
       data = await query(
         `SELECT ce.*, c.title, c.code, et.exam_date, et.start_time, et.venue
          FROM course_enrollments ce
@@ -34,23 +35,18 @@ export async function GET(request: NextRequest) {
          WHERE ce.student_id = ?`,
         [user.id]
       );
-    } else if (courseId) {
-      // Staff see students in a specific course
-      data = await query(
-        `SELECT s.registration_number, s.first_name, s.last_name, s.email, ce.academic_year, ce.semester
-         FROM course_enrollments ce
-         JOIN students s ON ce.student_id = s.id
-         WHERE ce.course_id = ?`,
-        [courseId]
-      );
     } else {
-      // Staff see all enrollments grouped by course
+      // Unified view: All courses with their counts and schedules
       data = await query(
-        `SELECT c.id, c.code, c.title, d.name as department_name, COUNT(ce.id) as student_count
+        `SELECT c.id, c.code, c.title, d.name as department_name, 
+                COUNT(ce.id) as student_count,
+                et.exam_date, et.start_time, et.venue
          FROM courses c
          LEFT JOIN departments d ON c.department_id = d.id
          LEFT JOIN course_enrollments ce ON c.id = ce.course_id
-         GROUP BY c.id, c.code, c.title, d.name`
+         LEFT JOIN exam_timetables et ON c.id = et.course_id
+         GROUP BY c.id, c.code, c.title, d.name, et.exam_date, et.start_time, et.venue
+         ORDER BY c.code ASC`
       );
     }
 
