@@ -16,7 +16,12 @@ interface Enrollment {
   course_title: string;
   academic_year: number;
   semester: number;
+  exam_date?: string;
+  start_time?: string;
+  venue?: string;
 }
+
+import { Calendar, MapPin, Clock, CheckCircle2, AlertCircle, Search, Sparkles } from 'lucide-react';
 
 export default function EnrollmentPage() {
   const [courses, setCourses] = useState<Course[]>([]);
@@ -31,10 +36,30 @@ export default function EnrollmentPage() {
   const [viewingCourse, setViewingCourse] = useState<any>(null);
   const [studentList, setStudentList] = useState<any[]>([]);
   const [listLoading, setListLoading] = useState(false);
+  const [formStatus, setFormStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [courseStats, setCourseStats] = useState<any[]>([]);
+  const [statsLoading, setStatsLoading] = useState(false);
 
   useEffect(() => {
     fetchData();
+    fetchStats();
   }, []);
+
+  const fetchStats = async () => {
+    setStatsLoading(true);
+    try {
+      const res = await fetch('/api/exams/enroll?stats=true'); // We'll add this specific flag handling in the next step
+      if (res.ok) {
+        const data = await res.json();
+        setCourseStats(data.data || []);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setStatsLoading(false);
+    }
+  };
 
   const fetchData = async () => {
     try {
@@ -68,6 +93,7 @@ export default function EnrollmentPage() {
   const handleEnroll = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedCourseId) return;
+    setFormStatus(null);
 
     try {
       const response = await fetch('/api/exams/enroll', {
@@ -83,13 +109,15 @@ export default function EnrollmentPage() {
       if (response.ok) {
         fetchData();
         setSelectedCourseId('');
-        alert('Successfully enrolled in course!');
+        setFormStatus({ type: 'success', message: 'Successfully enrolled in course!' });
+        setTimeout(() => setFormStatus(null), 5000);
       } else {
         const error = await response.json();
-        alert(error.error || 'Failed to enroll');
+        setFormStatus({ type: 'error', message: error.error || 'Failed to enroll' });
       }
     } catch (error) {
       console.error('Enroll error:', error);
+      setFormStatus({ type: 'error', message: 'A network error occurred. Please try again.' });
     }
   };
 
@@ -139,17 +167,30 @@ export default function EnrollmentPage() {
             <form onSubmit={handleEnroll} className="space-y-4">
               <div>
                 <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Course</label>
-                <select
-                  required
-                  value={selectedCourseId}
-                  onChange={(e) => setSelectedCourseId(e.target.value)}
-                  className="w-full rounded-xl border border-gray-300 bg-gray-50 p-2.5 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                >
-                  <option value="">Select a course...</option>
-                  {courses.map(c => (
-                    <option key={c.id} value={c.id}>{c.code} - {c.title}</option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <select
+                    required
+                    value={selectedCourseId}
+                    onChange={(e) => setSelectedCourseId(e.target.value)}
+                    className="w-full rounded-xl border border-gray-300 bg-gray-50 p-2.5 pl-10 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white appearance-none"
+                  >
+                    <option value="">Select a course...</option>
+                    {courses.filter(c => 
+                      c.code.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                      c.title.toLowerCase().includes(searchQuery.toLowerCase())
+                    ).map(c => (
+                      <option key={c.id} value={c.id}>{c.code} - {c.title}</option>
+                    ))}
+                  </select>
+                  <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+                </div>
+                <input 
+                  type="text"
+                  placeholder="Quick search courses..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs dark:border-gray-700 dark:bg-gray-900"
+                />
               </div>
               <div className="grid grid-cols-2 gap-4">
                  <div>
@@ -173,11 +214,22 @@ export default function EnrollmentPage() {
                     </select>
                  </div>
               </div>
+              {formStatus && (
+                <div className={`flex items-center gap-2 rounded-xl p-4 text-sm font-medium animate-in fade-in slide-in-from-top-2 duration-300 ${
+                  formStatus.type === 'success' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400' : 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400'
+                }`}>
+                  {formStatus.type === 'success' ? <CheckCircle2 className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
+                  {formStatus.message}
+                </div>
+              )}
               <button
                 type="submit"
-                className="w-full rounded-xl bg-emerald-600 py-3 font-bold text-white shadow-lg transition hover:bg-emerald-700 mt-2"
+                className="group relative w-full overflow-hidden rounded-xl bg-emerald-600 py-3 font-bold text-white shadow-lg transition-all hover:bg-emerald-700 hover:shadow-emerald-500/20 active:scale-95"
               >
-                Enroll Now
+                <span className="relative z-10 flex items-center justify-center gap-2">
+                  <Sparkles className="h-4 w-4 transition-transform group-hover:rotate-12" />
+                  Enroll Now
+                </span>
               </button>
             </form>
           </div>
@@ -194,8 +246,13 @@ export default function EnrollmentPage() {
                 <thead>
                   <tr className="border-b border-gray-100 dark:border-gray-700">
                     <th className="pb-4 pt-2 text-sm font-bold text-gray-400 uppercase tracking-wider">Course</th>
-                    <th className="pb-4 pt-2 text-sm font-bold text-gray-400 uppercase tracking-wider">Academic Period</th>
-                    {!isStudent && <th className="pb-4 pt-2 text-sm font-bold text-gray-400 uppercase tracking-wider">Students</th>}
+                    {isStudent ? (
+                      <th className="pb-4 pt-2 text-sm font-bold text-gray-400 uppercase tracking-wider">Academic Period</th>
+                    ) : (
+                      <th className="pb-4 pt-2 text-sm font-bold text-gray-400 uppercase tracking-wider">Department</th>
+                    )}
+                    {isStudent && <th className="pb-4 pt-2 text-sm font-bold text-gray-400 uppercase tracking-wider">Exam Schedule</th>}
+                    {!isStudent && <th className="pb-4 pt-2 text-sm font-bold text-gray-400 uppercase tracking-wider">Enrolled</th>}
                     <th className="pb-4 pt-2 text-sm font-bold text-gray-400 uppercase tracking-wider">Status</th>
                   </tr>
                 </thead>
@@ -209,25 +266,52 @@ export default function EnrollmentPage() {
                         </div>
                       </td>
                       <td className="py-4">
-                        <span className="text-sm text-gray-600 dark:text-gray-400">AY {en.academic_year} | Sem {en.semester}</span>
+                        {isStudent ? (
+                          <span className="text-sm text-gray-600 dark:text-gray-400">AY {en.academic_year} | Sem {en.semester}</span>
+                        ) : (
+                          <span className="text-sm text-gray-500 font-medium">{(en as any).department_name || 'General'}</span>
+                        )}
                       </td>
+                      {isStudent && (
+                        <td className="py-4">
+                          {en.exam_date ? (
+                            <div className="flex flex-col gap-1">
+                              <div className="flex items-center gap-1.5 text-xs font-bold text-gray-700 dark:text-gray-200">
+                                <Calendar className="h-3 w-3 text-emerald-500" />
+                                {new Date(en.exam_date).toLocaleDateString()}
+                              </div>
+                              <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                                <Clock className="h-3 w-3" />
+                                {en.start_time?.slice(0, 5)} @ {en.venue}
+                              </div>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-gray-400 italic">Not scheduled</span>
+                          )}
+                        </td>
+                      )}
                       {!isStudent && (
                         <td className="py-4">
-                           <span className="text-sm font-bold text-gray-900 dark:text-white">{(en as any).student_count} Students</span>
+                          <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-100 dark:border-blue-800">
+                            <span className="text-lg font-black text-blue-600 dark:text-blue-400">{(en as any).student_count || 0}</span>
+                            <span className="text-xs font-bold text-blue-400 uppercase tracking-tighter">Students</span>
+                          </div>
                         </td>
                       )}
                       <td className="py-4">
-                        <span className="inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">
-                          {isStudent ? '✅ Active' : '📊 Tracking'}
-                        </span>
-                        {!isStudent && (
-                           <button 
-                              onClick={() => fetchStudentList(en)}
-                              className="ml-3 text-xs font-bold text-blue-600 hover:underline"
-                           >
-                              View List
-                           </button>
-                        )}
+                        <div className="flex items-center">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">
+                            {isStudent ? <><CheckCircle2 className="h-3 w-3" /> Active</> : <><Sparkles className="h-3 w-3" /> Tracking</>}
+                          </span>
+                          {!isStudent && (
+                             <button 
+                                onClick={() => fetchStudentList(en)}
+                                className="ml-3 text-xs font-bold text-blue-600 hover:underline"
+                             >
+                                View List
+                             </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -242,6 +326,43 @@ export default function EnrollmentPage() {
               </table>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Global Enrollment Overview */}
+      <div className="rounded-3xl border border-gray-200 bg-white p-8 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h2 className="text-2xl font-black text-gray-900 dark:text-white">General Statistics</h2>
+            <p className="text-sm text-gray-500 font-medium tracking-tight">Overview of enrollment distribution across all courses</p>
+          </div>
+          <button 
+            onClick={fetchStats}
+            className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 transition-colors"
+          >
+            <Sparkles className={`h-5 w-5 ${statsLoading ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {courseStats.slice(0, 8).map((stat: any) => (
+            <div key={stat.id} className="relative group overflow-hidden rounded-2xl border border-gray-100 bg-gray-50/50 p-5 dark:border-gray-700/50 dark:bg-gray-900/50 transition-all hover:shadow-lg hover:-translate-y-1">
+              <div className="relative z-10">
+                <div className="flex items-center justify-between mb-3 text-emerald-600 dark:text-emerald-400">
+                  <span className="text-xs font-black uppercase tracking-widest">{stat.code}</span>
+                  <CheckCircle2 className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
+                <h3 className="text-sm font-bold text-gray-900 dark:text-white line-clamp-1 mb-4">{stat.title}</h3>
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-3xl font-black text-gray-900 dark:text-white">{stat.student_count || 0}</span>
+                  <span className="text-xs font-bold text-gray-400 uppercase">Enrolled</span>
+                </div>
+              </div>
+              <div className="absolute right-[-10%] bottom-[-10%] opacity-5 text-emerald-900 dark:text-emerald-100 scale-150 rotate-12 transition-transform group-hover:scale-175">
+                <Sparkles size={100} />
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 

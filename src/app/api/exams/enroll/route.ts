@@ -13,13 +13,24 @@ export async function GET(request: NextRequest) {
 
     const searchParams = request.nextUrl.searchParams;
     const courseId = searchParams.get('course_id');
+    const showStats = searchParams.get('stats') === 'true';
 
     let data;
-    if (user.role === 'student') {
+    if (showStats) {
       data = await query(
-        `SELECT ce.*, c.title, c.code
+        `SELECT c.id, c.code, c.title, d.name as department_name, COUNT(ce.id) as student_count
+         FROM courses c
+         LEFT JOIN departments d ON c.department_id = d.id
+         LEFT JOIN course_enrollments ce ON c.id = ce.course_id
+         GROUP BY c.id, c.code, c.title, d.name
+         ORDER BY student_count DESC`
+      );
+    } else if (user.role === 'student') {
+      data = await query(
+        `SELECT ce.*, c.title, c.code, et.exam_date, et.start_time, et.venue
          FROM course_enrollments ce
          JOIN courses c ON ce.course_id = c.id
+         LEFT JOIN exam_timetables et ON ce.course_id = et.course_id
          WHERE ce.student_id = ?`,
         [user.id]
       );
@@ -35,10 +46,11 @@ export async function GET(request: NextRequest) {
     } else {
       // Staff see all enrollments grouped by course
       data = await query(
-        `SELECT c.id, c.code, c.title, COUNT(ce.id) as student_count
+        `SELECT c.id, c.code, c.title, d.name as department_name, COUNT(ce.id) as student_count
          FROM courses c
+         LEFT JOIN departments d ON c.department_id = d.id
          LEFT JOIN course_enrollments ce ON c.id = ce.course_id
-         GROUP BY c.id, c.code, c.title`
+         GROUP BY c.id, c.code, c.title, d.name`
       );
     }
 
