@@ -361,6 +361,59 @@ export default function DashboardPage() {
           color: 'bg-indigo-600',
         },
       ],
+      professor: [
+        {
+          title: 'PhD Candidates',
+          value: stats.myCandidates || 0,
+          icon: '🎓',
+          href: '/phd/my-candidates',
+          color: 'bg-indigo-600',
+        },
+        {
+          title: 'My Papers',
+          value: stats.myPapers,
+          icon: '📄',
+          href: '/exam-papers',
+          color: 'bg-blue-500',
+        },
+        {
+          title: 'My Questions',
+          value: stats.myQuestions,
+          icon: '📝',
+          href: '/question-bank',
+          color: 'bg-green-500',
+        },
+        {
+          title: 'Notifications',
+          value: stats.notifications,
+          icon: '📬',
+          href: '/notifications/inbox',
+          color: 'bg-purple-500',
+        },
+      ],
+      external_examiner: [
+        {
+          title: 'PhD Candidates',
+          value: stats.myCandidates || 0,
+          icon: '🎓',
+          href: '/phd/my-candidates',
+          color: 'bg-indigo-600',
+        },
+        {
+          title: 'Upcoming Vivas',
+          value: stats.upcomingVivas || 0,
+          icon: '📅',
+          href: '/phd/schedules',
+          color: 'bg-yellow-500',
+        },
+        {
+          title: 'Notifications',
+          value: stats.notifications,
+          icon: '📬',
+          href: '/notifications/inbox',
+          color: 'bg-purple-500',
+        },
+      ],
       viva_coordinator: [
         {
           title: 'Total Candidates',
@@ -580,6 +633,59 @@ export default function DashboardPage() {
           color: 'text-purple-600 dark:text-purple-400',
         },
       ],
+      professor: [
+        {
+          title: 'My Candidates',
+          description: 'View candidates you supervise',
+          icon: '👨‍🎓',
+          href: '/phd/my-candidates',
+          color: 'text-indigo-600 dark:text-indigo-400',
+        },
+        {
+          title: 'Create New Paper',
+          description: 'Start creating a new exam paper',
+          icon: '➕',
+          href: '/exam-papers/create',
+          color: 'text-blue-600 dark:text-blue-400',
+        },
+        {
+          title: 'Add Questions',
+          description: 'Add questions to question bank',
+          icon: '📝',
+          href: '/question-bank/create',
+          color: 'text-green-600 dark:text-green-400',
+        },
+        {
+          title: 'View Inbox',
+          description: 'Check pending tasks',
+          icon: '📥',
+          href: '/notifications/inbox',
+          color: 'text-purple-600 dark:text-purple-400',
+        },
+      ],
+      external_examiner: [
+        {
+          title: 'My Assignments',
+          description: 'Candidates you are assigned to examine',
+          icon: '📋',
+          href: '/phd/my-candidates',
+          color: 'text-indigo-600 dark:text-indigo-400',
+        },
+        {
+          title: 'Viva Schedules',
+          description: 'View upcoming oral defences',
+          icon: '📅',
+          href: '/phd/schedules',
+          color: 'text-yellow-600 dark:text-yellow-400',
+        },
+        {
+          title: 'View Inbox',
+          description: 'Check pending tasks',
+          icon: '📥',
+          href: '/notifications/inbox',
+          color: 'text-purple-600 dark:text-purple-400',
+        },
+      ],
     };
 
     return actionsByRole[role || 'lecturer'] || actionsByRole.lecturer;
@@ -591,6 +697,8 @@ export default function DashboardPage() {
       exam_master: "Manage the print queue and ensure exams are ready for distribution.",
       dean: "Oversee college operations and approve papers from your departments.",
       hod: "Manage your department's courses, approve papers, and grant permissions.",
+      professor: "Oversee your PhD candidates and contribute to academic content.",
+      external_examiner: "Evaluate candidates and participate in scheduled viva voce.",
       lecturer: "Create exam papers and add questions to the question bank.",
     };
 

@@ -21,6 +21,8 @@ export async function GET(request: NextRequest) {
     // Get stats based on user role
     switch (user.role) {
       case 'lecturer':
+      case 'professor':
+      case 'external_examiner':
         await getLecturerStats(user.id, stats);
         break;
       case 'hod':
@@ -135,6 +137,19 @@ async function getLecturerStats(userId: number, stats: Record<string, number>) {
     [userId, userId, userId]
   );
   stats.myCandidates = phdCount[0]?.count || 0;
+
+  // Upcoming Vivas for this lecturer/professor
+  const upcomingVivas = await query<any[]>(
+    `SELECT COUNT(DISTINCT vs.id) as count 
+     FROM viva_schedules vs
+     JOIN phd_candidates pc ON vs.candidate_id = pc.id
+     LEFT JOIN viva_examiners ve ON vs.id = ve.viva_id
+     WHERE vs.status IN ('scheduled', 'in_progress')
+       AND (pc.supervisor_id = ? OR pc.co_supervisor_id = ? OR ve.examiner_id = ?)
+       AND vs.deleted_at IS NULL`,
+    [userId, userId, userId]
+  );
+  stats.upcomingVivas = upcomingVivas[0]?.count || 0;
 }
 
 async function getHODStats(userId: number, stats: Record<string, number>) {
