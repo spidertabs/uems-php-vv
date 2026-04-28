@@ -617,6 +617,7 @@ CREATE TABLE viva_evaluations (
     general_comments        TEXT,
     submitted_at            TIMESTAMPTZ,
     is_submitted            BOOLEAN     NOT NULL DEFAULT FALSE,
+    updated_at              TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE (viva_id, examiner_id)
 );
 CREATE INDEX idx_veval_viva      ON viva_evaluations (viva_id);
