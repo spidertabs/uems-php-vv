@@ -422,7 +422,7 @@ async function getAdminStats(stats: Record<string, number>) {
   const activeStaff = await query<any[]>(
     `SELECT COUNT(*) as count 
      FROM staff 
-     WHERE last_login >= DATE_SUB(NOW(), INTERVAL 30 DAY) 
+     WHERE last_login >= NOW() - INTERVAL '30 days' 
        AND deleted_at IS NULL`,
     []
   );
