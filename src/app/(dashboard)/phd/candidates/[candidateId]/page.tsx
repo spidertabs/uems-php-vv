@@ -181,7 +181,7 @@ export default function CandidateDetailPage() {
   const [theses, setTheses] = useState<ThesisSubmission[]>([]);
   const [vivas, setVivas] = useState<VivaRecord[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<Tab>('thesis');
+  const [activeTab, setActiveTab] = useState<Tab>('viva');
 
   // Upload modal state
   const [showUpload, setShowUpload] = useState(false);
@@ -324,28 +324,17 @@ export default function CandidateDetailPage() {
 
         if (currentUser) {
           const userIdStr = String(currentUser.id);
-          let me = unique.find(ex => 
-            String(ex.examiner_id) === userIdStr || 
+          const me = unique.find(ex => 
             String(ex.user_id) === userIdStr
           );
           
-          const myEval = v.evaluations?.find((ev: any) => String(ev.examiner_id) === userIdStr);
-          if (myEval) {
-            prefillDraft(myEval);
-            if (!me) {
-              me = {
-                examiner_id: currentUser.id,
-                user_id: currentUser.id,
-                examiner_name: myEval.examiner_name || 'Your Evaluation',
-                examiner_email: '',
-                role: (myEval.examiner_role as any) || 'supervisor',
-                confirmed: true,
-                evaluation_submitted: myEval.is_submitted,
-                evaluation_id: myEval.id || null,
-              };
+          if (me) {
+            setMyExaminerRecord(me);
+            const myEval = v.evaluations?.find((ev: any) => String(ev.examiner_id) === String(me.examiner_id));
+            if (myEval) {
+              prefillDraft(myEval);
             }
           }
-          if (me) setMyExaminerRecord(me);
         }
       }
     } catch (err) {
@@ -657,13 +646,9 @@ export default function CandidateDetailPage() {
     );
   }
 
-  // Build tabs based on role
   const tabs: { key: Tab; label: string }[] = [
-    { key: 'thesis', label: `📤 Thesis Versions (${theses.length})` },
     { key: 'viva', label: `📅 Viva History (${vivas.length})` },
-    // Show evaluation tab if there are vivas or if one is selected
     { key: 'evaluation', label: `📝 My Evaluation` },
-    // Only HOD/Admin can edit candidate details
     ...(isHodOrAdmin ? [{ key: 'edit' as Tab, label: '✏️ Edit Details' }] : []),
   ];
 
@@ -732,113 +717,10 @@ export default function CandidateDetailPage() {
         </div>
       </div>
 
-      {/* ── Tab: Thesis ── */}
+      {/* ── Tab: Thesis (Omitted) ── */}
       {activeTab === 'thesis' && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Thesis Submissions</h2>
-            {/* Only HOD/Admin can upload thesis versions */}
-            {isHodOrAdmin && (
-              <button
-                onClick={() => setShowUpload(true)}
-                className="rounded-lg bg-emerald-600 px-4 py-2 text-sm text-white transition-colors hover:bg-emerald-700"
-              >
-                + Upload New Version
-              </button>
-            )}
-          </div>
-
-          {theses.length === 0 ? (
-            <div className="rounded-xl border border-gray-200 bg-white py-12 text-center shadow-md dark:border-gray-700 dark:bg-gray-800">
-              <div className="text-5xl">📄</div>
-              <p className="mt-3 text-gray-600 dark:text-gray-400">No thesis submitted yet.</p>
-            </div>
-          ) : (
-            <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-md dark:border-gray-700 dark:bg-gray-800">
-              {theses
-                .slice()
-                .sort((a, b) => b.version - a.version)
-                .map((t) => (
-                  <div key={t.id} className="flex items-start justify-between gap-4 border-b border-gray-200 p-5 last:border-0 dark:border-gray-700">
-                    <div className="flex items-center gap-4">
-                      <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-xl dark:bg-emerald-900">
-                        📄
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-900 dark:text-white">
-                          Version {t.version}{' '}
-                          {t.version === Math.max(...theses.map(x => x.version)) && (
-                            <span className="ml-2 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300">
-                              Latest
-                            </span>
-                          )}
-                        </p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">{t.file_name}</p>
-                        {t.submission_notes && (
-                          <p className="mt-1 text-xs italic text-gray-400 dark:text-gray-500">{t.submission_notes}</p>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex-shrink-0 text-right text-sm">
-                      <p className="text-gray-600 dark:text-gray-400">{formatDate(t.submitted_at)}</p>
-                      <p className="text-gray-500">{formatFileSize(t.file_size_kb)}</p>
-                    </div>
-                  </div>
-                ))}
-            </div>
-          )}
-
-          {/* Upload Modal */}
-          {showUpload && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-              <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl dark:bg-gray-800">
-                <h3 className="mb-4 text-lg font-bold text-gray-900 dark:text-white">Upload Thesis Version</h3>
-                {uploadError && (
-                  <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600 dark:bg-red-900/30 dark:text-red-400">
-                    {uploadError}
-                  </div>
-                )}
-                <form onSubmit={handleUpload} className="space-y-4">
-                  {[
-                    { name: 'file_name', label: 'File Name', placeholder: 'thesis_v2.pdf', required: true },
-                    { name: 'file_path', label: 'File Path (server)', placeholder: '/uploads/theses/...', required: true },
-                    { name: 'file_size_kb', label: 'File Size (KB)', placeholder: '4820', required: false },
-                  ].map((f) => (
-                    <div key={f.name}>
-                      <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{f.label}</label>
-                      <input
-                        type="text"
-                        value={(uploadForm as Record<string, string>)[f.name]}
-                        onChange={(e) => setUploadForm(p => ({ ...p, [f.name]: e.target.value }))}
-                        placeholder={f.placeholder}
-                        required={f.required}
-                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                      />
-                    </div>
-                  ))}
-                  <div>
-                    <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Submission Notes</label>
-                    <textarea
-                      value={uploadForm.submission_notes}
-                      onChange={(e) => setUploadForm(p => ({ ...p, submission_notes: e.target.value }))}
-                      rows={3}
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                    />
-                  </div>
-                  <div className="flex gap-3 pt-2">
-                    <button type="button" onClick={() => setShowUpload(false)}
-                      className="flex-1 rounded-lg border border-gray-300 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300">
-                      Cancel
-                    </button>
-                    <button type="submit" disabled={uploadLoading}
-                      className="flex-1 rounded-lg bg-emerald-600 py-2 text-sm text-white hover:bg-emerald-700 disabled:opacity-50">
-                      {uploadLoading ? 'Uploading...' : 'Upload'}
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          )}
+        <div className="py-12 text-center text-gray-500">
+          Thesis submissions are managed elsewhere.
         </div>
       )}
 
@@ -943,75 +825,18 @@ export default function CandidateDetailPage() {
                     <div className="lg:col-span-2 space-y-6">
                       <div className="rounded-xl border border-gray-200 bg-white shadow-md dark:border-gray-700 dark:bg-gray-800">
                         <div className="flex items-center justify-between border-b border-gray-100 p-5 dark:border-gray-700">
-                          <h4 className="font-bold text-gray-900 dark:text-white">Examination Panel</h4>
-                          {isHodOrAdmin && vivaDetail.status === 'scheduled' && (
-                             <button onClick={() => setShowAssignForm(!showAssignForm)} className="text-sm font-medium text-emerald-600 hover:underline">
-                               {showAssignForm ? 'Close' : '+ Assign Examiner'}
-                             </button>
-                          )}
+                          <h4 className="font-bold text-gray-900 dark:text-white">Exam Information</h4>
                         </div>
-                        
-                        {showAssignForm && (
-                          <div className="border-b border-gray-100 bg-gray-50 p-5 dark:border-gray-700 dark:bg-gray-900/40">
-                             <p className="mb-3 text-xs font-semibold text-gray-400 uppercase tracking-widest">Available Staff</p>
-                             <div className="max-h-64 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
-                               {eligibleStaff.map(s => (
-                                 <div key={s.id} className="flex items-center justify-between rounded-lg bg-white p-3 shadow-sm dark:bg-gray-800">
-                                   <div>
-                                     <p className="text-sm font-medium text-gray-900 dark:text-white">{s.first_name} {s.last_name}</p>
-                                     <p className="text-[10px] text-gray-500">{s.email}</p>
-                                   </div>
-                                   <div className="flex gap-1">
-                                     {['internal_examiner', 'external_examiner', 'chairperson'].map(role => (
-                                       <button
-                                         key={role}
-                                         onClick={() => handleAssignManually(s.id, role as any)}
-                                         className="rounded px-2 py-1 text-[10px] font-bold uppercase bg-gray-100 text-gray-600 hover:bg-emerald-100 hover:text-emerald-700 dark:bg-gray-700 dark:text-gray-300"
-                                       >
-                                         + {role.split('_')[0]}
-                                       </button>
-                                     ))}
-                                   </div>
-                                 </div>
-                               ))}
-                             </div>
+                        <div className="p-5 space-y-4">
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            The examination panel details have been moved to the Evaluation tab for a cleaner workflow.
+                          </p>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs uppercase font-bold text-gray-400">Status:</span>
+                            <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${VIVA_STATUS_COLORS[vivaDetail.status as keyof typeof VIVA_STATUS_COLORS]}`}>
+                              {vivaDetail.status}
+                            </span>
                           </div>
-                        )}
-
-                        <div className="divide-y divide-gray-100 dark:divide-gray-700">
-                          {examiners.map(ex => (
-                            <div key={ex.examiner_id} className="flex items-center justify-between p-5">
-                              <div className="flex items-center gap-4">
-                                <div className="h-10 w-10 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600 font-bold dark:bg-emerald-900/30">
-                                  {ex.examiner_name.charAt(0)}
-                                </div>
-                                <div>
-                                  <p className="font-medium text-gray-900 dark:text-white">{ex.examiner_name}</p>
-                                  <div className="flex items-center gap-2 text-xs text-gray-500">
-                                    <span className="capitalize">{EXAMINER_ROLE_LABELS[ex.role] || ex.role.replace('_', ' ')}</span>
-                                    <span>•</span>
-                                    {ex.confirmed ? (
-                                      <span className="text-emerald-600 font-medium">Confirmed ✓</span>
-                                    ) : (
-                                      <span className="text-amber-600">Pending Confirmation</span>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-3">
-                                {ex.evaluation_submitted ? (
-                                  <span className="rounded-full bg-emerald-100 px-2 py-1 text-[10px] font-bold text-emerald-700 uppercase dark:bg-emerald-900/40">Evaluation Submitted</span>
-                                ) : (
-                                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-2 py-1 border border-gray-100 rounded-full">Pending Eval</span>
-                                )}
-                                {isHodOrAdmin && vivaDetail.status === 'scheduled' && (
-                                  <button onClick={() => handleRemoveExaminer(ex.examiner_id)} className="text-red-500 hover:text-red-700 p-1 rounded-lg hover:bg-red-50">
-                                    🗑️
-                                  </button>
-                                )}
-                              </div>
-                            </div>
-                          ))}
                         </div>
                       </div>
 
@@ -1203,7 +1028,7 @@ export default function CandidateDetailPage() {
               )}
 
               {/* If user is an examiner, show their form or their summary */}
-              {myExaminerRecord && !MANAGER_ROLES.includes(currentUser?.role || '') && (
+              {myExaminerRecord && (
                 <div className="space-y-5">
                   {myExaminerRecord.evaluation_submitted ? (
                     <div className="space-y-5">
@@ -1302,9 +1127,53 @@ export default function CandidateDetailPage() {
                 </div>
               )}
 
-              {/* Manager view: Show all evaluations */}
-              {(!myExaminerRecord || MANAGER_ROLES.includes(currentUser?.role || '')) && (
+              {/* Manager view: Show all evaluations & Summary Table */}
+              {MANAGER_ROLES.includes(currentUser?.role || '') && (
                 <div className="space-y-6">
+                  <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+                    <table className="w-full text-left text-sm">
+                      <thead className="bg-gray-50 text-[10px] font-bold uppercase tracking-widest text-gray-500 dark:bg-gray-900/50">
+                        <tr>
+                          <th className="px-6 py-4">Examiner (ID)</th>
+                          <th className="px-6 py-4">Role</th>
+                          <th className="px-6 py-4">Status</th>
+                          <th className="px-6 py-4">Score</th>
+                          <th className="px-6 py-4 text-center">Eval ID</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                        {examiners.map(ex => {
+                          const ev = evaluations.find(e => String(e.examiner_id) === String(ex.examiner_id));
+                          const total = ev ? (ev.originality_score ?? 0) + (ev.methodology_score ?? 0) + (ev.presentation_score ?? 0) + (ev.literature_score ?? 0) : null;
+                          return (
+                            <tr key={ex.examiner_id} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/30">
+                              <td className="px-6 py-4">
+                                <span className="font-medium text-gray-900 dark:text-white">{ex.examiner_name}</span>
+                                <span className="ml-2 text-[10px] text-gray-400">#{ex.examiner_id}</span>
+                              </td>
+                              <td className="px-6 py-4 capitalize text-gray-500">{ex.role.replace('_', ' ')}</td>
+                              <td className="px-6 py-4">
+                                {ev?.is_submitted ? (
+                                  <span className="text-emerald-600 font-medium">Submitted ✓</span>
+                                ) : (
+                                  <span className="text-amber-500">Pending</span>
+                                )}
+                              </td>
+                              <td className="px-6 py-4">
+                                {total !== null ? (
+                                  <span className="font-bold text-gray-900 dark:text-white">{total}/100</span>
+                                ) : '—'}
+                              </td>
+                              <td className="px-6 py-4 text-center text-[10px] font-mono text-gray-400">
+                                {ev?.id || ev?.evaluation_id || '—'}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+
                   {evaluations.length === 0 ? (
                     <div className="rounded-xl border border-gray-200 bg-white py-12 text-center dark:border-gray-700 dark:bg-gray-800">
                       <p className="text-gray-500">No submitted evaluations for this viva yet.</p>
