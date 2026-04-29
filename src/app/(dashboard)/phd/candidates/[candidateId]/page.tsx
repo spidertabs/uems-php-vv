@@ -227,6 +227,7 @@ export default function CandidateDetailPage() {
   const [evaluations, setEvaluations] = useState<SubmittedEvaluation[]>([]);
   const [examiners, setExaminers] = useState<ExaminerRecord[]>([]);
   const [evalLoading, setEvalLoading] = useState(false);
+  const [evaluationSummary, setEvaluationSummary] = useState<any>(null);
   const [myExaminerRecord, setMyExaminerRecord] = useState<ExaminerRecord | null>(null);
   const [draft, setDraft] = useState<EvaluationDraft>(EMPTY_DRAFT);
   const [saving, setSaving] = useState(false);
@@ -242,6 +243,12 @@ export default function CandidateDetailPage() {
   }, [searchParams]);
 
   useEffect(() => {
+    if (activeTab === 'evaluation' && !selectedVivaId && vivas.length > 0) {
+      setSelectedVivaId(vivas[0].viva_id);
+    }
+  }, [activeTab, selectedVivaId, vivas]);
+
+  useEffect(() => {
     if (activeTab === 'evaluation' && selectedVivaId) {
       fetchEvaluationData(selectedVivaId);
     }
@@ -254,7 +261,8 @@ export default function CandidateDetailPage() {
       const res = await fetch(`/api/phd/schedules/${vId}`, { cache: 'no-store' });
       if (res.ok) {
         const data = await res.json();
-        const v = data.schedule ?? data.viva ?? data;
+        const v = data.viva ?? data.viva_details ?? data.data ?? data.schedule ?? data;
+        setEvaluationSummary(v.evaluation_summary || null);
         
         const allEvaluators: ExaminerRecord[] = [
           ...(v.examiners || []),
@@ -828,7 +836,32 @@ export default function CandidateDetailPage() {
               <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-emerald-600" />
             </div>
           ) : (
-            <div className="space-y-6">
+            <div className="space-y-8">
+              {/* Overall Panel Summary (Visible to all if any submissions exist) */}
+              {evaluationSummary && evaluationSummary.submitted_count > 0 && (
+                <div className="rounded-xl border border-gray-200 bg-emerald-50/30 p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800/20">
+                  <h3 className="mb-4 text-sm font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-400">
+                    Panel Summary ({evaluationSummary.submitted_count}/{evaluationSummary.total_examiners} Submitted)
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
+                    {[
+                      { label: 'Originality', val: evaluationSummary.avg_originality, max: 25 },
+                      { label: 'Methodology', val: evaluationSummary.avg_methodology, max: 25 },
+                      { label: 'Presentation', val: evaluationSummary.avg_presentation, max: 25 },
+                      { label: 'Literature', val: evaluationSummary.avg_literature, max: 25 },
+                      { label: 'Overall', val: evaluationSummary.avg_overall, max: 100 },
+                    ].map((s) => (
+                      <div key={s.label} className="rounded-xl bg-white p-3 text-center shadow-sm dark:bg-gray-800">
+                        <div className={`text-xl font-bold ${s.label === 'Overall' ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-900 dark:text-white'}`}>
+                          {s.val !== null && s.val !== undefined ? s.val.toFixed(1) : '—'}
+                        </div>
+                        <div className="text-[10px] uppercase text-gray-500">{s.label}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* If user is an examiner, show their form or their summary */}
               {myExaminerRecord && !MANAGER_ROLES.includes(currentUser?.role || '') && (
                 <div className="space-y-5">
