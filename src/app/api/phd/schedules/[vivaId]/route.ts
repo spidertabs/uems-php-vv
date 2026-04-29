@@ -43,15 +43,13 @@ async function buildVivaDetail(vivaId: number): Promise<any | null> {
   // ② Examiners panel
   try {
     viva.examiners = await query<any[]>(
-      `SELECT ve.id, ve.viva_id, ve.examiner_id, ve.role,
-              ve.confirmed, ve.confirmed_at, ve.notified_at,
-              u.user_id,
-              CONCAT(u.first_name, ' ', u.last_name) AS examiner_name,
-              u.email AS examiner_email
+      `SELECT ve.id, ve.viva_id, ve.examiner_id, ve.role, 
+              ve.panel_slot, ve.confirmed, ve.confirmed_at,
+              u.first_name, u.last_name, u.email
        FROM viva_examiners ve
-       JOIN staff u ON ve.examiner_id = u.id
+       LEFT JOIN staff u ON ve.examiner_id = u.id
        WHERE ve.viva_id = ?
-       ORDER BY ve.id`,
+       ORDER BY ve.panel_slot ASC`,
       [vivaId]
     );
   } catch (err) {
@@ -70,7 +68,7 @@ async function buildVivaDetail(vivaId: number): Promise<any | null> {
               CONCAT(u.first_name, ' ', u.last_name) AS examiner_name,
               COALESCE(ve.role, 'supervisor') AS examiner_panel_role
        FROM viva_evaluations ev
-       JOIN staff u ON ev.examiner_id = u.id
+       LEFT JOIN staff u ON ev.examiner_id = u.id
        LEFT JOIN viva_examiners ve ON ve.viva_id = ev.viva_id AND ve.examiner_id = ev.examiner_id
        WHERE ev.viva_id = ?
        ORDER BY ev.id`,
@@ -84,12 +82,12 @@ async function buildVivaDetail(vivaId: number): Promise<any | null> {
   // ③.b Supervisors (to add to expected evaluators)
   try {
     viva.supervisors = await query<any[]>(
-      `SELECT DISTINCT u.id as supervisor_id, u.user_id, CONCAT(u.first_name, ' ', u.last_name) as supervisor_name, u.email as supervisor_email, 'supervisor' as role
+      `SELECT DISTINCT u.id as supervisor_id, CONCAT(u.first_name, ' ', u.last_name) as supervisor_name, u.email as supervisor_email, 'supervisor' as role
        FROM phd_candidates pc
        JOIN staff u ON (pc.supervisor_id = u.id OR pc.co_supervisor_id = u.id)
        WHERE pc.id = ?
        UNION
-       SELECT pcs.supervisor_id as supervisor_id, u.user_id, CONCAT(u.first_name, ' ', u.last_name) as supervisor_name, u.email as supervisor_email, pcs.role as role
+       SELECT pcs.supervisor_id as supervisor_id, CONCAT(u.first_name, ' ', u.last_name) as supervisor_name, u.email as supervisor_email, pcs.role as role
        FROM phd_candidate_supervisors pcs
        JOIN staff u ON pcs.supervisor_id = u.id
        WHERE pcs.candidate_id = ?`,

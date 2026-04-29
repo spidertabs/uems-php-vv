@@ -934,6 +934,16 @@ export default function CandidateDetailPage() {
 
                     {/* Quick Access Column */}
                     <div className="space-y-6">
+                      {['admin', 'viva_coordinator', 'dean', 'hod'].includes(currentUser?.role || '') && (
+                        <div className="flex gap-3">
+                          <Link
+                            href={`/phd/report/${selectedVivaId}`}
+                            className="w-full rounded-lg bg-gray-800 py-2 text-center text-sm font-bold text-white hover:bg-gray-900 dark:bg-gray-700"
+                          >
+                            Generate Formal Report
+                          </Link>
+                        </div>
+                      )}
                       <button 
                         onClick={() => setActiveTab('evaluation')}
                         className="w-full rounded-xl bg-gradient-to-br from-indigo-600 to-indigo-700 p-6 text-left text-white shadow-lg transition-transform hover:scale-[1.02] active:scale-95"
@@ -990,7 +1000,17 @@ export default function CandidateDetailPage() {
       {activeTab === 'evaluation' && (
         <div className="space-y-6">
           <div className="flex flex-wrap items-center justify-between gap-4">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Viva Evaluation</h2>
+            <div className="flex items-center gap-3">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Viva Evaluation</h2>
+              {['admin', 'viva_coordinator', 'dean', 'hod'].includes(currentUser?.role || '') && selectedVivaId && (
+                <Link
+                  href={`/phd/report/${selectedVivaId}`}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1 text-xs font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                >
+                  📋 Report
+                </Link>
+              )}
+            </div>
             {vivas.length > 1 && (
               <select
                 value={selectedVivaId || ''}
