@@ -294,17 +294,17 @@ export default function MyCandidatesPage() {
                         <div className="flex justify-end gap-2">
                           {c.pending_viva_id ? (
                             <Link
-                              href={`/phd/evaluations/${c.pending_viva_id}`}
+                              href={`/phd/candidates/${c.candidate_id ?? c.id}?tab=evaluation&vivaId=${c.pending_viva_id}`}
                               className="rounded-lg bg-red-50 px-3 py-1.5 text-xs font-bold text-red-700 transition-colors hover:bg-red-100 dark:bg-red-900/40 dark:text-red-300 dark:hover:bg-red-900/60"
                             >
                               Evaluate ★
                             </Link>
                           ) : c.viva_count > 0 && (
                             <Link
-                              href={`/phd/candidates/${c.candidate_id ?? c.id}`}
+                              href={`/phd/candidates/${c.candidate_id ?? c.id}?tab=evaluation`}
                               className="rounded-lg bg-gray-50 px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-100 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
                             >
-                              Results 📊
+                              My evaluation 📝
                             </Link>
                           )}
                           <Link

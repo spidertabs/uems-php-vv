@@ -259,7 +259,7 @@ export default function VivaDetailPage() {
             )}
             {/* Examiner shortcut to evaluation */}
             {isExaminerOnPanel && (
-              <Link href={`/phd/evaluations/${vivaId}`}
+              <Link href={`/phd/candidates/${viva.candidate_id}?tab=evaluation&vivaId=${vivaId}`}
                 className="flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-bold text-white hover:bg-indigo-700">
                 📝 My Evaluation
               </Link>

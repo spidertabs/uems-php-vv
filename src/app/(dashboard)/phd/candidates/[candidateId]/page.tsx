@@ -4,17 +4,154 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import {
   CANDIDATE_STATUS_LABELS,
   CANDIDATE_STATUS_COLORS,
   VIVA_STATUS_COLORS,
   OUTCOME_LABELS,
   OUTCOME_COLORS,
+  EXAMINER_ROLE_LABELS,
   type CandidateWithDetails,
   type ThesisSubmission,
   type CandidateStatus,
+  type VivaOutcome,
+  type ExaminerRole,
 } from '@/types/phd';
+
+// ── Evaluation Types ────────────────────────────────────────────────────────
+
+interface ExaminerRecord {
+  examiner_id: number;
+  user_id?: number;
+  examiner_name: string;
+  examiner_email: string;
+  role: ExaminerRole;
+  confirmed: boolean;
+  evaluation_submitted: boolean;
+  evaluation_id: number | null;
+}
+
+interface SubmittedEvaluation {
+  id?: number;
+  evaluation_id?: number;
+  examiner_id: number;
+  examiner_name: string;
+  examiner_role?: string;
+  originality_score: number | null;
+  methodology_score: number | null;
+  presentation_score: number | null;
+  literature_score: number | null;
+  strengths: string | null;
+  weaknesses: string | null;
+  recommended_corrections: string | null;
+  general_comments: string | null;
+  is_submitted: boolean;
+  submitted_at?: string;
+}
+
+interface EvaluationDraft {
+  id?: number;
+  originality_score: string;
+  methodology_score: string;
+  presentation_score: string;
+  literature_score: string;
+  strengths: string;
+  weaknesses: string;
+  recommended_corrections: string;
+  general_comments: string;
+  is_submitted: boolean;
+}
+
+const EMPTY_DRAFT: EvaluationDraft = {
+  originality_score: '',
+  methodology_score: '',
+  presentation_score: '',
+  literature_score: '',
+  strengths: '',
+  weaknesses: '',
+  recommended_corrections: '',
+  general_comments: '',
+  is_submitted: false,
+};
+
+const EVALUATOR_ONLY_ROLES = ['lecturer', 'professor', 'external_examiner'];
+const MANAGER_ROLES = ['admin', 'hod', 'exam_master', 'viva_coordinator', 'dean'];
+
+// ── Sub-components for Evaluation ──────────────────────────────────────────
+
+function ScoreBar({ score, max = 25 }: { score: number | null; max?: number }) {
+  if (score === null || score === undefined) return <span className="text-xs text-gray-400">—</span>;
+  const pct = (score / max) * 100;
+  const color = pct >= 70 ? 'bg-emerald-500' : pct >= 50 ? 'bg-yellow-500' : 'bg-red-500';
+  return (
+    <div className="flex items-center gap-2">
+      <div className="h-2 flex-1 rounded-full bg-gray-100 dark:bg-gray-700">
+        <div className={`h-2 rounded-full ${color} transition-all`} style={{ width: `${pct}%` }} />
+      </div>
+      <span className="w-12 text-right text-xs font-semibold text-gray-700 dark:text-gray-300">{score}/{max}</span>
+    </div>
+  );
+}
+
+function SubmittedEvaluationCard({ ev, fmt }: { ev: SubmittedEvaluation; fmt: (s: string) => string }) {
+  const total = (ev.originality_score ?? 0) + (ev.methodology_score ?? 0) + (ev.presentation_score ?? 0) + (ev.literature_score ?? 0);
+  const hasScores = ev.originality_score !== null;
+  return (
+    <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+      <div className="flex flex-wrap items-start justify-between gap-3 mb-5">
+        <div>
+          <p className="font-semibold text-gray-900 dark:text-white">{ev.examiner_name}</p>
+          {ev.examiner_role && (
+            <p className="text-xs capitalize text-gray-500 dark:text-gray-400">
+              {ev.examiner_role.replace('_', ' ')}
+              {ev.submitted_at && ` · Submitted ${fmt(ev.submitted_at)}`}
+            </p>
+          )}
+        </div>
+        {hasScores && (
+          <div className="rounded-lg bg-emerald-50 px-4 py-2 text-right dark:bg-emerald-900/30">
+            <span className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{total}</span>
+            <span className="text-sm text-gray-500">/100</span>
+          </div>
+        )}
+      </div>
+      {hasScores && (
+        <div className="grid gap-8 md:grid-cols-2">
+          <div className="space-y-4">
+            {[
+              { label: 'Originality', score: ev.originality_score },
+              { label: 'Methodology', score: ev.methodology_score },
+              { label: 'Presentation', score: ev.presentation_score },
+              { label: 'Literature Review', score: ev.literature_score },
+            ].map(row => (
+              <div key={row.label} className="space-y-1.5">
+                <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider text-gray-500">
+                  <span>{row.label}</span>
+                  <span>{row.score}/25</span>
+                </div>
+                <ScoreBar score={row.score} />
+              </div>
+            ))}
+          </div>
+          <div className="space-y-3">
+            {[
+              { label: 'Strengths', val: ev.strengths, color: 'border-emerald-500' },
+              { label: 'Weaknesses', val: ev.weaknesses, color: 'border-orange-500' },
+              { label: 'Corrections', val: ev.recommended_corrections, color: 'border-blue-500' },
+              { label: 'Comments', val: ev.general_comments, color: 'border-purple-500' },
+            ].filter(r => r.val).map(r => (
+              <div key={r.label} className={`rounded-lg border-l-4 ${r.color} bg-gray-50 p-3 dark:bg-gray-700/40`}>
+                <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-gray-400">{r.label}</p>
+                <p className="whitespace-pre-wrap text-sm text-gray-700 dark:text-gray-300">{r.val}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 interface VivaRecord {
   viva_id: number;
@@ -31,7 +168,7 @@ interface CurrentUser {
 }
 
 // Tabs available depend on role
-type Tab = 'thesis' | 'viva' | 'edit';
+type Tab = 'thesis' | 'viva' | 'evaluation' | 'edit';
 
 export default function CandidateDetailPage() {
   const router = useRouter();
@@ -81,6 +218,177 @@ export default function CandidateDetailPage() {
     fetchProgrammes();
     fetchSupervisors();
   }, [candidateId]);
+
+  // Evaluation state
+  const searchParams = useSearchParams();
+  const [selectedVivaId, setSelectedVivaId] = useState<number | null>(
+    searchParams.get('vivaId') ? parseInt(searchParams.get('vivaId')!) : null
+  );
+  const [evaluations, setEvaluations] = useState<SubmittedEvaluation[]>([]);
+  const [examiners, setExaminers] = useState<ExaminerRecord[]>([]);
+  const [evalLoading, setEvalLoading] = useState(false);
+  const [myExaminerRecord, setMyExaminerRecord] = useState<ExaminerRecord | null>(null);
+  const [draft, setDraft] = useState<EvaluationDraft>(EMPTY_DRAFT);
+  const [saving, setSaving] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [saveMsg, setSaveMsg] = useState('');
+  const [draftError, setDraftError] = useState('');
+
+  useEffect(() => {
+    const tabParam = searchParams.get('tab') as Tab;
+    if (tabParam && ['thesis', 'viva', 'evaluation', 'edit'].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (activeTab === 'evaluation' && selectedVivaId) {
+      fetchEvaluationData(selectedVivaId);
+    }
+  }, [activeTab, selectedVivaId]);
+
+  const fetchEvaluationData = async (vId: number) => {
+    setEvalLoading(true);
+    setDraftError('');
+    try {
+      const res = await fetch(`/api/phd/schedules/${vId}`, { cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json();
+        const v = data.schedule ?? data.viva ?? data;
+        
+        const allEvaluators: ExaminerRecord[] = [
+          ...(v.examiners || []),
+          ...((v as any).supervisors || []).map((s: any) => ({
+            examiner_id: s.supervisor_id,
+            user_id: s.supervisor_id,
+            examiner_name: s.supervisor_name,
+            examiner_email: s.supervisor_email,
+            role: s.role as any,
+            confirmed: true,
+            evaluation_submitted: false,
+            evaluation_id: null,
+          })),
+        ];
+
+        if (v.evaluations) {
+          v.evaluations.forEach((ev: any) => {
+            const match = allEvaluators.find(
+              e => String(e.examiner_id) === String(ev.examiner_id) ||
+                   String(e.user_id) === String(ev.examiner_id)
+            );
+            if (match) {
+              match.evaluation_submitted = ev.is_submitted || false;
+              match.evaluation_id = ev.id || ev.evaluation_id || null;
+            }
+          });
+          setEvaluations(v.evaluations);
+        }
+        
+        const unique = Array.from(new Map(allEvaluators.map(e => [Number(e.examiner_id), e])).values());
+        setExaminers(unique);
+
+        if (currentUser) {
+          let me = unique.find(ex => String(ex.examiner_id) === String(currentUser.id) || String(ex.user_id) === String(currentUser.id));
+          const myEval = v.evaluations?.find((ev: any) => String(ev.examiner_id) === String(currentUser.id));
+          if (myEval) {
+            prefillDraft(myEval);
+            if (!me) {
+              me = {
+                examiner_id: currentUser.id,
+                examiner_name: myEval.examiner_name || 'Your Evaluation',
+                examiner_email: '',
+                role: (myEval.examiner_role as any) || 'supervisor',
+                confirmed: true,
+                evaluation_submitted: myEval.is_submitted,
+                evaluation_id: myEval.id || null,
+              };
+            }
+          }
+          if (me) setMyExaminerRecord(me);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch evaluation data:', err);
+    } finally {
+      setEvalLoading(false);
+    }
+  };
+
+  const prefillDraft = (ev: SubmittedEvaluation) => {
+    setDraft({
+      id: ev.id ?? ev.evaluation_id,
+      originality_score: ev.originality_score?.toString() ?? '',
+      methodology_score: ev.methodology_score?.toString() ?? '',
+      presentation_score: ev.presentation_score?.toString() ?? '',
+      literature_score: ev.literature_score?.toString() ?? '',
+      strengths: ev.strengths ?? '',
+      weaknesses: ev.weaknesses ?? '',
+      recommended_corrections: ev.recommended_corrections ?? '',
+      general_comments: ev.general_comments ?? '',
+      is_submitted: Boolean(ev.is_submitted),
+    });
+  };
+
+  const handleSaveDraft = async () => {
+    if (!selectedVivaId) return;
+    setSaving(true); setSaveMsg(''); setDraftError('');
+    try {
+      const res = await fetch('/api/phd/my-evaluations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          viva_id: selectedVivaId,
+          examiner_id: currentUser?.id,
+          originality_score: parseInt(draft.originality_score) || null,
+          methodology_score: parseInt(draft.methodology_score) || null,
+          presentation_score: parseInt(draft.presentation_score) || null,
+          literature_score: parseInt(draft.literature_score) || null,
+          strengths: draft.strengths || null,
+          weaknesses: draft.weaknesses || null,
+          recommended_corrections: draft.recommended_corrections || null,
+          general_comments: draft.general_comments || null,
+        }),
+      });
+      if (res.ok) { setSaveMsg('Draft saved ✓'); fetchEvaluationData(selectedVivaId); }
+      else { const d = await res.json(); setDraftError(d.error || 'Save failed.'); }
+    } catch { setDraftError('Network error.'); }
+    finally { setSaving(false); }
+  };
+
+  const handleSubmitEvaluation = async () => {
+    if (!selectedVivaId) return;
+    const allScoresFilled = draft.originality_score && draft.methodology_score && draft.presentation_score && draft.literature_score;
+    if (!allScoresFilled) { setDraftError('All four score fields are required before submitting.'); return; }
+    if (!confirm('Submit your evaluation? This cannot be undone.')) return;
+    setSubmitting(true); setDraftError('');
+    try {
+      const res = await fetch('/api/phd/my-evaluations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          viva_id: selectedVivaId,
+          examiner_id: currentUser?.id,
+          originality_score: parseInt(draft.originality_score),
+          methodology_score: parseInt(draft.methodology_score),
+          presentation_score: parseInt(draft.presentation_score),
+          literature_score: parseInt(draft.literature_score),
+          strengths: draft.strengths || null,
+          weaknesses: draft.weaknesses || null,
+          recommended_corrections: draft.recommended_corrections || null,
+          general_comments: draft.general_comments || null,
+        }),
+      });
+      const saveResult = await res.json();
+      if (!res.ok) { setDraftError(saveResult.error || 'Save failed.'); return; }
+      const evalId = saveResult.data?.id;
+      if (evalId) {
+        const subRes = await fetch(`/api/phd/evaluations/${evalId}/submit`, { method: 'POST' });
+        if (subRes.ok) { fetchEvaluationData(selectedVivaId); return; }
+        const d = await subRes.json(); setDraftError(d.error || 'Submit failed.');
+      }
+    } catch { setDraftError('Network error.'); }
+    finally { setSubmitting(false); }
+  };
 
   const fetchAll = async () => {
     try {
@@ -232,6 +540,8 @@ export default function CandidateDetailPage() {
   const tabs: { key: Tab; label: string }[] = [
     { key: 'thesis', label: `📤 Thesis Versions (${theses.length})` },
     { key: 'viva', label: `📅 Viva History (${vivas.length})` },
+    // Show evaluation tab if there are vivas or if one is selected
+    { key: 'evaluation', label: `📝 My Evaluation` },
     // Only HOD/Admin can edit candidate details
     ...(isHodOrAdmin ? [{ key: 'edit' as Tab, label: '✏️ Edit Details' }] : []),
   ];
@@ -455,12 +765,15 @@ export default function CandidateDetailPage() {
                   <div className="flex gap-2">
                     {/* Evaluators can go directly to their evaluation */}
                     {isEvaluatorOnly && (
-                      <Link
-                        href={`/phd/evaluations/${v.viva_id}`}
+                      <button
+                        onClick={() => {
+                          setSelectedVivaId(v.viva_id);
+                          setActiveTab('evaluation');
+                        }}
                         className="rounded-lg bg-indigo-100 px-4 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-200 dark:bg-indigo-900 dark:text-indigo-200"
                       >
                         📝 My Evaluation
-                      </Link>
+                      </button>
                     )}
                     <Link
                       href={`/phd/schedules/${v.viva_id}`}
@@ -471,6 +784,170 @@ export default function CandidateDetailPage() {
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Tab: Evaluation ── */}
+      {activeTab === 'evaluation' && (
+        <div className="space-y-6">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Viva Evaluation</h2>
+            {vivas.length > 1 && (
+              <select
+                value={selectedVivaId || ''}
+                onChange={(e) => setSelectedVivaId(parseInt(e.target.value) || null)}
+                className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+              >
+                <option value="">— Select Viva —</option>
+                {vivas.map(v => (
+                  <option key={v.viva_id} value={v.viva_id}>
+                    {formatDate(v.scheduled_date)} ({v.viva_status})
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+
+          {!selectedVivaId ? (
+            <div className="rounded-xl border border-gray-200 bg-white py-12 text-center shadow-md dark:border-gray-700 dark:bg-gray-800">
+              <div className="text-5xl">📝</div>
+              <p className="mt-3 text-gray-600 dark:text-gray-400">Select a viva to view or fill out an evaluation.</p>
+              {vivas.length > 0 && (
+                <button
+                  onClick={() => setSelectedVivaId(vivas[0].viva_id)}
+                  className="mt-4 text-sm font-medium text-emerald-600 hover:underline"
+                >
+                  View latest viva →
+                </button>
+              )}
+            </div>
+          ) : evalLoading ? (
+            <div className="flex h-48 items-center justify-center">
+              <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-emerald-600" />
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {/* If user is an examiner, show their form or their summary */}
+              {myExaminerRecord && !MANAGER_ROLES.includes(currentUser?.role || '') && (
+                <div className="space-y-5">
+                  {myExaminerRecord.evaluation_submitted ? (
+                    <div className="space-y-5">
+                      <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-5 dark:border-emerald-700 dark:bg-emerald-900/20">
+                        <div className="flex items-center gap-3 text-emerald-800 dark:text-emerald-200">
+                          <span className="text-2xl">✅</span>
+                          <div>
+                            <p className="font-bold">Evaluation Submitted</p>
+                            <p className="text-sm">Your evaluation has been officially recorded.</p>
+                          </div>
+                        </div>
+                      </div>
+                      {evaluations.find(ev => String(ev.examiner_id) === String(currentUser?.id)) && (
+                        <SubmittedEvaluationCard
+                          ev={evaluations.find(ev => String(ev.examiner_id) === String(currentUser?.id))!}
+                          fmt={formatDate}
+                        />
+                      )}
+                    </div>
+                  ) : (
+                    <div className="space-y-6">
+                      <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
+                        <h3 className="mb-5 font-semibold text-gray-900 dark:text-white">Scoring (out of 100)</h3>
+                        <div className="grid gap-6 md:grid-cols-2">
+                          {[
+                            { key: 'originality_score' as keyof EvaluationDraft, label: 'Originality' },
+                            { key: 'methodology_score' as keyof EvaluationDraft, label: 'Methodology' },
+                            { key: 'presentation_score' as keyof EvaluationDraft, label: 'Presentation' },
+                            { key: 'literature_score' as keyof EvaluationDraft, label: 'Literature Review' },
+                          ].map(f => (
+                            <div key={f.key} className="flex items-center justify-between gap-4">
+                              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{f.label}</label>
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="number" min={0} max={25}
+                                  value={draft[f.key] as string}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    const n = parseInt(val);
+                                    if (val === '' || (!isNaN(n) && n >= 0 && n <= 25)) {
+                                      setDraft(p => ({ ...p, [f.key]: val }));
+                                    }
+                                  }}
+                                  className="w-16 rounded-lg border border-gray-300 px-2 py-1.5 text-center text-sm focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                />
+                                <span className="text-xs text-gray-400">/25</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
+                        <h3 className="mb-5 font-semibold text-gray-900 dark:text-white">Feedback</h3>
+                        <div className="space-y-4">
+                          {[
+                            { key: 'strengths' as keyof EvaluationDraft, label: 'Strengths', placeholder: 'Key strengths...' },
+                            { key: 'weaknesses' as keyof EvaluationDraft, label: 'Weaknesses', placeholder: 'Areas for improvement...' },
+                            { key: 'recommended_corrections' as keyof EvaluationDraft, label: 'Corrections', placeholder: 'Specific corrections needed...' },
+                            { key: 'general_comments' as keyof EvaluationDraft, label: 'General Comments', placeholder: 'Overall remarks...' },
+                          ].map(f => (
+                            <div key={f.key}>
+                              <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">{f.label}</label>
+                              <textarea
+                                value={draft[f.key] as string}
+                                onChange={(e) => setDraft(p => ({ ...p, [f.key]: e.target.value }))}
+                                rows={3}
+                                placeholder={f.placeholder}
+                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-3">
+                        <button
+                          onClick={handleSaveDraft}
+                          disabled={saving}
+                          className="rounded-lg border border-gray-300 px-5 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+                        >
+                          {saving ? 'Saving...' : '💾 Save Draft'}
+                        </button>
+                        <button
+                          onClick={handleSubmitEvaluation}
+                          disabled={submitting}
+                          className="rounded-lg bg-emerald-600 px-5 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+                        >
+                          {submitting ? 'Submitting...' : '✅ Submit Evaluation'}
+                        </button>
+                        {saveMsg && <span className="text-sm text-emerald-600 font-medium">{saveMsg}</span>}
+                        {draftError && <span className="text-sm text-red-600 font-medium">{draftError}</span>}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Manager view: Show all evaluations */}
+              {(!myExaminerRecord || MANAGER_ROLES.includes(currentUser?.role || '')) && (
+                <div className="space-y-6">
+                  {evaluations.length === 0 ? (
+                    <div className="rounded-xl border border-gray-200 bg-white py-12 text-center dark:border-gray-700 dark:bg-gray-800">
+                      <p className="text-gray-500">No submitted evaluations for this viva yet.</p>
+                      <p className="text-xs text-gray-400 mt-1">{examiners.filter(e => !e.evaluation_submitted).length} examiners pending.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-6">
+                      <div className="grid gap-6">
+                        {evaluations.filter(ev => ev.is_submitted).map(ev => (
+                          <SubmittedEvaluationCard key={ev.id} ev={ev} fmt={formatDate} />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>
