@@ -182,8 +182,8 @@ export default function VivaEvaluationsPage() {
     setFetchError(null);
     try {
       const [meRes, vivaRes] = await Promise.all([
-        fetch('/api/auth/me'),
-        fetch(`/api/phd/schedules/${vivaId}`),
+        fetch('/api/auth/me', { cache: 'no-store' }),
+        fetch(`/api/phd/schedules/${vivaId}`, { cache: 'no-store' }),
       ]);
       if (meRes.status === 401 || vivaRes.status === 401) {
         router.push('/auth/login'); return;
@@ -242,7 +242,7 @@ export default function VivaEvaluationsPage() {
           );
 
           // Find this user's saved draft 
-          const myEval = v.evaluations?.find((ev) => Number(ev.examiner_id) === uid);
+          const myEval = v.evaluations?.find((ev) => Number(ev.examiner_id) === Number(uid));
           if (myEval) {
             prefillDraft(myEval);
             
@@ -291,7 +291,7 @@ export default function VivaEvaluationsPage() {
       weaknesses: ev.weaknesses ?? '',
       recommended_corrections: ev.recommended_corrections ?? '',
       general_comments: ev.general_comments ?? '',
-      is_submitted: ev.is_submitted ?? false,
+      is_submitted: Boolean(ev.is_submitted),
     });
   }
 
@@ -415,7 +415,11 @@ export default function VivaEvaluationsPage() {
   const pendingExaminers = examiners.filter((e) => !e.evaluation_submitted);
   const allEvaluationsIn = examiners.length > 0 && pendingExaminers.length === 0;
   const vivaStatus = viva?.viva_status ?? viva?.status ?? '';
-  const locked = draft.is_submitted;
+  
+  // Robust locked check
+  const locked = Boolean(draft.is_submitted) || 
+                 Boolean(myExaminerRecord?.evaluation_submitted) || 
+                 evaluations.some(ev => Number(ev.examiner_id) === Number(currentUserId) && Boolean(ev.is_submitted));
 
   // ─── Loading / not found ─────────────────────────────────────────────────────
 
