@@ -46,8 +46,8 @@ export async function GET(req: NextRequest) {
       baseParams.push(user.department_id);
     }
 
-    // Build params for the SELECT part (14 placeholders)
-    const selectParams: any[] = Array(14).fill(user.id);
+    // Build params for the SELECT part (15 placeholders)
+    const selectParams: any[] = Array(15).fill(user.id);
 
     // Build query
     let sql = `
@@ -106,7 +106,14 @@ export async function GET(req: NextRequest) {
             AND (veval.id IS NULL OR veval.is_submitted = FALSE)
             AND vs2.status IN ('scheduled', 'in_progress')
           LIMIT 1
-        ) as pending_viva_id
+        ) as pending_viva_id,
+        -- Completed evaluations
+        (
+          SELECT COUNT(*) FROM viva_schedules vs3
+          JOIN viva_evaluations veval2 ON vs3.id = veval2.viva_id AND veval2.examiner_id = ?
+          WHERE vs3.candidate_id = pc.id 
+            AND veval2.is_submitted = TRUE
+        ) as completed_evaluations
       FROM phd_candidates pc
       LEFT JOIN students st ON pc.registration_number = st.registration_number
       LEFT JOIN programmes p ON pc.programme_id = p.id

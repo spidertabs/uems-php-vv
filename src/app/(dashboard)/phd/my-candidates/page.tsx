@@ -27,6 +27,7 @@ interface Candidate {
   viva_count: number;
   role_as_supervisor: 'primary' | 'co_supervisor' | 'supervisor' | 'examiner' | 'other'; // which role the current user has
   pending_evaluations: number;
+  completed_evaluations: number;
   pending_viva_id?: number;
 }
 
@@ -264,11 +265,15 @@ export default function MyCandidatesPage() {
                         >
                           {CANDIDATE_STATUS_LABELS[c.status]}
                         </span>
-                        {c.pending_evaluations > 0 && (
+                        {c.pending_evaluations > 0 ? (
                           <p className="mt-1 flex items-center gap-1 text-[10px] font-bold uppercase text-red-500 animate-pulse">
-                            ⚠️ Pending Evaluation
+                            ⚠️ Pending Evaluation ({c.pending_evaluations})
                           </p>
-                        )}
+                        ) : c.completed_evaluations > 0 ? (
+                          <p className="mt-1 flex items-center gap-1 text-[10px] font-bold uppercase text-emerald-500">
+                            ✅ Evaluated ({c.completed_evaluations})
+                          </p>
+                        ) : null}
                         {c.enrolment_year && (
                           <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
                             Enrolled {c.enrolment_year}
@@ -287,12 +292,19 @@ export default function MyCandidatesPage() {
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex justify-end gap-2">
-                          {c.pending_viva_id && (
+                          {c.pending_viva_id ? (
                             <Link
                               href={`/phd/evaluations/${c.pending_viva_id}`}
                               className="rounded-lg bg-red-50 px-3 py-1.5 text-xs font-bold text-red-700 transition-colors hover:bg-red-100 dark:bg-red-900/40 dark:text-red-300 dark:hover:bg-red-900/60"
                             >
                               Evaluate ★
+                            </Link>
+                          ) : c.viva_count > 0 && (
+                            <Link
+                              href={`/phd/candidates/${c.candidate_id ?? c.id}`}
+                              className="rounded-lg bg-gray-50 px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-100 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                            >
+                              Results 📊
                             </Link>
                           )}
                           <Link
