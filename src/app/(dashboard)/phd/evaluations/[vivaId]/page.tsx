@@ -218,8 +218,8 @@ export default function VivaEvaluationsPage() {
         if (v.evaluations) {
           v.evaluations.forEach((ev) => {
             const evalMatch = allEvaluators.find(
-              (e) => Number(e.examiner_id) === Number(ev.examiner_id) ||
-                     Number(e.user_id)     === Number(ev.examiner_id)
+              (e) => String(e.examiner_id) === String(ev.examiner_id) ||
+                     String(e.user_id)     === String(ev.examiner_id)
             );
             if (evalMatch) {
               evalMatch.evaluation_submitted = ev.is_submitted || false;
@@ -238,11 +238,12 @@ export default function VivaEvaluationsPage() {
 
         if (uid) {
           let me = uniqueEvaluators.find(
-            (ex) => Number(ex.examiner_id) === uid || Number(ex.user_id) === uid
+            (ex) => String(ex.examiner_id) === String(uid) || String(ex.user_id) === String(uid)
           );
 
-          // Find this user's saved draft 
-          const myEval = v.evaluations?.find((ev) => Number(ev.examiner_id) === Number(uid));
+          // Find this user's saved draft (prioritize submitted one)
+          const myEval = v.evaluations?.find((ev) => String(ev.examiner_id) === String(uid) && ev.is_submitted) ||
+                         v.evaluations?.find((ev) => String(ev.examiner_id) === String(uid));
           if (myEval) {
             prefillDraft(myEval);
             
@@ -419,7 +420,7 @@ export default function VivaEvaluationsPage() {
   // Robust locked check
   const locked = Boolean(draft.is_submitted) || 
                  Boolean(myExaminerRecord?.evaluation_submitted) || 
-                 evaluations.some(ev => Number(ev.examiner_id) === Number(currentUserId) && Boolean(ev.is_submitted));
+                 evaluations.some(ev => String(ev.examiner_id) === String(currentUserId) && Boolean(ev.is_submitted));
 
   // ─── Loading / not found ─────────────────────────────────────────────────────
 
