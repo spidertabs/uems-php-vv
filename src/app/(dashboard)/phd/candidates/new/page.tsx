@@ -9,17 +9,10 @@ interface StudentOption { registration_number: string; first_name: string; last_
 interface UserOption { id: number; first_name: string; last_name: string; email: string; role: string; }
 interface ProgrammeOption { id: number; code: string; name: string; }
 
-// ✅ Field is defined OUTSIDE the page component so it doesn't get
-//    recreated on every render — that was causing inputs to lose focus
-//    after each keystroke.
 function Field({
   name, label, required = false, children, errors,
 }: {
-  name: string;
-  label: string;
-  required?: boolean;
-  children: React.ReactNode;
-  errors: Record<string, string>;
+  name: string; label: string; required?: boolean; children: React.ReactNode; errors: Record<string, string>;
 }) {
   return (
     <div>
@@ -34,6 +27,7 @@ function Field({
 
 export default function RegisterCandidatePage() {
   const router = useRouter();
+  const [authorized, setAuthorized] = useState<boolean | null>(null);
   const [students, setStudents] = useState<StudentOption[]>([]);
   const [programmes, setProgrammes] = useState<ProgrammeOption[]>([]);
   const [supervisors, setSupervisors] = useState<UserOption[]>([]);
@@ -50,6 +44,22 @@ export default function RegisterCandidatePage() {
   const [dataLoading, setDataLoading] = useState(true);
 
   useEffect(() => {
+    // Check authorization — only HOD and admin
+    fetch('/api/auth/me')
+      .then(r => r.json())
+      .then(d => {
+        const role = d.user?.role;
+        if (!role || !['admin', 'hod'].includes(role)) {
+          setAuthorized(false);
+        } else {
+          setAuthorized(true);
+        }
+      })
+      .catch(() => setAuthorized(false));
+  }, []);
+
+  useEffect(() => {
+    if (!authorized) return;
     const fetchOptions = async () => {
       try {
         const [uRes, sRes, pRes] = await Promise.all([
@@ -57,24 +67,39 @@ export default function RegisterCandidatePage() {
           fetch('/api/phd/eligible-supervisors'),
           fetch('/api/phd/programmes'),
         ]);
-        if (uRes.ok) {
-          const d = await uRes.json();
-          setStudents(d.staff || []);
-        }
-        if (sRes.ok) {
-          const d = await sRes.json();
-          setSupervisors(d.staff || []);
-        }
-        if (pRes.ok) {
-          const d = await pRes.json();
-          setProgrammes(d.programmes || []);
-        }
+        if (uRes.ok) { const d = await uRes.json(); setStudents(d.staff || []); }
+        if (sRes.ok) { const d = await sRes.json(); setSupervisors(d.staff || []); }
+        if (pRes.ok) { const d = await pRes.json(); setProgrammes(d.programmes || []); }
       } finally {
         setDataLoading(false);
       }
     };
     fetchOptions();
-  }, []);
+  }, [authorized]);
+
+  // Not authorized
+  if (authorized === false) {
+    return (
+      <div className="lg:pl-64 flex flex-col items-center justify-center py-24 text-center">
+        <div className="text-6xl mb-4">🚫</div>
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Access Restricted</h2>
+        <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-sm">
+          Only the Head of Department or an Administrator can register new PhD candidates.
+        </p>
+        <Link href="/phd/candidates" className="rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-emerald-700">
+          ← Back to Candidates
+        </Link>
+      </div>
+    );
+  }
+
+  if (authorized === null || dataLoading) {
+    return (
+      <div className="flex h-96 items-center justify-center">
+        <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-emerald-600" />
+      </div>
+    );
+  }
 
   const validate = () => {
     const e: Record<string, string> = {};
@@ -113,10 +138,6 @@ export default function RegisterCandidatePage() {
     }
   };
 
-  if (dataLoading) {
-    return <div className="flex h-96 items-center justify-center"><div className="h-12 w-12 animate-spin rounded-full border-b-2 border-emerald-600"></div></div>;
-  }
-
   return (
     <div className="space-y-6 lg:pl-64 max-w-2xl">
       <Link href="/phd/candidates" className="text-sm text-emerald-600 hover:underline dark:text-emerald-400">
@@ -125,7 +146,9 @@ export default function RegisterCandidatePage() {
 
       <div>
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">👨‍🎓 Register PhD Candidate</h1>
-        <p className="mt-1 text-gray-600 dark:text-gray-400">Register an existing student as a PhD candidate.</p>
+        <p className="mt-1 text-gray-600 dark:text-gray-400">
+          Register an existing student as a PhD candidate. <span className="font-medium text-amber-600 dark:text-amber-400">(HOD / Admin only)</span>
+        </p>
       </div>
 
       <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
@@ -139,11 +162,11 @@ export default function RegisterCandidatePage() {
           <Field name="registration_number" label="Student Account" required errors={errors}>
             <select
               value={form.registration_number}
-              onChange={(e) => setForm((p) => ({ ...p, registration_number: e.target.value }))}
+              onChange={(e) => setForm(p => ({ ...p, registration_number: e.target.value }))}
               className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900 focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
             >
               <option value="">Select student...</option>
-              {students.map((s) => (
+              {students.map(s => (
                 <option key={s.registration_number} value={s.registration_number}>
                   {s.first_name} {s.last_name} ({s.registration_number}) — {s.email}
                 </option>
@@ -154,7 +177,7 @@ export default function RegisterCandidatePage() {
           <Field name="thesis_title" label="Thesis Title" required errors={errors}>
             <textarea
               value={form.thesis_title}
-              onChange={(e) => setForm((p) => ({ ...p, thesis_title: e.target.value }))}
+              onChange={(e) => setForm(p => ({ ...p, thesis_title: e.target.value }))}
               rows={3}
               placeholder="Full thesis title as submitted..."
               className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
@@ -164,25 +187,25 @@ export default function RegisterCandidatePage() {
           <Field name="programme_id" label="PhD Programme" required errors={errors}>
             <select
               value={form.programme_id}
-              onChange={(e) => setForm((p) => ({ ...p, programme_id: e.target.value }))}
+              onChange={(e) => setForm(p => ({ ...p, programme_id: e.target.value }))}
               className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
             >
               <option value="">Select programme...</option>
-              {programmes.map((p) => (
+              {programmes.map(p => (
                 <option key={p.id} value={p.id}>{p.code} — {p.name}</option>
               ))}
             </select>
           </Field>
 
           <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-            <Field name="supervisor_id" label="Primary Supervisor" errors={errors}>
+            <Field name="supervisor_id" label="Primary Supervisor" required errors={errors}>
               <select
                 value={form.supervisor_id}
-                onChange={(e) => setForm((p) => ({ ...p, supervisor_id: e.target.value }))}
+                onChange={(e) => setForm(p => ({ ...p, supervisor_id: e.target.value }))}
                 className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
               >
                 <option value="">Select supervisor...</option>
-                {supervisors.map((u) => (
+                {supervisors.map(u => (
                   <option key={u.id} value={u.id}>{u.first_name} {u.last_name} ({u.role})</option>
                 ))}
               </select>
@@ -191,13 +214,13 @@ export default function RegisterCandidatePage() {
             <Field name="co_supervisor_id" label="Co-Supervisor (optional)" errors={errors}>
               <select
                 value={form.co_supervisor_id}
-                onChange={(e) => setForm((p) => ({ ...p, co_supervisor_id: e.target.value }))}
+                onChange={(e) => setForm(p => ({ ...p, co_supervisor_id: e.target.value }))}
                 className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
               >
                 <option value="">None</option>
                 {supervisors
-                  .filter((u) => u.id.toString() !== form.supervisor_id)
-                  .map((u) => (
+                  .filter(u => u.id.toString() !== form.supervisor_id)
+                  .map(u => (
                     <option key={u.id} value={u.id}>{u.first_name} {u.last_name} ({u.role})</option>
                   ))}
               </select>
@@ -208,7 +231,7 @@ export default function RegisterCandidatePage() {
             <input
               type="number"
               value={form.enrolment_year}
-              onChange={(e) => setForm((p) => ({ ...p, enrolment_year: e.target.value }))}
+              onChange={(e) => setForm(p => ({ ...p, enrolment_year: e.target.value }))}
               min={2000}
               max={new Date().getFullYear()}
               className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
@@ -216,17 +239,11 @@ export default function RegisterCandidatePage() {
           </Field>
 
           <div className="flex gap-3 pt-2">
-            <Link
-              href="/phd/candidates"
-              className="flex-1 rounded-lg border border-gray-300 py-2 text-center text-sm text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300"
-            >
+            <Link href="/phd/candidates" className="flex-1 rounded-lg border border-gray-300 py-2 text-center text-sm text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300">
               Cancel
             </Link>
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex-1 rounded-lg bg-emerald-600 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
-            >
+            <button type="submit" disabled={loading}
+              className="flex-1 rounded-lg bg-emerald-600 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50">
               {loading ? 'Registering...' : 'Register Candidate'}
             </button>
           </div>

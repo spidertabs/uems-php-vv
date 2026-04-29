@@ -25,6 +25,12 @@ interface VivaRecord {
   outcome: string | null;
 }
 
+interface CurrentUser {
+  id: number;
+  role: string;
+}
+
+// Tabs available depend on role
 type Tab = 'thesis' | 'viva' | 'edit';
 
 export default function CandidateDetailPage() {
@@ -32,6 +38,7 @@ export default function CandidateDetailPage() {
   const params = useParams();
   const candidateId = params.candidateId as string;
 
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [candidate, setCandidate] = useState<CandidateWithDetails | null>(null);
   const [theses, setTheses] = useState<ThesisSubmission[]>([]);
   const [vivas, setVivas] = useState<VivaRecord[]>([]);
@@ -40,12 +47,7 @@ export default function CandidateDetailPage() {
 
   // Upload modal state
   const [showUpload, setShowUpload] = useState(false);
-  const [uploadForm, setUploadForm] = useState({
-    file_name: '',
-    file_path: '',
-    file_size_kb: '',
-    submission_notes: '',
-  });
+  const [uploadForm, setUploadForm] = useState({ file_name: '', file_path: '', file_size_kb: '', submission_notes: '' });
   const [uploadLoading, setUploadLoading] = useState(false);
   const [uploadError, setUploadError] = useState('');
 
@@ -66,6 +68,13 @@ export default function CandidateDetailPage() {
   const [supervisors, setSupervisors] = useState<Array<{ id: number; name: string }>>([]);
   const [programmeLoading, setProgrammeLoading] = useState(false);
   const [supervisorLoading, setSupervisorLoading] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then(r => r.json())
+      .then(d => setCurrentUser(d.user ?? null))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     fetchAll();
@@ -105,15 +114,9 @@ export default function CandidateDetailPage() {
     try {
       setProgrammeLoading(true);
       const res = await fetch('/api/phd/programmes');
-      if (res.ok) {
-        const d = await res.json();
-        setProgrammes(d.programmes || []);
-      }
-    } catch (err) {
-      console.error('Failed to fetch programmes:', err);
-    } finally {
-      setProgrammeLoading(false);
-    }
+      if (res.ok) { const d = await res.json(); setProgrammes(d.programmes || []); }
+    } catch (err) { console.error(err); }
+    finally { setProgrammeLoading(false); }
   };
 
   const fetchSupervisors = async () => {
@@ -122,23 +125,15 @@ export default function CandidateDetailPage() {
       const res = await fetch('/api/phd/eligible-supervisors');
       if (res.ok) {
         const d = await res.json();
-        const raw = d.staff || [];
         setSupervisors(
-          raw.map((u: {
-            id: number;
-            first_name: string;
-            last_name: string;
-          }) => ({
+          (d.staff || []).map((u: { id: number; first_name: string; last_name: string }) => ({
             id: u.id,
             name: `${u.first_name} ${u.last_name}`.trim(),
           }))
         );
       }
-    } catch (err) {
-      console.error('Failed to fetch supervisors:', err);
-    } finally {
-      setSupervisorLoading(false);
-    }
+    } catch (err) { console.error(err); }
+    finally { setSupervisorLoading(false); }
   };
 
   const handleUpload = async (e: React.FormEvent) => {
@@ -149,10 +144,7 @@ export default function CandidateDetailPage() {
       const res = await fetch(`/api/phd/candidates/${candidateId}/thesis`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...uploadForm,
-          file_size_kb: parseInt(uploadForm.file_size_kb) || null,
-        }),
+        body: JSON.stringify({ ...uploadForm, file_size_kb: parseInt(uploadForm.file_size_kb) || null }),
       });
       const data = await res.json();
       if (!res.ok) { setUploadError(data.error || 'Upload failed'); return; }
@@ -202,17 +194,17 @@ export default function CandidateDetailPage() {
   };
 
   const formatDate = (dateStr: string) =>
-    new Date(dateStr).toLocaleDateString('en-GB', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    });
+    new Date(dateStr).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 
   const formatFileSize = (kb: number | null) => {
     if (!kb) return '—';
     if (kb < 1024) return `${kb} KB`;
     return `${(kb / 1024).toFixed(1)} MB`;
   };
+
+  // Role checks
+  const isHodOrAdmin = currentUser && ['admin', 'hod'].includes(currentUser.role);
+  const isEvaluatorOnly = currentUser && !['admin', 'hod'].includes(currentUser.role);
 
   if (loading) {
     return (
@@ -234,16 +226,16 @@ export default function CandidateDetailPage() {
     );
   }
 
+  // Build tabs based on role
   const tabs: { key: Tab; label: string }[] = [
     { key: 'thesis', label: `📤 Thesis Versions (${theses.length})` },
     { key: 'viva', label: `📅 Viva History (${vivas.length})` },
-    { key: 'edit', label: '✏️ Edit Details' },
+    // Only HOD/Admin can edit candidate details
+    ...(isHodOrAdmin ? [{ key: 'edit' as Tab, label: '✏️ Edit Details' }] : []),
   ];
 
   return (
     <div className="space-y-6 lg:pl-64">
-
-      {/* Back */}
       <Link href="/phd/candidates" className="text-sm text-emerald-600 hover:underline dark:text-emerald-400">
         ← Back to Candidates
       </Link>
@@ -253,16 +245,12 @@ export default function CandidateDetailPage() {
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                {candidate.candidate_name}
-              </h1>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{candidate.candidate_name}</h1>
               <span className={`rounded-full px-3 py-1 text-xs font-medium ${CANDIDATE_STATUS_COLORS[candidate.status]}`}>
                 {CANDIDATE_STATUS_LABELS[candidate.status]}
               </span>
             </div>
-            <p className="mt-1 font-mono text-sm text-gray-500 dark:text-gray-400">
-              {candidate.registration_number}
-            </p>
+            <p className="mt-1 font-mono text-sm text-gray-500 dark:text-gray-400">{candidate.registration_number}</p>
             <p className="mt-2 text-sm font-medium text-gray-700 dark:text-gray-300">
               {candidate.programme_code} — {candidate.programme_name}
             </p>
@@ -282,6 +270,14 @@ export default function CandidateDetailPage() {
             )}
           </div>
         </div>
+
+        {/* Evaluator notice */}
+        {isEvaluatorOnly && (
+          <div className="mt-4 flex items-center gap-2 rounded-lg bg-indigo-50 px-4 py-2.5 text-sm text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-300">
+            <span>ℹ️</span>
+            <span>You are viewing this candidate as an assigned examiner or supervisor. Edit access is restricted to HOD/Admin.</span>
+          </div>
+        )}
 
         {/* Tabs */}
         <div className="mt-6 border-b border-gray-200 dark:border-gray-700">
@@ -308,12 +304,15 @@ export default function CandidateDetailPage() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Thesis Submissions</h2>
-            <button
-              onClick={() => setShowUpload(true)}
-              className="rounded-lg bg-emerald-600 px-4 py-2 text-sm text-white transition-colors hover:bg-emerald-700"
-            >
-              + Upload New Version
-            </button>
+            {/* Only HOD/Admin can upload thesis versions */}
+            {isHodOrAdmin && (
+              <button
+                onClick={() => setShowUpload(true)}
+                className="rounded-lg bg-emerald-600 px-4 py-2 text-sm text-white transition-colors hover:bg-emerald-700"
+              >
+                + Upload New Version
+              </button>
+            )}
           </div>
 
           {theses.length === 0 ? (
@@ -327,10 +326,7 @@ export default function CandidateDetailPage() {
                 .slice()
                 .sort((a, b) => b.version - a.version)
                 .map((t) => (
-                  <div
-                    key={t.id}
-                    className="flex items-start justify-between gap-4 border-b border-gray-200 p-5 last:border-0 dark:border-gray-700"
-                  >
+                  <div key={t.id} className="flex items-start justify-between gap-4 border-b border-gray-200 p-5 last:border-0 dark:border-gray-700">
                     <div className="flex items-center gap-4">
                       <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-xl dark:bg-emerald-900">
                         📄
@@ -338,7 +334,7 @@ export default function CandidateDetailPage() {
                       <div>
                         <p className="font-medium text-gray-900 dark:text-white">
                           Version {t.version}{' '}
-                          {t.version === Math.max(...theses.map((x) => x.version)) && (
+                          {t.version === Math.max(...theses.map(x => x.version)) && (
                             <span className="ml-2 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300">
                               Latest
                             </span>
@@ -346,9 +342,7 @@ export default function CandidateDetailPage() {
                         </p>
                         <p className="text-sm text-gray-500 dark:text-gray-400">{t.file_name}</p>
                         {t.submission_notes && (
-                          <p className="mt-1 text-xs italic text-gray-400 dark:text-gray-500">
-                            {t.submission_notes}
-                          </p>
+                          <p className="mt-1 text-xs italic text-gray-400 dark:text-gray-500">{t.submission_notes}</p>
                         )}
                       </div>
                     </div>
@@ -365,9 +359,7 @@ export default function CandidateDetailPage() {
           {showUpload && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
               <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl dark:bg-gray-800">
-                <h3 className="mb-4 text-lg font-bold text-gray-900 dark:text-white">
-                  Upload Thesis Version
-                </h3>
+                <h3 className="mb-4 text-lg font-bold text-gray-900 dark:text-white">Upload Thesis Version</h3>
                 {uploadError && (
                   <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600 dark:bg-red-900/30 dark:text-red-400">
                     {uploadError}
@@ -380,13 +372,11 @@ export default function CandidateDetailPage() {
                     { name: 'file_size_kb', label: 'File Size (KB)', placeholder: '4820', required: false },
                   ].map((f) => (
                     <div key={f.name}>
-                      <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        {f.label}
-                      </label>
+                      <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{f.label}</label>
                       <input
                         type="text"
                         value={(uploadForm as Record<string, string>)[f.name]}
-                        onChange={(e) => setUploadForm((p) => ({ ...p, [f.name]: e.target.value }))}
+                        onChange={(e) => setUploadForm(p => ({ ...p, [f.name]: e.target.value }))}
                         placeholder={f.placeholder}
                         required={f.required}
                         className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
@@ -394,29 +384,21 @@ export default function CandidateDetailPage() {
                     </div>
                   ))}
                   <div>
-                    <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Submission Notes
-                    </label>
+                    <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Submission Notes</label>
                     <textarea
                       value={uploadForm.submission_notes}
-                      onChange={(e) => setUploadForm((p) => ({ ...p, submission_notes: e.target.value }))}
+                      onChange={(e) => setUploadForm(p => ({ ...p, submission_notes: e.target.value }))}
                       rows={3}
                       className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                     />
                   </div>
                   <div className="flex gap-3 pt-2">
-                    <button
-                      type="button"
-                      onClick={() => setShowUpload(false)}
-                      className="flex-1 rounded-lg border border-gray-300 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300"
-                    >
+                    <button type="button" onClick={() => setShowUpload(false)}
+                      className="flex-1 rounded-lg border border-gray-300 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300">
                       Cancel
                     </button>
-                    <button
-                      type="submit"
-                      disabled={uploadLoading}
-                      className="flex-1 rounded-lg bg-emerald-600 py-2 text-sm text-white hover:bg-emerald-700 disabled:opacity-50"
-                    >
+                    <button type="submit" disabled={uploadLoading}
+                      className="flex-1 rounded-lg bg-emerald-600 py-2 text-sm text-white hover:bg-emerald-700 disabled:opacity-50">
                       {uploadLoading ? 'Uploading...' : 'Upload'}
                     </button>
                   </div>
@@ -432,12 +414,15 @@ export default function CandidateDetailPage() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Viva History</h2>
-            <Link
-              href={`/phd/schedules/new?candidate_id=${candidateId}`}
-              className="rounded-lg bg-emerald-600 px-4 py-2 text-sm text-white transition-colors hover:bg-emerald-700"
-            >
-              + Schedule Viva
-            </Link>
+            {/* Only HOD/Admin can schedule vivas */}
+            {isHodOrAdmin && (
+              <Link
+                href={`/phd/schedules/new?candidate_id=${candidateId}`}
+                className="rounded-lg bg-emerald-600 px-4 py-2 text-sm text-white transition-colors hover:bg-emerald-700"
+              >
+                + Schedule Viva
+              </Link>
+            )}
           </div>
 
           {vivas.length === 0 ? (
@@ -448,10 +433,7 @@ export default function CandidateDetailPage() {
           ) : (
             <div className="space-y-3">
               {vivas.map((v) => (
-                <div
-                  key={v.viva_id}
-                  className="flex items-center justify-between rounded-xl border border-gray-200 bg-white p-5 shadow-md dark:border-gray-700 dark:bg-gray-800"
-                >
+                <div key={v.viva_id} className="flex items-center justify-between rounded-xl border border-gray-200 bg-white p-5 shadow-md dark:border-gray-700 dark:bg-gray-800">
                   <div>
                     <div className="flex items-center gap-3">
                       <span className={`rounded-full px-3 py-1 text-xs font-medium ${VIVA_STATUS_COLORS[v.viva_status as keyof typeof VIVA_STATUS_COLORS]}`}>
@@ -468,12 +450,23 @@ export default function CandidateDetailPage() {
                     </p>
                     <p className="text-sm text-gray-500 dark:text-gray-400">📍 {v.venue}</p>
                   </div>
-                  <Link
-                    href={`/phd/schedules/${v.viva_id}`}
-                    className="rounded-lg bg-emerald-100 px-4 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900 dark:text-emerald-200"
-                  >
-                    {v.outcome ? 'View Report' : 'View Viva'}
-                  </Link>
+                  <div className="flex gap-2">
+                    {/* Evaluators can go directly to their evaluation */}
+                    {isEvaluatorOnly && (
+                      <Link
+                        href={`/phd/evaluations/${v.viva_id}`}
+                        className="rounded-lg bg-indigo-100 px-4 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-200 dark:bg-indigo-900 dark:text-indigo-200"
+                      >
+                        📝 My Evaluation
+                      </Link>
+                    )}
+                    <Link
+                      href={`/phd/schedules/${v.viva_id}`}
+                      className="rounded-lg bg-emerald-100 px-4 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900 dark:text-emerald-200"
+                    >
+                      {v.outcome ? 'View Report' : 'View Viva'}
+                    </Link>
+                  </div>
                 </div>
               ))}
             </div>
@@ -481,12 +474,10 @@ export default function CandidateDetailPage() {
         </div>
       )}
 
-      {/* ── Tab: Edit ── */}
-      {activeTab === 'edit' && (
+      {/* ── Tab: Edit (HOD/Admin only) ── */}
+      {activeTab === 'edit' && isHodOrAdmin && (
         <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
-          <h2 className="mb-5 text-lg font-semibold text-gray-900 dark:text-white">
-            Edit Candidate Details
-          </h2>
+          <h2 className="mb-5 text-lg font-semibold text-gray-900 dark:text-white">Edit Candidate Details</h2>
 
           {editError && (
             <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600 dark:bg-red-900/30 dark:text-red-400">
@@ -500,145 +491,103 @@ export default function CandidateDetailPage() {
           )}
 
           <form onSubmit={handleEdit} className="max-w-lg space-y-5">
-
-            {/* Thesis Title */}
             <div>
-              <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Thesis Title
-              </label>
+              <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Thesis Title</label>
               <textarea
                 value={editForm.thesis_title || ''}
-                onChange={(e) => setEditForm((p) => ({ ...p, thesis_title: e.target.value }))}
+                onChange={(e) => setEditForm(p => ({ ...p, thesis_title: e.target.value }))}
                 rows={3}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
               />
             </div>
 
-            {/* PhD Programme */}
             <div>
               <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                 PhD Programme <span className="text-red-500">*</span>
               </label>
               <select
                 value={editForm.programme_id || ''}
-                onChange={(e) =>
-                  setEditForm((p) => ({ ...p, programme_id: parseInt(e.target.value) || undefined }))
-                }
+                onChange={(e) => setEditForm(p => ({ ...p, programme_id: parseInt(e.target.value) || undefined }))}
                 required
                 className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
               >
                 <option value="">— Select Programme —</option>
                 {programmeLoading ? (
                   <option disabled>Loading programmes...</option>
-                ) : (
-                  programmes.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.code} — {p.name}
-                    </option>
-                  ))
-                )}
+                ) : programmes.map(p => (
+                  <option key={p.id} value={p.id}>{p.code} — {p.name}</option>
+                ))}
               </select>
             </div>
 
-            {/* Primary Supervisor */}
             <div>
               <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Primary Supervisor <span className="text-red-500">*</span>
               </label>
               <select
                 value={editForm.supervisor_id || ''}
-                onChange={(e) =>
-                  setEditForm((p) => ({ ...p, supervisor_id: parseInt(e.target.value) || undefined }))
-                }
+                onChange={(e) => setEditForm(p => ({ ...p, supervisor_id: parseInt(e.target.value) || undefined }))}
                 required
                 className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
               >
                 <option value="">— Select Supervisor —</option>
                 {supervisorLoading ? (
                   <option disabled>Loading supervisors...</option>
-                ) : (
-                  supervisors.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name}
-                    </option>
-                  ))
-                )}
+                ) : supervisors.map(s => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
               </select>
             </div>
 
-            {/* Co-Supervisor */}
             <div>
               <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Co-Supervisor{' '}
-                <span className="font-normal text-gray-400">(optional)</span>
+                Co-Supervisor <span className="font-normal text-gray-400">(optional)</span>
               </label>
               <select
                 value={editForm.co_supervisor_id || ''}
-                onChange={(e) =>
-                  setEditForm((p) => ({
-                    ...p,
-                    co_supervisor_id: e.target.value ? parseInt(e.target.value) : null,
-                  }))
-                }
+                onChange={(e) => setEditForm(p => ({
+                  ...p,
+                  co_supervisor_id: e.target.value ? parseInt(e.target.value) : null,
+                }))}
                 className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
               >
                 <option value="">— No Co-Supervisor —</option>
                 {supervisorLoading ? (
                   <option disabled>Loading supervisors...</option>
-                ) : (
-                  supervisors
-                    .filter((s) => s.id !== editForm.supervisor_id)
-                    .map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.name}
-                      </option>
-                    ))
-                )}
+                ) : supervisors
+                    .filter(s => s.id !== editForm.supervisor_id)
+                    .map(s => (
+                      <option key={s.id} value={s.id}>{s.name}</option>
+                    ))}
               </select>
             </div>
 
-            {/* Status */}
             <div>
-              <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Candidate Status
-              </label>
+              <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Candidate Status</label>
               <select
                 value={editForm.status || ''}
-                onChange={(e) =>
-                  setEditForm((p) => ({ ...p, status: e.target.value as CandidateStatus }))
-                }
+                onChange={(e) => setEditForm(p => ({ ...p, status: e.target.value as CandidateStatus }))}
                 className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
               >
-                {(Object.entries(CANDIDATE_STATUS_LABELS) as [CandidateStatus, string][]).map(
-                  ([v, l]) => (
-                    <option key={v} value={v}>{l}</option>
-                  )
-                )}
+                {(Object.entries(CANDIDATE_STATUS_LABELS) as [CandidateStatus, string][]).map(([v, l]) => (
+                  <option key={v} value={v}>{l}</option>
+                ))}
               </select>
             </div>
 
-            {/* Actions */}
             <div className="flex gap-3 pt-2">
-              <button
-                type="button"
-                onClick={resetEditForm}
-                className="flex-1 rounded-lg border border-gray-300 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
-              >
+              <button type="button" onClick={resetEditForm}
+                className="flex-1 rounded-lg border border-gray-300 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">
                 Reset
               </button>
-              <button
-                type="submit"
-                disabled={editLoading}
-                className="flex-1 rounded-lg bg-emerald-600 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
-              >
+              <button type="submit" disabled={editLoading}
+                className="flex-1 rounded-lg bg-emerald-600 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50">
                 {editLoading ? 'Saving...' : 'Save Changes'}
               </button>
             </div>
-
           </form>
         </div>
       )}
-
     </div>
   );
 }
