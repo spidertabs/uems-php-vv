@@ -166,6 +166,7 @@ interface VivaRecord {
 interface CurrentUser {
   id: number;
   role: string;
+  email?: string;
 }
 
 // Tabs available depend on role
@@ -330,7 +331,9 @@ export default function CandidateDetailPage() {
         if (currentUser) {
           const userIdStr = String(currentUser.id);
           const me = unique.find(ex => 
-            String(ex.user_id) === userIdStr
+            String(ex.examiner_id) === userIdStr || 
+            (ex.user_id && String(ex.user_id) === userIdStr) ||
+            (ex.examiner_email && currentUser.email && ex.examiner_email.toLowerCase() === currentUser.email.toLowerCase())
           );
           
           if (me) {
