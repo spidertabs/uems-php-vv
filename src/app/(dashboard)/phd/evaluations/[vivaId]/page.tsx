@@ -461,9 +461,13 @@ export default function VivaEvaluationsPage() {
     Boolean(myExaminerRecord?.evaluation_submitted) ||
     evaluations.some(ev => String(ev.examiner_id) === String(currentUser?.id) && Boolean(ev.is_submitted));
 
-  const isHodOrAdmin = currentUser && ['admin', 'hod'].includes(currentUser.role);
-  // HOD is NOT an evaluator — they manage the process but don't evaluate
-  const isHod = currentUser?.role === 'hod';
+  // Role enum: lecturer | professor | external_examiner | hod | dean | exam_master | viva_coordinator | admin
+  const MANAGER_ROLES = ['admin', 'hod', 'exam_master', 'viva_coordinator', 'dean'];
+  const EVALUATOR_ONLY_ROLES = ['lecturer', 'professor', 'external_examiner'];
+
+  const isHodOrAdmin = currentUser && MANAGER_ROLES.includes(currentUser.role);
+  // HOD and other managers are NOT evaluators — they oversee the process
+  const isHod = currentUser ? !EVALUATOR_ONLY_ROLES.includes(currentUser.role) : false;
 
   if (loading) {
     return (
@@ -505,14 +509,15 @@ export default function VivaEvaluationsPage() {
         ← Back to Viva Detail
       </Link>
 
-      {/* HOD notice */}
+      {/* Manager notice (HOD, Dean, Exam Master, Viva Coordinator, Admin) */}
       {isHod && (
         <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-900/20">
           <span className="text-xl">👔</span>
           <div>
-            <p className="font-semibold text-amber-800 dark:text-amber-200">Head of Department View</p>
+            <p className="font-semibold text-amber-800 dark:text-amber-200">Management View</p>
             <p className="text-sm text-amber-700 dark:text-amber-300">
-              As HOD, you oversee this process but do not evaluate directly. You can view all evaluations and issue the official outcome once all examiners have submitted.
+              Your role ({currentUser?.role?.replace('_', ' ')}) has oversight of this process but is not an evaluating examiner.
+              You can view all evaluations and — if you are HOD, Exam Master, Viva Coordinator or Admin — issue the official outcome once all examiners have submitted.
             </p>
           </div>
         </div>

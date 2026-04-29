@@ -202,9 +202,11 @@ export default function CandidateDetailPage() {
     return `${(kb / 1024).toFixed(1)} MB`;
   };
 
-  // Role checks
-  const isHodOrAdmin = currentUser && ['admin', 'hod'].includes(currentUser.role);
-  const isEvaluatorOnly = currentUser && !['admin', 'hod'].includes(currentUser.role);
+  // Role enum: lecturer | professor | external_examiner | hod | dean | exam_master | viva_coordinator | admin
+  const MANAGER_ROLES = ['admin', 'hod', 'exam_master', 'viva_coordinator', 'dean'];
+  const EVALUATOR_ONLY_ROLES = ['lecturer', 'professor', 'external_examiner'];
+  const isHodOrAdmin = currentUser && MANAGER_ROLES.includes(currentUser.role);
+  const isEvaluatorOnly = currentUser && EVALUATOR_ONLY_ROLES.includes(currentUser.role);
 
   if (loading) {
     return (

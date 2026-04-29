@@ -48,12 +48,15 @@ export default function RegisterCandidatePage() {
     fetch('/api/auth/me')
       .then(r => r.json())
       .then(d => {
-        const role = d.user?.role;
-        if (!role || !['admin', 'hod'].includes(role)) {
-          setAuthorized(false);
-        } else {
-          setAuthorized(true);
-        }
+    // Only HOD, admin, exam_master, viva_coordinator can register candidates
+    // Roles: lecturer | professor | external_examiner | hod | dean | exam_master | viva_coordinator | admin
+    const ALLOWED = ['admin', 'hod', 'exam_master', 'viva_coordinator'];
+    const role = d.user?.role;
+    if (!role || !ALLOWED.includes(role)) {
+      setAuthorized(false);
+    } else {
+      setAuthorized(true);
+    }
       })
       .catch(() => setAuthorized(false));
   }, []);
@@ -84,7 +87,7 @@ export default function RegisterCandidatePage() {
         <div className="text-6xl mb-4">🚫</div>
         <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Access Restricted</h2>
         <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-sm">
-          Only the Head of Department or an Administrator can register new PhD candidates.
+          Only the Head of Department, Viva Coordinator, Exam Master, or Administrator can register new PhD candidates.
         </p>
         <Link href="/phd/candidates" className="rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-emerald-700">
           ← Back to Candidates
@@ -147,7 +150,8 @@ export default function RegisterCandidatePage() {
       <div>
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">👨‍🎓 Register PhD Candidate</h1>
         <p className="mt-1 text-gray-600 dark:text-gray-400">
-          Register an existing student as a PhD candidate. <span className="font-medium text-amber-600 dark:text-amber-400">(HOD / Admin only)</span>
+          Register an existing student as a PhD candidate.{' '}
+        <span className="font-medium text-amber-600 dark:text-amber-400">(HOD / Viva Coordinator / Admin only)</span>
         </p>
       </div>
 

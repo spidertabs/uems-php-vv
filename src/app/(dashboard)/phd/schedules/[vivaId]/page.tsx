@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // src/app/(dashboard)/phd/schedules/[vivaId]/page.tsx
 'use client';
@@ -79,8 +80,13 @@ export default function VivaDetailPage() {
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
-  // Role checks
-  const isHodOrAdmin = currentUser && ['admin', 'hod'].includes(currentUser.role);
+  // Role enum: lecturer | professor | external_examiner | hod | dean | exam_master | viva_coordinator | admin
+  const MANAGER_ROLES = ['admin', 'hod', 'exam_master', 'viva_coordinator'];
+  const EVALUATOR_ROLES = ['lecturer', 'professor', 'external_examiner'];
+
+  // HOD, admin, exam_master, viva_coordinator can manage (schedule, assign examiners, complete, postpone, recommend)
+  const isHodOrAdmin = currentUser && MANAGER_ROLES.includes(currentUser.role);
+  // Examiners assigned to this viva can go to their evaluation
   const isExaminerOnPanel = viva && currentUser &&
     (viva.examiners.some(e => e.examiner_id === currentUser.id) ||
      (viva as any).supervisors?.some((s: any) => s.supervisor_id === currentUser.id));
@@ -304,7 +310,7 @@ export default function VivaDetailPage() {
                 <span className="text-2xl">📋</span> Configure Examination Panel
               </h3>
               <p className="mb-4 text-sm text-gray-500 dark:text-gray-400">
-                Note: The HOD cannot be assigned as an examiner. Select from eligible lecturers, professors, and external examiners.
+                Note: HOD, Dean, Exam Master, Viva Coordinator, and Admin roles cannot be assigned as examiners. Select from eligible lecturers, professors, and external examiners.
               </p>
 
               <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
