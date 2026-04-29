@@ -45,6 +45,7 @@ async function buildVivaDetail(vivaId: number): Promise<any | null> {
     viva.examiners = await query<any[]>(
       `SELECT ve.id, ve.viva_id, ve.examiner_id, ve.role,
               ve.confirmed, ve.confirmed_at, ve.notified_at,
+              u.user_id,
               CONCAT(u.first_name, ' ', u.last_name) AS examiner_name,
               u.email AS examiner_email
        FROM viva_examiners ve

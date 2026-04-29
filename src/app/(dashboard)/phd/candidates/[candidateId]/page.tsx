@@ -17,6 +17,7 @@ import {
   type CandidateStatus,
   type VivaOutcome,
   type ExaminerRole,
+  type VivaWithFullDetails,
 } from '@/types/phd';
 
 // ── Evaluation Types ────────────────────────────────────────────────────────
@@ -229,6 +230,21 @@ export default function CandidateDetailPage() {
   const [evalLoading, setEvalLoading] = useState(false);
   const [evaluationSummary, setEvaluationSummary] = useState<any>(null);
   const [myExaminerRecord, setMyExaminerRecord] = useState<ExaminerRecord | null>(null);
+
+  // Schedule Management States (Ported from Schedules page)
+  const [vivaDetail, setVivaDetail] = useState<VivaWithFullDetails | null>(null);
+  const [eligibleStaff, setEligibleStaff] = useState<any[]>([]);
+  const [showAssignForm, setShowAssignForm] = useState(false);
+  const [assignLoading, setAssignLoading] = useState(false);
+  const [assignError, setAssignError] = useState('');
+  const [showPostpone, setShowPostpone] = useState(false);
+  const [postponeReason, setPostponeReason] = useState('');
+  const [postponeLoading, setPostponeLoading] = useState(false);
+  const [recForm, setRecForm] = useState<{ outcome: VivaOutcome | ''; correction_deadline: string; final_comments: string }>({
+    outcome: '', correction_deadline: '', final_comments: '',
+  });
+  const [recLoading, setRecLoading] = useState(false);
+  const [recError, setRecError] = useState('');
   const [draft, setDraft] = useState<EvaluationDraft>(EMPTY_DRAFT);
   const [saving, setSaving] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -249,10 +265,20 @@ export default function CandidateDetailPage() {
   }, [activeTab, selectedVivaId, vivas]);
 
   useEffect(() => {
-    if (activeTab === 'evaluation' && selectedVivaId) {
-      fetchEvaluationData(selectedVivaId);
+    if (selectedVivaId) {
+      if (activeTab === 'evaluation' || activeTab === 'viva') {
+        fetchEvaluationData(selectedVivaId);
+      }
     }
   }, [activeTab, selectedVivaId]);
+
+  useEffect(() => {
+    if ((activeTab === 'viva' || showAssignForm) && eligibleStaff.length === 0) {
+      fetch('/api/phd/eligible-examiners')
+        .then(r => r.json())
+        .then(d => setEligibleStaff(d.staff || []));
+    }
+  }, [activeTab, showAssignForm, eligibleStaff.length]);
 
   const fetchEvaluationData = async (vId: number) => {
     setEvalLoading(true);
@@ -262,6 +288,7 @@ export default function CandidateDetailPage() {
       if (res.ok) {
         const data = await res.json();
         const v = data.viva ?? data.viva_details ?? data.data ?? data.schedule ?? data;
+        setVivaDetail(v);
         setEvaluationSummary(v.evaluation_summary || null);
         
         const allEvaluators: ExaminerRecord[] = [
@@ -296,13 +323,19 @@ export default function CandidateDetailPage() {
         setExaminers(unique);
 
         if (currentUser) {
-          let me = unique.find(ex => String(ex.examiner_id) === String(currentUser.id) || String(ex.user_id) === String(currentUser.id));
-          const myEval = v.evaluations?.find((ev: any) => String(ev.examiner_id) === String(currentUser.id));
+          const userIdStr = String(currentUser.id);
+          let me = unique.find(ex => 
+            String(ex.examiner_id) === userIdStr || 
+            String(ex.user_id) === userIdStr
+          );
+          
+          const myEval = v.evaluations?.find((ev: any) => String(ev.examiner_id) === userIdStr);
           if (myEval) {
             prefillDraft(myEval);
             if (!me) {
               me = {
                 examiner_id: currentUser.id,
+                user_id: currentUser.id,
                 examiner_name: myEval.examiner_name || 'Your Evaluation',
                 examiner_email: '',
                 role: (myEval.examiner_role as any) || 'supervisor',
@@ -322,6 +355,89 @@ export default function CandidateDetailPage() {
     }
   };
 
+  // Schedule Management Actions
+  const handleConfirmExaminer = async (exId: number) => {
+    if (!selectedVivaId) return;
+    await fetch(`/api/phd/schedules/${selectedVivaId}/examiners/${exId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ confirmed: true }),
+    });
+    fetchEvaluationData(selectedVivaId);
+  };
+
+  const handleRemoveExaminer = async (exId: number) => {
+    if (!selectedVivaId || !confirm('Remove this examiner?')) return;
+    await fetch(`/api/phd/schedules/${selectedVivaId}/examiners/${exId}`, { method: 'DELETE' });
+    fetchEvaluationData(selectedVivaId);
+  };
+
+  const handleAssignManually = async (exId: number, role: ExaminerRole, slot?: number) => {
+    if (!selectedVivaId) return;
+    setAssignError('');
+    setAssignLoading(true);
+    try {
+      const res = await fetch(`/api/phd/schedules/${selectedVivaId}/examiners`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ examiner_id: exId, role, panel_slot: slot }),
+      });
+      if (!res.ok) {
+        const d = await res.json();
+        setAssignError(d.error || 'Failed to assign');
+      } else {
+        fetchEvaluationData(selectedVivaId);
+      }
+    } finally {
+      setAssignLoading(false);
+    }
+  };
+
+  const handleCompleteViva = async () => {
+    if (!selectedVivaId || !confirm('Mark this viva as completed?')) return;
+    await fetch(`/api/phd/schedules/${selectedVivaId}/complete`, { method: 'POST' });
+    fetchEvaluationData(selectedVivaId);
+  };
+
+  const handlePostponeViva = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedVivaId) return;
+    setPostponeLoading(true);
+    await fetch(`/api/phd/schedules/${selectedVivaId}/postpone`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ postponement_reason: postponeReason }),
+    });
+    setShowPostpone(false);
+    setPostponeLoading(false);
+    fetchEvaluationData(selectedVivaId);
+  };
+
+  const handleRecommendation = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedVivaId) return;
+    setRecError('');
+    if (!recForm.outcome) { setRecError('Please select an outcome.'); return; }
+    if (recForm.outcome !== 'pass' && !recForm.correction_deadline) {
+      setRecError('A correction deadline is required.'); return;
+    }
+    setRecLoading(true);
+    try {
+      const res = await fetch(`/api/phd/schedules/${selectedVivaId}/recommendation`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(recForm),
+      });
+      if (!res.ok) {
+        const d = await res.json();
+        setRecError(d.error || 'Failed');
+      } else {
+        fetchEvaluationData(selectedVivaId);
+      }
+    } finally {
+      setRecLoading(false);
+    }
+  };
   const prefillDraft = (ev: SubmittedEvaluation) => {
     setDraft({
       id: ev.id ?? ev.evaluation_id,
@@ -518,9 +634,6 @@ export default function CandidateDetailPage() {
     return `${(kb / 1024).toFixed(1)} MB`;
   };
 
-  // Role enum: lecturer | professor | external_examiner | hod | dean | exam_master | viva_coordinator | admin
-  const MANAGER_ROLES = ['admin', 'hod', 'exam_master', 'viva_coordinator', 'dean'];
-  const EVALUATOR_ONLY_ROLES = ['lecturer', 'professor', 'external_examiner'];
   const isHodOrAdmin = currentUser && MANAGER_ROLES.includes(currentUser.role);
   const isEvaluatorOnly = currentUser && EVALUATOR_ONLY_ROLES.includes(currentUser.role);
 
@@ -729,69 +842,296 @@ export default function CandidateDetailPage() {
         </div>
       )}
 
-      {/* ── Tab: Viva History ── */}
+      {/* ── Tab: Viva (Integrated Management) ── */}
       {activeTab === 'viva' && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Viva History</h2>
-            {/* Only HOD/Admin can schedule vivas */}
-            {isHodOrAdmin && (
-              <Link
-                href={`/phd/schedules/new?candidate_id=${candidateId}`}
-                className="rounded-lg bg-emerald-600 px-4 py-2 text-sm text-white transition-colors hover:bg-emerald-700"
-              >
-                + Schedule Viva
-              </Link>
-            )}
-          </div>
-
-          {vivas.length === 0 ? (
-            <div className="rounded-xl border border-gray-200 bg-white py-12 text-center shadow-md dark:border-gray-700 dark:bg-gray-800">
-              <div className="text-5xl">📅</div>
-              <p className="mt-3 text-gray-600 dark:text-gray-400">No viva scheduled yet.</p>
+          {!selectedVivaId ? (
+            // Viva History List
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Viva History</h2>
+                {isHodOrAdmin && (
+                  <Link
+                    href={`/phd/schedules/new?candidate_id=${candidateId}`}
+                    className="rounded-lg bg-emerald-600 px-4 py-2 text-sm text-white transition-colors hover:bg-emerald-700"
+                  >
+                    + Schedule Viva
+                  </Link>
+                )}
+              </div>
+              {vivas.length === 0 ? (
+                <div className="rounded-xl border border-gray-200 bg-white py-12 text-center shadow-md dark:border-gray-700 dark:bg-gray-800">
+                  <div className="text-5xl">📅</div>
+                  <p className="mt-3 text-gray-600 dark:text-gray-400">No viva scheduled yet.</p>
+                </div>
+              ) : (
+                <div className="grid gap-4 md:grid-cols-2">
+                  {vivas.map((v) => (
+                    <div
+                      key={v.viva_id}
+                      onClick={() => setSelectedVivaId(v.viva_id)}
+                      className="cursor-pointer group relative rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition-all hover:border-emerald-300 hover:shadow-md dark:border-gray-700 dark:bg-gray-800"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${VIVA_STATUS_COLORS[v.viva_status as keyof typeof VIVA_STATUS_COLORS]}`}>
+                          {v.viva_status.replace('_', ' ')}
+                        </span>
+                        {v.outcome && (
+                          <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${OUTCOME_COLORS[v.outcome as keyof typeof OUTCOME_COLORS]}`}>
+                            {OUTCOME_LABELS[v.outcome as keyof typeof OUTCOME_LABELS]}
+                          </span>
+                        )}
+                      </div>
+                      <div className="mt-4">
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white">📅 {formatDate(v.scheduled_date)}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">⏰ {v.scheduled_time.slice(0, 5)} · 📍 {v.venue}</p>
+                      </div>
+                      <div className="mt-4 flex items-center gap-2 text-xs font-medium text-emerald-600 opacity-0 transition-opacity group-hover:opacity-100 dark:text-emerald-400">
+                        View Details →
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           ) : (
-            <div className="space-y-3">
-              {vivas.map((v) => (
-                <div key={v.viva_id} className="flex items-center justify-between rounded-xl border border-gray-200 bg-white p-5 shadow-md dark:border-gray-700 dark:bg-gray-800">
-                  <div>
-                    <div className="flex items-center gap-3">
-                      <span className={`rounded-full px-3 py-1 text-xs font-medium ${VIVA_STATUS_COLORS[v.viva_status as keyof typeof VIVA_STATUS_COLORS]}`}>
-                        {v.viva_status.replace('_', ' ').toUpperCase()}
+            // Viva Detail View (Integrated)
+            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2">
+              <button 
+                onClick={() => setSelectedVivaId(null)}
+                className="flex items-center gap-2 text-sm text-gray-500 hover:text-emerald-600 dark:text-gray-400"
+              >
+                ← Back to History
+              </button>
+              
+              {!vivaDetail || evalLoading ? (
+                 <div className="flex h-64 items-center justify-center rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+                   <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-emerald-600" />
+                 </div>
+              ) : (
+                <div className="space-y-6">
+                  {/* Summary & Actions Bar */}
+                  <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
+                    <div className="flex items-center gap-4">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-2xl dark:bg-emerald-900">
+                        📅
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                          Viva on {formatDate(vivaDetail.scheduled_date)}
+                        </h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          {vivaDetail.scheduled_time.slice(0, 5)} · {vivaDetail.venue}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <span className={`rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider ${VIVA_STATUS_COLORS[vivaDetail.status as keyof typeof VIVA_STATUS_COLORS]}`}>
+                        {vivaDetail.status.replace('_', ' ').toUpperCase()}
                       </span>
-                      {v.outcome && (
-                        <span className={`rounded-full px-3 py-1 text-xs font-medium ${OUTCOME_COLORS[v.outcome as keyof typeof OUTCOME_COLORS]}`}>
-                          {OUTCOME_LABELS[v.outcome as keyof typeof OUTCOME_LABELS]}
+                      {vivaDetail.recommendation?.outcome && (
+                        <span className={`rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider ${OUTCOME_COLORS[vivaDetail.recommendation.outcome as keyof typeof OUTCOME_COLORS]}`}>
+                          {OUTCOME_LABELS[vivaDetail.recommendation.outcome as keyof typeof OUTCOME_LABELS]}
                         </span>
                       )}
                     </div>
-                    <p className="mt-2 text-sm text-gray-700 dark:text-gray-300">
-                      📅 {formatDate(v.scheduled_date)} · ⏰ {v.scheduled_time.slice(0, 5)}
-                    </p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">📍 {v.venue}</p>
                   </div>
-                  <div className="flex gap-2">
-                    {/* Evaluators can go directly to their evaluation */}
-                    {isEvaluatorOnly && (
-                      <button
-                        onClick={() => {
-                          setSelectedVivaId(v.viva_id);
-                          setActiveTab('evaluation');
-                        }}
-                        className="rounded-lg bg-indigo-100 px-4 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-200 dark:bg-indigo-900 dark:text-indigo-200"
+
+                  {/* Integrated Content Sections */}
+                  <div className="grid gap-6 lg:grid-cols-3">
+                    {/* Panel Section */}
+                    <div className="lg:col-span-2 space-y-6">
+                      <div className="rounded-xl border border-gray-200 bg-white shadow-md dark:border-gray-700 dark:bg-gray-800">
+                        <div className="flex items-center justify-between border-b border-gray-100 p-5 dark:border-gray-700">
+                          <h4 className="font-bold text-gray-900 dark:text-white">Examination Panel</h4>
+                          {isHodOrAdmin && vivaDetail.status === 'scheduled' && (
+                             <button onClick={() => setShowAssignForm(!showAssignForm)} className="text-sm font-medium text-emerald-600 hover:underline">
+                               {showAssignForm ? 'Close' : '+ Assign Examiner'}
+                             </button>
+                          )}
+                        </div>
+                        
+                        {showAssignForm && (
+                          <div className="border-b border-gray-100 bg-gray-50 p-5 dark:border-gray-700 dark:bg-gray-900/40">
+                             <p className="mb-3 text-xs font-semibold text-gray-400 uppercase tracking-widest">Available Staff</p>
+                             <div className="max-h-64 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
+                               {eligibleStaff.map(s => (
+                                 <div key={s.id} className="flex items-center justify-between rounded-lg bg-white p-3 shadow-sm dark:bg-gray-800">
+                                   <div>
+                                     <p className="text-sm font-medium text-gray-900 dark:text-white">{s.first_name} {s.last_name}</p>
+                                     <p className="text-[10px] text-gray-500">{s.email}</p>
+                                   </div>
+                                   <div className="flex gap-1">
+                                     {['internal_examiner', 'external_examiner', 'chairperson'].map(role => (
+                                       <button
+                                         key={role}
+                                         onClick={() => handleAssignManually(s.id, role as any)}
+                                         className="rounded px-2 py-1 text-[10px] font-bold uppercase bg-gray-100 text-gray-600 hover:bg-emerald-100 hover:text-emerald-700 dark:bg-gray-700 dark:text-gray-300"
+                                       >
+                                         + {role.split('_')[0]}
+                                       </button>
+                                     ))}
+                                   </div>
+                                 </div>
+                               ))}
+                             </div>
+                          </div>
+                        )}
+
+                        <div className="divide-y divide-gray-100 dark:divide-gray-700">
+                          {examiners.map(ex => (
+                            <div key={ex.examiner_id} className="flex items-center justify-between p-5">
+                              <div className="flex items-center gap-4">
+                                <div className="h-10 w-10 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600 font-bold dark:bg-emerald-900/30">
+                                  {ex.examiner_name.charAt(0)}
+                                </div>
+                                <div>
+                                  <p className="font-medium text-gray-900 dark:text-white">{ex.examiner_name}</p>
+                                  <div className="flex items-center gap-2 text-xs text-gray-500">
+                                    <span className="capitalize">{EXAMINER_ROLE_LABELS[ex.role] || ex.role.replace('_', ' ')}</span>
+                                    <span>•</span>
+                                    {ex.confirmed ? (
+                                      <span className="text-emerald-600 font-medium">Confirmed ✓</span>
+                                    ) : (
+                                      <span className="text-amber-600">Pending Confirmation</span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                {ex.evaluation_submitted ? (
+                                  <span className="rounded-full bg-emerald-100 px-2 py-1 text-[10px] font-bold text-emerald-700 uppercase dark:bg-emerald-900/40">Evaluation Submitted</span>
+                                ) : (
+                                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-2 py-1 border border-gray-100 rounded-full">Pending Eval</span>
+                                )}
+                                {isHodOrAdmin && vivaDetail.status === 'scheduled' && (
+                                  <button onClick={() => handleRemoveExaminer(ex.examiner_id)} className="text-red-500 hover:text-red-700 p-1 rounded-lg hover:bg-red-50">
+                                    🗑️
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Final Recommendation */}
+                      {isHodOrAdmin && (vivaDetail.status === 'completed' || vivaDetail.status === 'scheduled') && (
+                        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
+                          <h4 className="mb-4 font-bold text-gray-900 dark:text-white">🏁 Final Recommendation</h4>
+                          {vivaDetail.recommendation?.outcome ? (
+                            <div className="rounded-lg bg-emerald-50 p-4 dark:bg-emerald-900/10">
+                              <p className="text-sm font-bold text-emerald-800 dark:text-emerald-300">
+                                Decision: {OUTCOME_LABELS[vivaDetail.recommendation.outcome as keyof typeof OUTCOME_LABELS]}
+                              </p>
+                              {vivaDetail.recommendation.correction_deadline && (
+                                <p className="text-xs text-emerald-600 mt-1">Correction Deadline: {formatDate(vivaDetail.recommendation.correction_deadline)}</p>
+                              )}
+                              {vivaDetail.recommendation.final_comments && (
+                                <p className="mt-2 text-sm italic text-gray-600 dark:text-gray-400">&ldquo;{vivaDetail.recommendation.final_comments}&rdquo;</p>
+                              )}
+                            </div>
+                          ) : (
+                            <form onSubmit={handleRecommendation} className="space-y-4">
+                              <div className="grid gap-4 sm:grid-cols-2">
+                                <div>
+                                  <label className="mb-1 block text-xs font-bold text-gray-400 uppercase">Outcome</label>
+                                  <select
+                                    value={recForm.outcome}
+                                    onChange={(e) => setRecForm(p => ({ ...p, outcome: e.target.value as any }))}
+                                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                  >
+                                    <option value="">Select Outcome...</option>
+                                    {Object.entries(OUTCOME_LABELS).map(([k, v]) => (
+                                      <option key={k} value={k}>{v}</option>
+                                    ))}
+                                  </select>
+                                </div>
+                                {recForm.outcome && recForm.outcome !== 'pass' && (
+                                  <div>
+                                    <label className="mb-1 block text-xs font-bold text-gray-400 uppercase">Correction Deadline</label>
+                                    <input
+                                      type="date"
+                                      value={recForm.correction_deadline}
+                                      onChange={(e) => setRecForm(p => ({ ...p, correction_deadline: e.target.value }))}
+                                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                    />
+                                  </div>
+                                )}
+                              </div>
+                              <div>
+                                <label className="mb-1 block text-xs font-bold text-gray-400 uppercase">Consensus Remarks</label>
+                                <textarea
+                                  value={recForm.final_comments}
+                                  onChange={(e) => setRecForm(p => ({ ...p, final_comments: e.target.value }))}
+                                  rows={2}
+                                  placeholder="Summarize the panel agreement..."
+                                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                />
+                              </div>
+                              {recError && <p className="text-xs text-red-500 font-medium">{recError}</p>}
+                              <button
+                                type="submit"
+                                disabled={recLoading}
+                                className="w-full rounded-lg bg-emerald-600 py-2.5 text-sm font-bold text-white shadow-lg shadow-emerald-500/20 hover:bg-emerald-700 disabled:opacity-50"
+                              >
+                                {recLoading ? 'Processing...' : '💾 Save & Finalize Viva'}
+                              </button>
+                            </form>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Quick Access Column */}
+                    <div className="space-y-6">
+                      <button 
+                        onClick={() => setActiveTab('evaluation')}
+                        className="w-full rounded-xl bg-gradient-to-br from-indigo-600 to-indigo-700 p-6 text-left text-white shadow-lg transition-transform hover:scale-[1.02] active:scale-95"
                       >
-                        📝 My Evaluation
+                        <p className="text-sm font-medium opacity-90">Ready to score?</p>
+                        <h4 className="text-xl font-bold">Go to Evaluation 📝</h4>
+                        <p className="mt-2 text-xs opacity-75">Fill out or view individual scores for this viva session.</p>
                       </button>
-                    )}
-                    <Link
-                      href={`/phd/schedules/${v.viva_id}`}
-                      className="rounded-lg bg-emerald-100 px-4 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900 dark:text-emerald-200"
-                    >
-                      {v.outcome ? 'View Report' : 'View Viva'}
-                    </Link>
+
+                      {isHodOrAdmin && vivaDetail.status === 'scheduled' && (
+                        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-md dark:border-gray-700 dark:bg-gray-800">
+                          <h4 className="mb-4 text-xs font-bold text-gray-400 uppercase">Viva Management</h4>
+                          <div className="space-y-2">
+                             <button onClick={handleCompleteViva} className="w-full rounded-lg bg-emerald-50 py-2 text-sm font-bold text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-400">
+                               ✅ Mark as Conducted
+                             </button>
+                             <button onClick={() => setShowPostpone(true)} className="w-full rounded-lg bg-amber-50 py-2 text-sm font-bold text-amber-700 hover:bg-amber-100 dark:bg-amber-900/20 dark:text-amber-400">
+                               ⏳ Postpone Viva
+                             </button>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {showPostpone && (
+                        <div className="rounded-xl border border-amber-200 bg-amber-50 p-5 dark:border-amber-900/50 dark:bg-amber-900/20">
+                          <h4 className="mb-2 text-sm font-bold text-amber-800 dark:text-amber-300 italic underline tracking-widest text-center uppercase">Postponement Reason</h4>
+                          <form onSubmit={handlePostponeViva} className="space-y-3">
+                            <textarea
+                              value={postponeReason}
+                              onChange={(e) => setPostponeReason(e.target.value)}
+                              required
+                              rows={2}
+                              className="w-full rounded-lg border border-amber-200 px-3 py-2 text-sm focus:outline-none dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                            />
+                            <div className="flex gap-2">
+                              <button type="button" onClick={() => setShowPostpone(false)} className="flex-1 text-xs text-gray-500">Cancel</button>
+                              <button type="submit" disabled={postponeLoading} className="flex-1 rounded-lg bg-amber-600 py-1.5 text-xs font-bold text-white disabled:opacity-50">
+                                {postponeLoading ? 'Savng...' : 'Confirm'}
+                              </button>
+                            </div>
+                          </form>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
-              ))}
+              )}
             </div>
           )}
         </div>
