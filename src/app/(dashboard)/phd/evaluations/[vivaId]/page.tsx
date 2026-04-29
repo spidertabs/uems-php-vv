@@ -93,6 +93,10 @@ const EMPTY_DRAFT: EvaluationDraft = {
 
 type Tab = 'my_evaluation' | 'all_evaluations' | 'examiners' | 'outcome';
 
+// Role constants — hoisted to module level so fetchAll can reference them
+const MANAGER_ROLES      = ['admin', 'hod', 'exam_master', 'viva_coordinator', 'dean'];
+const EVALUATOR_ONLY_ROLES = ['lecturer', 'professor', 'external_examiner'];
+
 interface CurrentUser {
   id: number;
   role: string;
@@ -320,9 +324,12 @@ export default function VivaEvaluationsPage() {
 
           if (me) {
             setMyExaminerRecord(me);
+          }
+
+          // Evaluator roles always land on My Evaluation; managers land on All Evaluations
+          if (userRole && EVALUATOR_ONLY_ROLES.includes(userRole)) {
             setActiveTab('my_evaluation');
           } else {
-            // HOD/Admin with no evaluator role — default to all_evaluations
             setActiveTab('all_evaluations');
           }
         }
@@ -462,11 +469,8 @@ export default function VivaEvaluationsPage() {
     evaluations.some(ev => String(ev.examiner_id) === String(currentUser?.id) && Boolean(ev.is_submitted));
 
   // Role enum: lecturer | professor | external_examiner | hod | dean | exam_master | viva_coordinator | admin
-  const MANAGER_ROLES = ['admin', 'hod', 'exam_master', 'viva_coordinator', 'dean'];
-  const EVALUATOR_ONLY_ROLES = ['lecturer', 'professor', 'external_examiner'];
-
   const isHodOrAdmin = currentUser && MANAGER_ROLES.includes(currentUser.role);
-  // HOD and other managers are NOT evaluators — they oversee the process
+  // Managers are NOT evaluators — they oversee the process
   const isHod = currentUser ? !EVALUATOR_ONLY_ROLES.includes(currentUser.role) : false;
 
   if (loading) {
@@ -488,20 +492,28 @@ export default function VivaEvaluationsPage() {
     );
   }
 
-  // HOD blocked from evaluation tab
-  const tabs: { key: Tab; label: string }[] = [
-    // My Evaluation: only for non-HOD examiners assigned to this viva
-    ...(myExaminerRecord && !isHod
-      ? [{ key: 'my_evaluation' as Tab, label: `📝 My Evaluation${locked ? ' ✅' : ''}` }]
-      : []),
-    { key: 'all_evaluations', label: `📊 All Evaluations (${submitted.length}/${examiners.length || '—'})` },
-    { key: 'examiners',       label: `👥 Examiners (${examiners.filter(e => e.evaluation_submitted).length}/${examiners.length})` },
-    // Outcome: HOD and Admin can issue; all can view
-    { key: 'outcome', label: '🏆 Outcome' },
-  ];
-
   // My evaluation as read-only data (for self-reflection section)
   const mySubmittedEval = submitted.find(ev => String(ev.examiner_id) === String(currentUser?.id));
+
+  // ── Tab visibility rules ──────────────────────────────────────────────────
+  // Evaluators (lecturer/professor/external_examiner):
+  //   • Only see "My Evaluation" tab — they cannot see other examiners' evaluations
+  // Managers (hod/admin/exam_master/viva_coordinator/dean):
+  //   • See "All Evaluations", "Examiners", "Outcome" — they do NOT evaluate
+
+  const isEvaluatorRole = currentUser && EVALUATOR_ONLY_ROLES.includes(currentUser.role);
+
+  const tabs: { key: Tab; label: string }[] = isEvaluatorRole
+    ? [
+        // Evaluators only see their own evaluation tab
+        { key: 'my_evaluation', label: `📝 My Evaluation${locked ? ' ✅' : ''}` },
+      ]
+    : [
+        // Managers see everything except My Evaluation
+        { key: 'all_evaluations', label: `📊 All Evaluations (${submitted.length}/${examiners.length || '—'})` },
+        { key: 'examiners',       label: `👥 Examiners (${examiners.filter(e => e.evaluation_submitted).length}/${examiners.length})` },
+        { key: 'outcome',         label: '🏆 Outcome' },
+      ];
 
   return (
     <div className="space-y-6 lg:pl-64">
@@ -577,8 +589,8 @@ export default function VivaEvaluationsPage() {
         </div>
       </div>
 
-      {/* ── Tab: My Evaluation ── */}
-      {activeTab === 'my_evaluation' && myExaminerRecord && !isHod && (
+      {/* ── Tab: My Evaluation (evaluator roles only) ── */}
+      {activeTab === 'my_evaluation' && isEvaluatorRole && (
         <div className="space-y-5">
           {locked ? (
             /* ── POST-SUBMISSION: Replace form with read-only evaluation + self-reflection ── */
@@ -791,8 +803,8 @@ export default function VivaEvaluationsPage() {
         </div>
       )}
 
-      {/* ── Tab: All Evaluations ── */}
-      {activeTab === 'all_evaluations' && (
+      {/* ── Tab: All Evaluations (managers only: HOD, Admin, Exam Master, Viva Coordinator, Dean) ── */}
+      {activeTab === 'all_evaluations' && !isEvaluatorRole && (
         <div className="space-y-4">
           {pendingExaminers.length > 0 && (
             <div className="flex items-start gap-3 rounded-xl border border-orange-200 bg-orange-50 p-4 dark:border-orange-800 dark:bg-orange-900/20">
@@ -823,8 +835,8 @@ export default function VivaEvaluationsPage() {
         </div>
       )}
 
-      {/* ── Tab: Examiners ── */}
-      {activeTab === 'examiners' && (
+      {/* ── Tab: Examiners (managers only) ── */}
+      {activeTab === 'examiners' && !isEvaluatorRole && (
         <div className="rounded-xl border border-gray-200 bg-white shadow-md dark:border-gray-700 dark:bg-gray-800 overflow-hidden">
           {examiners.length === 0 ? (
             <div className="py-14 text-center">
@@ -875,8 +887,8 @@ export default function VivaEvaluationsPage() {
         </div>
       )}
 
-      {/* ── Tab: Outcome ── */}
-      {activeTab === 'outcome' && (
+      {/* ── Tab: Outcome (managers only) ── */}
+      {activeTab === 'outcome' && !isEvaluatorRole && (
         <div className="space-y-4">
           {viva.outcome ? (
             <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
