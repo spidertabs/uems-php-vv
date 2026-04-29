@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 // src/app/(dashboard)/phd/schedules/[vivaId]/page.tsx
 'use client';
 
