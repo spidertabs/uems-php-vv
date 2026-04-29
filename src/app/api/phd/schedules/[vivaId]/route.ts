@@ -43,9 +43,9 @@ async function buildVivaDetail(vivaId: number): Promise<any | null> {
   // ② Examiners panel
   try {
     viva.examiners = await query<any[]>(
-      `SELECT ve.id, ve.viva_id, ve.examiner_id, ve.role, 
-              ve.panel_slot, ve.confirmed, ve.confirmed_at,
-              u.first_name, u.last_name, u.email
+      `SELECT ve.*, 
+              CONCAT(u.first_name, ' ', u.last_name) AS examiner_name,
+              u.email AS examiner_email
        FROM viva_examiners ve
        LEFT JOIN staff u ON ve.examiner_id = u.id
        WHERE ve.viva_id = ?
@@ -57,21 +57,17 @@ async function buildVivaDetail(vivaId: number): Promise<any | null> {
     viva.examiners = [];
   }
 
-  // ③ Evaluations (one per examiner, joined with panel role)
+  // ③ Evaluations
   try {
     viva.evaluations = await query<any[]>(
-      `SELECT ev.id, ev.viva_id, ev.examiner_id,
-              ev.originality_score, ev.methodology_score,
-              ev.presentation_score, ev.literature_score, ev.overall_score,
-              ev.strengths, ev.weaknesses, ev.recommended_corrections,
-              ev.general_comments, ev.is_submitted, ev.submitted_at,
+      `SELECT ev.*,
               CONCAT(u.first_name, ' ', u.last_name) AS examiner_name,
-              COALESCE(ve.role, 'supervisor') AS examiner_panel_role
+              ve.role AS examiner_panel_role
        FROM viva_evaluations ev
        LEFT JOIN staff u ON ev.examiner_id = u.id
-       LEFT JOIN viva_examiners ve ON ve.viva_id = ev.viva_id AND ve.examiner_id = ev.examiner_id
+       LEFT JOIN viva_examiners ve ON (ve.viva_id = ev.viva_id AND ve.examiner_id = ev.examiner_id)
        WHERE ev.viva_id = ?
-       ORDER BY ev.id`,
+       ORDER BY ev.submitted_at DESC NULLS LAST, ev.id DESC`,
       [vivaId]
     );
   } catch (err) {
