@@ -229,6 +229,7 @@ export default function CandidateDetailPage() {
   const [evaluations, setEvaluations] = useState<SubmittedEvaluation[]>([]);
   const [examiners, setExaminers] = useState<ExaminerRecord[]>([]);
   const [evalLoading, setEvalLoading] = useState(false);
+  const [evalError, setEvalError] = useState('');
   const [evaluationSummary, setEvaluationSummary] = useState<any>(null);
   const [myExaminerRecord, setMyExaminerRecord] = useState<ExaminerRecord | null>(null);
 
@@ -257,13 +258,20 @@ export default function CandidateDetailPage() {
     if (tabParam && ['thesis', 'viva', 'evaluation', 'edit'].includes(tabParam)) {
       setActiveTab(tabParam);
     }
+    const vId = searchParams.get('vivaId');
+    if (vId) setSelectedVivaId(parseInt(vId));
   }, [searchParams]);
 
   useEffect(() => {
+    // Default to first viva if on evaluation tab and none selected
     if (activeTab === 'evaluation' && !selectedVivaId && vivas.length > 0) {
       setSelectedVivaId(vivas[0].viva_id);
     }
-  }, [activeTab, selectedVivaId, vivas]);
+    // Reset if switching candidates and ID no longer exists in history
+    if (selectedVivaId && vivas.length > 0 && !vivas.some(v => v.viva_id === selectedVivaId)) {
+      setSelectedVivaId(vivas[0].viva_id);
+    }
+  }, [activeTab, selectedVivaId, vivas, candidateId]);
 
   useEffect(() => {
     if (selectedVivaId && (activeTab === 'evaluation' || activeTab === 'viva')) {
@@ -347,9 +355,14 @@ export default function CandidateDetailPage() {
             setMyExaminerRecord(null);
           }
         }
+      } else {
+        setEvalError('Failed to load viva details. Please ensure this viva belongs to the current candidate.');
+        setVivaDetail(null);
       }
     } catch (err) {
       console.error('Failed to fetch evaluation data:', err);
+      setEvalError('A network error occurred while loading evaluation data.');
+      setVivaDetail(null);
     } finally {
       setEvalLoading(false);
     }
@@ -1010,6 +1023,21 @@ export default function CandidateDetailPage() {
           ) : evalLoading ? (
             <div className="flex h-48 items-center justify-center">
               <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-emerald-600" />
+            </div>
+          ) : evalError ? (
+            <div className="rounded-xl border border-red-200 bg-red-50 p-8 text-center shadow-md dark:border-red-900/30 dark:bg-red-900/20">
+              <div className="mb-3 text-3xl">⚠️</div>
+              <p className="text-red-600 dark:text-red-400 font-medium">{evalError}</p>
+              <button 
+                onClick={() => selectedVivaId && fetchEvaluationData(selectedVivaId)}
+                className="mt-4 text-sm font-semibold text-emerald-600 hover:underline"
+              >
+                Try reloading data
+              </button>
+            </div>
+          ) : !vivaDetail ? (
+            <div className="rounded-xl border border-gray-200 bg-white py-12 text-center shadow-md dark:border-gray-700 dark:bg-gray-800">
+               <p className="text-gray-500">Could not retrieve details for this viva. It may belong to another candidate.</p>
             </div>
           ) : (
             <div className="space-y-8">
