@@ -265,12 +265,10 @@ export default function CandidateDetailPage() {
   }, [activeTab, selectedVivaId, vivas]);
 
   useEffect(() => {
-    if (selectedVivaId) {
-      if (activeTab === 'evaluation' || activeTab === 'viva') {
-        fetchEvaluationData(selectedVivaId);
-      }
+    if (selectedVivaId && (activeTab === 'evaluation' || activeTab === 'viva')) {
+      fetchEvaluationData(selectedVivaId);
     }
-  }, [activeTab, selectedVivaId]);
+  }, [activeTab, selectedVivaId, currentUser]);
 
   useEffect(() => {
     if ((activeTab === 'viva' || showAssignForm) && eligibleStaff.length === 0) {
@@ -295,7 +293,7 @@ export default function CandidateDetailPage() {
           ...(v.examiners || []),
           ...((v as any).supervisors || []).map((s: any) => ({
             examiner_id: s.supervisor_id,
-            user_id: s.supervisor_id,
+            user_id: s.user_id,
             examiner_name: s.supervisor_name,
             examiner_email: s.supervisor_email,
             role: s.role as any,
@@ -305,9 +303,17 @@ export default function CandidateDetailPage() {
           })),
         ];
 
+        // 1. De-duplicate first
+        const uniqueEntries = new Map<number, ExaminerRecord>();
+        allEvaluators.forEach(e => {
+          uniqueEntries.set(Number(e.examiner_id), e);
+        });
+        const unique = Array.from(uniqueEntries.values());
+
+        // 2. Update submission status on the UNIQUE entries
         if (v.evaluations) {
           v.evaluations.forEach((ev: any) => {
-            const match = allEvaluators.find(
+            const match = unique.find(
               e => String(e.examiner_id) === String(ev.examiner_id) ||
                    String(e.user_id) === String(ev.examiner_id)
             );
@@ -319,7 +325,6 @@ export default function CandidateDetailPage() {
           setEvaluations(v.evaluations);
         }
         
-        const unique = Array.from(new Map(allEvaluators.map(e => [Number(e.examiner_id), e])).values());
         setExaminers(unique);
 
         if (currentUser) {
@@ -334,6 +339,9 @@ export default function CandidateDetailPage() {
             if (myEval) {
               prefillDraft(myEval);
             }
+          } else {
+            // Fallback for HOD/Admin who are NOT examiners but want to see the tab content
+            setMyExaminerRecord(null);
           }
         }
       }
@@ -1041,9 +1049,9 @@ export default function CandidateDetailPage() {
                           </div>
                         </div>
                       </div>
-                      {evaluations.find(ev => String(ev.examiner_id) === String(currentUser?.id)) && (
+                      {evaluations.find(ev => String(ev.examiner_id) === String(myExaminerRecord.examiner_id)) && (
                         <SubmittedEvaluationCard
-                          ev={evaluations.find(ev => String(ev.examiner_id) === String(currentUser?.id))!}
+                          ev={evaluations.find(ev => String(ev.examiner_id) === String(myExaminerRecord.examiner_id))!}
                           fmt={formatDate}
                         />
                       )}
@@ -1127,8 +1135,8 @@ export default function CandidateDetailPage() {
                 </div>
               )}
 
-              {/* Manager view: Show all evaluations & Summary Table */}
-              {MANAGER_ROLES.includes(currentUser?.role || '') && (
+              {/* Manager & Evaluator view: Show all evaluations & Summary Table */}
+              {(MANAGER_ROLES.includes(currentUser?.role || '') || !!myExaminerRecord) && (
                 <div className="space-y-6">
                   <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
                     <table className="w-full text-left text-sm">
