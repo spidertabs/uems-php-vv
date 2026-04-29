@@ -1,5 +1,4 @@
 // src/app/api/phd/available-users/route.ts
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAuth } from '@/lib/auth';
 import { getStudentsForCandidateRegistration } from '@/lib/phd/candidates';
