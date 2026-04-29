@@ -1,8 +1,7 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+// src/app/api/phd/eligible-supervisors/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAuth } from '@/lib/auth';
 import { getEligibleSupervisors } from '@/lib/phd/candidates';
-
 export async function GET(req: NextRequest) {
   try {
     const user = await verifyAuth(req);

@@ -1,3 +1,4 @@
+// src/app/api/phd/candidates/[candidateId]/route.ts
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAuth } from '@/lib/auth';
