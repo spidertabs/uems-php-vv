@@ -7,7 +7,10 @@ import { query } from '@/lib/db';
 export async function GET(req: NextRequest) {
   try {
     const user = await verifyAuth(req);
-    if (!user || !['viva_coordinator', 'admin', 'hod', 'dean'].includes(user.role)) {
+    const evaluatorRoles = ['lecturer', 'professor', 'external_examiner'];
+    const managerRoles = ['viva_coordinator', 'admin', 'hod', 'dean'];
+    
+    if (!user || ![...managerRoles, ...evaluatorRoles].includes(user.role)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
@@ -42,6 +45,18 @@ export async function GET(req: NextRequest) {
     if (user.role === 'hod' && user.department_id) {
       sql += ' AND p.department_id = ?';
       params.push(user.department_id);
+    }
+
+    // Filter for assigned roles (Lecturers/Professors/External Examiners)
+    if (evaluatorRoles.includes(user.role)) {
+      sql += ` AND (pc.supervisor_id = ? OR pc.co_supervisor_id = ? OR pc.id IN (
+        SELECT pcs.candidate_id FROM phd_candidate_supervisors pcs WHERE pcs.supervisor_id = ?
+      ) OR pc.id IN (
+        SELECT vs_sub.candidate_id FROM viva_schedules vs_sub 
+        JOIN viva_examiners ve_sub ON vs_sub.id = ve_sub.viva_id 
+        WHERE ve_sub.examiner_id = ?
+      ))`;
+      params.push(user.id, user.id, user.id, user.id);
     }
 
     const statuses = searchParams.getAll('status');

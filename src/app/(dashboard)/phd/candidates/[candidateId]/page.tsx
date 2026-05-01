@@ -1186,8 +1186,8 @@ export default function CandidateDetailPage() {
                 </div>
               )}
 
-              {/* Manager & Evaluator view: Show all evaluations & Summary Table */}
-              {(MANAGER_ROLES.includes(currentUser?.role || '') || !!myExaminerRecord) && (
+              {/* Manager only view: Show all evaluations & Summary Table */}
+              {MANAGER_ROLES.includes(currentUser?.role || '') && (
                 <div className="space-y-6">
                   <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
                     <table className="w-full text-left text-sm">

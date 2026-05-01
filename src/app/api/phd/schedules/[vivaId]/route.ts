@@ -163,6 +163,18 @@ export async function GET(
     const viva = await buildVivaDetail(vivaId);
     if (!viva) return NextResponse.json({ error: 'Viva not found' }, { status: 404 });
 
+    // Restrict visibility for evaluators: "view his only"
+    const evaluatorRoles = ['lecturer', 'professor', 'external_examiner'];
+    if (evaluatorRoles.includes(user.role)) {
+      // 1. Only show their own evaluation
+      viva.evaluations = (viva.evaluations || []).filter(
+        (ev: any) => Number(ev.examiner_id) === Number(user.id)
+      );
+      
+      // 2. Hide the averages summary to ensure strict data isolation
+      viva.evaluation_summary = null;
+    }
+
     return NextResponse.json({ viva });
   } catch (error) {
     console.error('Error fetching viva detail:', error);
