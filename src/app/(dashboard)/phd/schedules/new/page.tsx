@@ -39,7 +39,7 @@ function ScheduleVivaPageInner() {
   const [dataLoading, setDataLoading] = useState(true);
  
   useEffect(() => {
-    fetch('/api/phd/candidates?status=thesis_submitted&status=enrolled&status=viva_scheduled&status=corrections_pending&status=corrections_submitted')
+    fetch('/api/phd/candidates?status=thesis_submitted&status=enrolled&status=corrections_pending&status=corrections_submitted')
       .then((r) => r.json())
       .then((d) => setCandidates(d.candidates || []))
       .finally(() => setDataLoading(false));
