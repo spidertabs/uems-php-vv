@@ -796,7 +796,7 @@ export default function DashboardPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="mb-2 text-3xl font-bold">
-              Welcome back, {user?.name}! 👋
+              Welcome back, {user?.name || user?.first_name || user?.email.split('@')[0]}! 👋
             </h1>
             <p className="mb-3 text-blue-100">
               {new Date().toLocaleDateString('en-US', {

@@ -44,6 +44,7 @@ export async function GET() {
         email: userData.email,
         first_name: userData.first_name,
         last_name: userData.last_name,
+        name: [userData.first_name, userData.last_name].filter(Boolean).join(' ') || userData.email.split('@')[0],
         role: userData.role,
         phone: userData.phone,
         department_id: userData.department_id,

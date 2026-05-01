@@ -71,10 +71,17 @@ export async function GET(request: NextRequest) {
 }
 
 async function getLecturerStats(userId: number, stats: Record<string, number>) {
-  // Lecturer's own papers
+  // Lecturer's papers (created by them OR where they have explict permissions for the course)
   const lecturerPapers = await query<any[]>(
-    'SELECT COUNT(*) as count FROM exam_papers WHERE created_by = ? AND deleted_at IS NULL',
-    [userId]
+    `SELECT COUNT(DISTINCT ep.id) as count 
+     FROM exam_papers ep
+     WHERE (ep.created_by = ? OR EXISTS (
+       SELECT 1 FROM lecturer_permissions lp 
+       WHERE lp.lecturer_id = ? 
+       AND lp.course_id = ep.course_id 
+       AND lp.is_active = TRUE
+     )) AND ep.deleted_at IS NULL`,
+    [userId, userId]
   );
   stats.myPapers = Number(lecturerPapers[0]?.count || 0);
 
@@ -129,15 +136,17 @@ async function getLecturerStats(userId: number, stats: Record<string, number>) {
   );
   stats.approvedPapers = Number(approved[0]?.count || 0);
 
-  // PhD Candidates assigned to this lecturer
+  // PhD Candidates assigned to this lecturer (includes supervisors and internal/external examiners)
   const phdCount = await query<any[]>(
     `SELECT COUNT(DISTINCT pc.id) as count 
      FROM phd_candidates pc
      LEFT JOIN viva_schedules vs ON pc.id = vs.candidate_id
      LEFT JOIN viva_examiners ve ON vs.id = ve.viva_id
-     WHERE (pc.supervisor_id = ? OR pc.co_supervisor_id = ? OR ve.examiner_id = ?)
+     WHERE (pc.supervisor_id = ? OR pc.co_supervisor_id = ? OR ve.examiner_id = ? OR pc.id IN (
+       SELECT pcs.candidate_id FROM phd_candidate_supervisors pcs WHERE pcs.supervisor_id = ?
+     ))
        AND pc.deleted_at IS NULL`,
-    [userId, userId, userId]
+    [userId, userId, userId, userId]
   );
   stats.myCandidates = Number(phdCount[0]?.count || 0);
 
@@ -148,8 +157,10 @@ async function getLecturerStats(userId: number, stats: Record<string, number>) {
      JOIN phd_candidates pc ON vs.candidate_id = pc.id
      LEFT JOIN viva_examiners ve ON vs.id = ve.viva_id
      WHERE vs.status IN ('scheduled', 'in_progress')
-       AND (pc.supervisor_id = ? OR pc.co_supervisor_id = ? OR ve.examiner_id = ?)`,
-    [userId, userId, userId]
+       AND (pc.supervisor_id = ? OR pc.co_supervisor_id = ? OR ve.examiner_id = ? OR pc.id IN (
+         SELECT pcs.candidate_id FROM phd_candidate_supervisors pcs WHERE pcs.supervisor_id = ?
+       ))`,
+    [userId, userId, userId, userId]
   );
   stats.upcomingVivas = Number(upcomingVivasCount[0]?.count || 0);
 }

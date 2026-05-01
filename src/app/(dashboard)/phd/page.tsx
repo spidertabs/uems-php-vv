@@ -55,6 +55,7 @@ export default function PhdDashboardPage() {
     pending_outcomes: 0,
     outstanding_evaluations: 0,
   });
+  const [user, setUser] = useState<any>(null);
   const [statusBreakdown, setStatusBreakdown] = useState<StatusBreakdown[]>([]);
   const [upcomingVivas, setUpcomingVivas] = useState<UpcomingViva[]>([]);
   const [recentOutcomes, setRecentOutcomes] = useState<RecentOutcome[]>([]);
@@ -66,14 +67,20 @@ export default function PhdDashboardPage() {
 
   const fetchDashboardData = async () => {
     try {
-      const [statsRes, schedulesRes] = await Promise.all([
+      const [statsRes, schedulesRes, userRes] = await Promise.all([
         fetch('/api/phd/stats'),
         fetch('/api/phd/schedules?status=scheduled&limit=5'),
+        fetch('/api/auth/me'),
       ]);
 
-      if (statsRes.status === 401) {
+      if (userRes.status === 401) {
         router.push('/auth/login');
         return;
+      }
+
+      if (userRes.ok) {
+        const u = await userRes.json();
+        setUser(u.user);
       }
 
       if (statsRes.ok) {
@@ -93,6 +100,9 @@ export default function PhdDashboardPage() {
       setLoading(false);
     }
   };
+
+  const isManagement = ['admin', 'hod', 'dean', 'viva_coordinator'].includes(user?.role || '');
+  const canManageVivás = ['admin', 'viva_coordinator', 'hod', 'dean'].includes(user?.role || '');
 
   const formatDate = (dateStr: string) =>
     new Date(dateStr).toLocaleDateString('en-GB', {
@@ -130,10 +140,10 @@ export default function PhdDashboardPage() {
 
   const statCards = [
     {
-      title: 'Total Candidates',
+      title: isManagement ? 'Total Candidates' : 'Assigned Candidates',
       value: stats.total_candidates,
       icon: '👨‍🎓',
-      href: '/phd/candidates',
+      href: isManagement ? '/phd/candidates' : '/phd/my-candidates',
       color: 'bg-emerald-500',
     },
     {
@@ -165,7 +175,9 @@ export default function PhdDashboardPage() {
       <div className="rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-700 p-8 text-white shadow-xl">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="mb-2 text-3xl font-bold">🎓 PhD Viva Voce Administration</h1>
+            <h1 className="mb-2 text-3xl font-bold">
+              🎓 PhD Viva Voce {isManagement ? 'Administration' : 'Dashboard'}
+            </h1>
             <p className="mb-1 text-emerald-100">
               {new Date().toLocaleDateString('en-US', {
                 weekday: 'long',
@@ -178,20 +190,22 @@ export default function PhdDashboardPage() {
               Manage PhD candidates, thesis submissions, oral defence scheduling, and panel evaluations.
             </p>
           </div>
-          <div className="hidden md:flex flex-col gap-2 text-right">
-            <Link
-              href="/phd/candidates/new"
-              className="rounded-lg bg-white/20 px-4 py-2 text-sm font-medium backdrop-blur-sm hover:bg-white/30 transition-colors"
-            >
-              + Register Candidate
-            </Link>
-            <Link
-              href="/phd/schedules/new"
-              className="rounded-lg bg-white/20 px-4 py-2 text-sm font-medium backdrop-blur-sm hover:bg-white/30 transition-colors"
-            >
-              + Schedule Viva
-            </Link>
-          </div>
+          {canManageVivás && (
+            <div className="hidden md:flex flex-col gap-2 text-right">
+              <Link
+                href="/phd/candidates/new"
+                className="rounded-lg bg-white/20 px-4 py-2 text-sm font-medium backdrop-blur-sm hover:bg-white/30 transition-colors"
+              >
+                + Register Candidate
+              </Link>
+              <Link
+                href="/phd/schedules/new"
+                className="rounded-lg bg-white/20 px-4 py-2 text-sm font-medium backdrop-blur-sm hover:bg-white/30 transition-colors"
+              >
+                + Schedule Viva
+              </Link>
+            </div>
+          )}
         </div>
       </div>
 
@@ -381,11 +395,12 @@ export default function PhdDashboardPage() {
         <h2 className="mb-4 text-xl font-bold text-gray-900 dark:text-white">Quick Actions</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[
-            { icon: '👨‍🎓', title: 'Register Candidate', desc: 'Add a new PhD candidate', href: '/phd/candidates/new', color: 'text-emerald-600 dark:text-emerald-400' },
-            { icon: '📅', title: 'Schedule Viva', desc: 'Create a new oral defence appointment', href: '/phd/schedules/new', color: 'text-yellow-600 dark:text-yellow-400' },
-            { icon: '👥', title: 'View Candidates', desc: 'Browse all PhD candidates', href: '/phd/candidates', color: 'text-blue-600 dark:text-blue-400' },
+            { icon: '👨‍🎓', title: 'Register Candidate', desc: 'Add a new PhD candidate', href: '/phd/candidates/new', color: 'text-emerald-600 dark:text-emerald-400', hide: !canManageVivás },
+            { icon: '📅', title: 'Schedule Viva', desc: 'Create a new oral defence appointment', href: '/phd/schedules/new', color: 'text-yellow-600 dark:text-yellow-400', hide: !canManageVivás },
+            { icon: '👥', title: 'View Candidates', desc: isManagement ? 'Browse all PhD candidates' : 'View your assigned candidates', href: isManagement ? '/phd/candidates' : '/phd/my-candidates', color: 'text-blue-600 dark:text-blue-400' },
             { icon: '📊', title: 'PhD Reports', desc: 'Outcomes and progress statistics', href: '/phd/reports', color: 'text-purple-600 dark:text-purple-400' },
-          ].map((a) => (
+            { icon: '📜', title: 'My Evaluations', desc: 'View your submitted evaluations', href: '/phd/my-candidates', color: 'text-indigo-600 dark:text-indigo-400', hide: isManagement },
+          ].filter(a => !a.hide).map((a) => (
             <Link
               key={a.title}
               href={a.href}
