@@ -124,64 +124,99 @@ export async function POST(req: NextRequest) {
       duration_minutes,
     } = body;
 
+    // 1. Initial validation
     if (!candidate_id || !thesis_id || !scheduled_date || !scheduled_time || !venue || !duration_minutes) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: 'Missing required scheduling information' },
         { status: 400 }
       );
     }
 
-    // Verify candidate exists
-    const candidate = await query<any[]>(
-      'SELECT id FROM phd_candidates WHERE id = ?',
-      [candidate_id]
+    // 2. Prevent duplicate active schedules
+    const existing = await query<any[]>(
+      'SELECT id FROM viva_schedules WHERE candidate_id = ? AND status = \'scheduled\'',
+      [parseInt(candidate_id)]
     );
 
-    if (!candidate || candidate.length === 0) {
+    if (existing.length > 0) {
       return NextResponse.json(
-        { error: 'Candidate not found' },
-        { status: 404 }
+        { error: 'Candidate already has an active viva session scheduled' },
+        { status: 400 }
       );
     }
 
-    // Verify thesis exists for this candidate
+    // 3. Verify thesis-candidate relationship
     const thesis = await query<any[]>(
       'SELECT id FROM thesis_submissions WHERE id = ? AND candidate_id = ?',
-      [thesis_id, candidate_id]
+      [parseInt(thesis_id), parseInt(candidate_id)]
     );
 
-    if (!thesis || thesis.length === 0) {
+    if (thesis.length === 0) {
       return NextResponse.json(
-        { error: 'Thesis not found for this candidate' },
+        { error: 'Specified thesis not found for this candidate' },
         { status: 404 }
       );
     }
 
-    // Create schedule
+    // 4. Create schedule
+    console.log(`📝 Creating viva for candidate ${candidate_id} by user ${user.id}`);
+    
+    // Explicitly cast to ensure correct DB mapping
     const result = await query<any>(
       `INSERT INTO viva_schedules 
        (candidate_id, thesis_id, scheduled_date, scheduled_time, venue, duration_minutes, status, created_by, created_at, updated_at)
        VALUES (?, ?, ?::date, ?::time, ?, ?, 'scheduled', ?, NOW(), NOW())`,
-      [candidate_id, thesis_id, scheduled_date, scheduled_time, venue, duration_minutes, user.id]
+      [
+        parseInt(candidate_id),
+        parseInt(thesis_id),
+        scheduled_date,
+        scheduled_time,
+        venue,
+        parseInt(duration_minutes),
+        user.id
+      ]
     );
 
-    // Trigger will auto-update candidate status to 'viva_scheduled'
+    const vivaId = result.insertId;
 
-    // Notify candidate, supervisor, and any already-assigned examiners via centralised helper
-    await notifyVivaScheduled((result as any).insertId);
+    if (!vivaId) {
+      throw new Error('Database failed to return a new schedule ID.');
+    }
 
-    // Audit log
+    // 5. Audit Logging
     await query(
       `INSERT INTO audit_logs (user_id, action, entity_type, entity_id, new_values, created_at)
        VALUES (?, 'CREATE', 'viva_schedules', ?, CAST(? AS jsonb), NOW())`,
-      [user.id, (result as any).insertId, JSON.stringify({ candidate_id, thesis_id, scheduled_date, scheduled_time, venue, duration_minutes })]
+      [
+        user.id,
+        vivaId,
+        JSON.stringify({
+          candidate_id,
+          thesis_id,
+          scheduled_date,
+          scheduled_time,
+          venue,
+          duration_minutes
+        })
+      ]
     );
 
-    return NextResponse.json({ viva_id: (result as any).insertId }, { status: 201 });
-  } catch (error) {
-    console.error('Error creating schedule:', error);
+    // 6. Notifications (Non-blocking but awaited)
+    try {
+      await notifyVivaScheduled(vivaId);
+    } catch (notifErr) {
+      console.error('⚠️ Notification failed (viva created successfully):', notifErr);
+    }
+
+    return NextResponse.json({ 
+      viva_id: vivaId,
+      message: 'Viva session scheduled successfully'
+    }, { status: 201 });
+
+  } catch (error: any) {
+    console.error('❌ Critical Error in PhD Schedule API:', error);
     return NextResponse.json(
-      { error: 'Failed to create schedule' },
+      { error: error.message || 'An unexpected error occurred while scheduling the viva' },
       { status: 500 }
     );
   }

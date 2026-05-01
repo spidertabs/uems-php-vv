@@ -91,10 +91,12 @@ export async function notifyThesisUploaded(
  * Notify candidate, supervisor, and all assigned examiners that a viva has been scheduled.
  */
 export async function notifyVivaScheduled(vivaId: number): Promise<void> {
+  console.log('🔔 Notifying for vivaId:', vivaId);
   const rows = await query<any[]>(
     `SELECT
        vs.scheduled_date, vs.scheduled_time, vs.venue,
        pc.id AS candidate_id,
+       pc.thesis_title,
        s.id AS student_id,
        CONCAT(s.first_name, ' ', s.last_name) AS candidate_name,
        pc.supervisor_id,
@@ -106,15 +108,30 @@ export async function notifyVivaScheduled(vivaId: number): Promise<void> {
      WHERE vs.id = ?`,
     [vivaId]
   );
-  if (!rows.length) return;
+
+  if (!rows.length) {
+    console.log('⚠️ No notification rows found for vivaId:', vivaId);
+    return;
+  }
 
   const first = rows[0];
-  const dateStr = new Date(first.scheduled_date).toLocaleDateString('en-GB', {
-    day: 'numeric', month: 'short', year: 'numeric',
-  });
+  let dateStr = 'TBD';
+  try {
+    if (first.scheduled_date) {
+      const d = new Date(first.scheduled_date);
+      if (!isNaN(d.getTime())) {
+        dateStr = d.toLocaleDateString('en-GB', {
+          day: 'numeric', month: 'short', year: 'numeric',
+        });
+      }
+    }
+  } catch (e) {
+    console.error('Error formatting date for notification:', e);
+  }
+
   const title = 'Viva Scheduled';
-  const message = `Your viva has been scheduled for ${dateStr} at ${first.venue}.`;
-  const actionUrl = `/phd/schedules/${vivaId}`;
+  const message = `Your viva session has been scheduled for ${dateStr} at ${first.scheduled_time || 'TBD'} at ${first.venue || 'TBD'}.`;
+  const actionUrl = `/phd/candidate/${first.candidate_id}`;
 
   // Notify Candidate
   await createNotification({

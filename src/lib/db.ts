@@ -121,6 +121,11 @@ export async function query<T = any>(
     const pgSQL = toPostgres(sql, params);
     const finalSql = inlineParams(pgSQL, params);
 
+    // DEBUG: Log the final SQL for investigation
+    if (isWriteStatement(pgSQL)) {
+      console.log('📝 SQL EXECUTE:', finalSql);
+    }
+
     if (isInsert(pgSQL)) {
       const hasReturning = /RETURNING/i.test(finalSql);
       const insertSql = hasReturning ? finalSql : finalSql + ' RETURNING id';
