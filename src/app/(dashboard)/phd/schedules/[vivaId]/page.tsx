@@ -315,59 +315,155 @@ export default function VivaDetailPage() {
 
               <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
                 {/* Slot 1: Professor/Internal */}
-                <div className="space-y-4 rounded-lg bg-gray-50 p-4 dark:bg-gray-700/30">
+                <div className={`space-y-4 rounded-lg p-4 transition-all ${
+                  viva.examiners.find(e => e.panel_slot === 1) 
+                    ? 'bg-indigo-50/50 border border-indigo-100 dark:bg-indigo-900/10 dark:border-indigo-900/30' 
+                    : 'bg-gray-50 border border-gray-100 dark:bg-gray-700/30 dark:border-gray-700'
+                }`}>
                   <div className="flex items-center justify-between">
-                    <label className="text-sm font-bold text-gray-900 dark:text-white">1. Professor (Internal)</label>
+                    <div>
+                      <label className="text-sm font-bold text-gray-900 dark:text-white">1. Professor (Internal)</label>
+                      {!viva.examiners.find(e => e.panel_slot === 1) && (
+                        <span className="ml-2 inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-[9px] font-bold text-green-700 uppercase ring-1 ring-inset ring-green-600/20">
+                          Empty
+                        </span>
+                      )}
+                    </div>
                     <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-bold text-indigo-700 uppercase">Staff</span>
                   </div>
-                  <select disabled={assignLoading}
-                    onChange={(e) => { if (e.target.value) handleAssignManually(parseInt(e.target.value), 'internal_examiner', 1); }}
-                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                    <option value="">Choose Professor...</option>
-                    {eligibleStaff
-                      .filter(u => u.role === 'professor' && !['admin', 'hod'].includes(u.role) && !viva.examiners.find(e => e.examiner_id === u.id))
-                      .map(u => (
-                        <option key={u.id} value={u.id}>{u.first_name} {u.last_name}</option>
-                      ))}
-                  </select>
+                  
+                  {viva.examiners.find(e => e.panel_slot === 1) ? (
+                    <div className="flex items-center justify-between rounded-lg bg-white p-3 shadow-sm dark:bg-gray-800">
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">👤</span>
+                        <div>
+                          <p className="text-xs font-bold text-gray-900 dark:text-white">
+                            {viva.examiners.find(e => e.panel_slot === 1)?.examiner_name}
+                          </p>
+                          <p className="text-[10px] text-gray-500">{viva.examiners.find(e => e.panel_slot === 1)?.examiner_email}</p>
+                        </div>
+                      </div>
+                      <button 
+                        onClick={() => handleRemoveExaminer(viva.examiners.find(e => e.panel_slot === 1)!.examiner_id)}
+                        className="text-[10px] font-bold text-red-600 hover:underline dark:text-red-400"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ) : (
+                    <select disabled={assignLoading}
+                      onChange={(e) => { if (e.target.value) handleAssignManually(parseInt(e.target.value), 'internal_examiner', 1); }}
+                      className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                      <option value="">Choose Professor...</option>
+                      {eligibleStaff
+                        .filter(u => u.role === 'professor' && !['admin', 'hod', 'exam_master', 'viva_coordinator'].includes(u.role) && !viva.examiners.find(e => e.examiner_id === u.id))
+                        .map(u => (
+                          <option key={u.id} value={u.id}>{u.first_name} {u.last_name}</option>
+                        ))}
+                    </select>
+                  )}
                   <p className="text-[11px] text-gray-500">Must be a senior staff member with Professor rank.</p>
                 </div>
 
                 {/* Slot 2: Lecturer/Internal */}
-                <div className="space-y-4 rounded-lg bg-gray-50 p-4 dark:bg-gray-700/30">
+                <div className={`space-y-4 rounded-lg p-4 transition-all ${
+                  viva.examiners.find(e => e.panel_slot === 2) 
+                    ? 'bg-indigo-50/50 border border-indigo-100 dark:bg-indigo-900/10 dark:border-indigo-900/30' 
+                    : 'bg-gray-50 border border-gray-100 dark:bg-gray-700/30 dark:border-gray-700'
+                }`}>
                   <div className="flex items-center justify-between">
-                    <label className="text-sm font-bold text-gray-900 dark:text-white">2. Lecturer (Internal)</label>
+                    <div>
+                      <label className="text-sm font-bold text-gray-900 dark:text-white">2. Lecturer (Internal)</label>
+                      {!viva.examiners.find(e => e.panel_slot === 2) && (
+                        <span className="ml-2 inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-[9px] font-bold text-green-700 uppercase ring-1 ring-inset ring-green-600/20">
+                          Empty
+                        </span>
+                      )}
+                    </div>
                     <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-bold text-indigo-700 uppercase">Staff</span>
                   </div>
-                  <select disabled={assignLoading}
-                    onChange={(e) => { if (e.target.value) handleAssignManually(parseInt(e.target.value), 'internal_examiner', 2); }}
-                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                    <option value="">Choose Lecturer...</option>
-                    {eligibleStaff
-                      .filter(u => u.role === 'lecturer' && !viva.examiners.find(e => e.examiner_id === u.id))
-                      .map(u => (
-                        <option key={u.id} value={u.id}>{u.first_name} {u.last_name}</option>
-                      ))}
-                  </select>
+
+                  {viva.examiners.find(e => e.panel_slot === 2) ? (
+                    <div className="flex items-center justify-between rounded-lg bg-white p-3 shadow-sm dark:bg-gray-800">
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">👤</span>
+                        <div>
+                          <p className="text-xs font-bold text-gray-900 dark:text-white">
+                            {viva.examiners.find(e => e.panel_slot === 2)?.examiner_name}
+                          </p>
+                          <p className="text-[10px] text-gray-500">{viva.examiners.find(e => e.panel_slot === 2)?.examiner_email}</p>
+                        </div>
+                      </div>
+                      <button 
+                        onClick={() => handleRemoveExaminer(viva.examiners.find(e => e.panel_slot === 2)!.examiner_id)}
+                        className="text-[10px] font-bold text-red-600 hover:underline dark:text-red-400"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ) : (
+                    <select disabled={assignLoading}
+                      onChange={(e) => { if (e.target.value) handleAssignManually(parseInt(e.target.value), 'internal_examiner', 2); }}
+                      className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                      <option value="">Choose Lecturer...</option>
+                      {eligibleStaff
+                        .filter(u => u.role === 'lecturer' && !viva.examiners.find(e => e.examiner_id === u.id))
+                        .map(u => (
+                          <option key={u.id} value={u.id}>{u.first_name} {u.last_name}</option>
+                        ))}
+                    </select>
+                  )}
                   <p className="text-[11px] text-gray-500">Internal examiner from the relevant department.</p>
                 </div>
 
                 {/* Slot 3: External */}
-                <div className="space-y-4 rounded-lg bg-gray-50 p-4 dark:bg-gray-700/30">
+                <div className={`space-y-4 rounded-lg p-4 transition-all ${
+                  viva.examiners.find(e => e.panel_slot === 3) 
+                    ? 'bg-orange-50/50 border border-orange-100 dark:bg-orange-900/10 dark:border-orange-900/30' 
+                    : 'bg-gray-50 border border-gray-100 dark:bg-gray-700/30 dark:border-gray-700'
+                }`}>
                   <div className="flex items-center justify-between">
-                    <label className="text-sm font-bold text-gray-900 dark:text-white">3. External Examiner</label>
+                    <div>
+                      <label className="text-sm font-bold text-gray-900 dark:text-white">3. External Examiner</label>
+                      {!viva.examiners.find(e => e.panel_slot === 3) && (
+                        <span className="ml-2 inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-[9px] font-bold text-green-700 uppercase ring-1 ring-inset ring-green-600/20">
+                          Empty
+                        </span>
+                      )}
+                    </div>
                     <span className="rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-bold text-orange-700 uppercase">External</span>
                   </div>
-                  <select disabled={assignLoading}
-                    onChange={(e) => { if (e.target.value) handleAssignManually(parseInt(e.target.value), 'external_examiner', 3); }}
-                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                    <option value="">Choose External...</option>
-                    {eligibleStaff
-                      .filter(u => u.role === 'external_examiner' && !viva.examiners.find(e => e.examiner_id === u.id))
-                      .map(u => (
-                        <option key={u.id} value={u.id}>{u.first_name} {u.last_name}</option>
-                      ))}
-                  </select>
+
+                  {viva.examiners.find(e => e.panel_slot === 3) ? (
+                    <div className="flex items-center justify-between rounded-lg bg-white p-3 shadow-sm dark:bg-gray-800">
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">🌍</span>
+                        <div>
+                          <p className="text-xs font-bold text-gray-900 dark:text-white">
+                            {viva.examiners.find(e => e.panel_slot === 3)?.examiner_name}
+                          </p>
+                          <p className="text-[10px] text-gray-500">{viva.examiners.find(e => e.panel_slot === 3)?.examiner_email}</p>
+                        </div>
+                      </div>
+                      <button 
+                        onClick={() => handleRemoveExaminer(viva.examiners.find(e => e.panel_slot === 3)!.examiner_id)}
+                        className="text-[10px] font-bold text-red-600 hover:underline dark:text-red-400"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ) : (
+                    <select disabled={assignLoading}
+                      onChange={(e) => { if (e.target.value) handleAssignManually(parseInt(e.target.value), 'external_examiner', 3); }}
+                      className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                      <option value="">Choose External...</option>
+                      {eligibleStaff
+                        .filter(u => u.role === 'external_examiner' && !viva.examiners.find(e => e.examiner_id === u.id))
+                        .map(u => (
+                          <option key={u.id} value={u.id}>{u.first_name} {u.last_name}</option>
+                        ))}
+                    </select>
+                  )}
                   <p className="text-[11px] text-gray-500">1 examiner from an external institution.</p>
                 </div>
               </div>

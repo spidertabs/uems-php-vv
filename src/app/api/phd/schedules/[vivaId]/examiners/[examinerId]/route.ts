@@ -9,7 +9,7 @@ export async function PUT(
 ) {
   try {
     const user = await verifyAuth(req);
-    if (!user || !['viva_coordinator', 'admin'].includes(user.role)) {
+    if (!user || !['viva_coordinator', 'admin', 'hod'].includes(user.role)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
@@ -68,7 +68,7 @@ export async function DELETE(
 ) {
   try {
     const user = await verifyAuth(req);
-    if (!user || !['viva_coordinator', 'admin'].includes(user.role)) {
+    if (!user || !['viva_coordinator', 'admin', 'hod'].includes(user.role)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
