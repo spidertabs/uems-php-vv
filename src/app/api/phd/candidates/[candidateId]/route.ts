@@ -154,7 +154,7 @@ export async function PUT(
 
       if (ineligible.length > 0) {
         return NextResponse.json(
-          { error: 'One or more selected supervisors are ineligible' },
+          { error: 'One or more selected supervisors are ineligible (HODs cannot supervise)' },
           { status: 400 }
         );
       }

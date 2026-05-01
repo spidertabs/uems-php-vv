@@ -142,7 +142,7 @@ export async function getEligibleSupervisors(deptId?: number): Promise<any[]> {
            d.name AS department_name
     FROM staff u
     LEFT JOIN departments d ON u.department_id = d.id
-    WHERE u.role NOT IN ('exam_master') 
+    WHERE u.role NOT IN ('exam_master', 'hod') 
       AND u.is_active = TRUE 
       AND u.deleted_at IS NULL
   `;
