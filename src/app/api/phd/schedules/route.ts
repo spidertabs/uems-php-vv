@@ -133,7 +133,7 @@ export async function POST(req: NextRequest) {
 
     // Verify candidate exists
     const candidate = await query<any[]>(
-      'SELECT id, user_id FROM phd_candidates WHERE id = ?',
+      'SELECT id FROM phd_candidates WHERE id = ?',
       [candidate_id]
     );
 
