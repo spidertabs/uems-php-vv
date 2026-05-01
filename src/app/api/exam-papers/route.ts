@@ -81,11 +81,11 @@ export async function GET(request: NextRequest) {
       `;
       params.push(user_id, user_id);
     } else if (role === 'hod') {
-      sql += ` AND c.department_id = ?`;
-      params.push(department_id!);
+      sql += ` AND (c.department_id = ? OR ep.created_by = ?)`;
+      params.push(department_id!, user_id);
     } else if (role === 'dean') {
-      sql += ` AND c.college_id = ?`;
-      params.push(college_id!);
+      sql += ` AND (c.college_id = ? OR ep.created_by = ?)`;
+      params.push(college_id!, user_id);
     }
 
     sql += ` GROUP BY ep.id, ep.paper_code, ep.exam_type, ep.academic_year, ep.semester, ep.exam_date, ep.duration, ep.total_marks, ep.status, ep.created_at, ep.submitted_at, ep.hod_id, ep.dean_id, ep.created_by, c.code, c.title, c.department_id, c.college_id, creator.first_name, creator.last_name, hod.first_name, hod.last_name, dean.first_name, dean.last_name ORDER BY ep.created_at DESC`;
