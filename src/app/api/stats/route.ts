@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
         await getLecturerStats(user.id, stats);
         break;
       case 'hod':
-        await getHODStats(user.id, stats);
+        await getHODStats(user, stats);
         break;
       case 'dean':
         if (user.college_id) {
@@ -165,98 +165,105 @@ async function getLecturerStats(userId: number, stats: Record<string, number>) {
   stats.upcomingVivas = Number(upcomingVivasCount[0]?.count || 0);
 }
 
-async function getHODStats(userId: number, stats: Record<string, number>) {
-  // Papers in HOD's courses awaiting approval
+async function getHODStats(user: any, stats: Record<string, number>) {
+  const userId = user.id;
+  const deptId = user.department_id;
+
+  // Papers in HOD's department awaiting approval
   const hodPapers = await query<any[]>(
     `SELECT COUNT(*) as count 
      FROM exam_papers ep
      JOIN courses c ON ep.course_id = c.id
-     WHERE c.hod_id = ? 
+     WHERE (c.department_id = ? OR c.hod_id = ?) 
        AND ep.status IN ('submitted', 'hod_review') 
        AND ep.deleted_at IS NULL`,
-    [userId]
+    [deptId, userId]
   );
-  stats.pendingApprovals = hodPapers[0]?.count || 0;
+  stats.pendingApprovals = Number(hodPapers[0]?.count || 0);
 
-  // All papers in HOD's courses
+  // All papers in HOD's department + papers they created personally
   const allHodPapers = await query<any[]>(
-    `SELECT COUNT(*) as count 
+    `SELECT COUNT(DISTINCT ep.id) as count 
      FROM exam_papers ep
      JOIN courses c ON ep.course_id = c.id
-     WHERE c.hod_id = ? 
+     WHERE (c.department_id = ? OR c.hod_id = ? OR ep.created_by = ?) 
        AND ep.deleted_at IS NULL`,
-    [userId]
+    [deptId, userId, userId]
   );
-  stats.myPapers = allHodPapers[0]?.count || 0;
+  stats.myPapers = Number(allHodPapers[0]?.count || 0);
 
-  // Questions in HOD's courses
+  // Questions in HOD's department + questions they created
   const hodQuestions = await query<any[]>(
-    `SELECT COUNT(*) as count 
+    `SELECT COUNT(DISTINCT q.id) as count 
      FROM questions q
      JOIN courses c ON q.course_id = c.id
-     WHERE c.hod_id = ? 
+     WHERE (c.department_id = ? OR c.hod_id = ? OR q.created_by = ?) 
        AND q.deleted_at IS NULL`,
-    [userId]
+    [deptId, userId, userId]
   );
-  stats.myQuestions = hodQuestions[0]?.count || 0;
+  stats.myQuestions = Number(hodQuestions[0]?.count || 0);
 
   // Department courses
   const deptCourses = await query<any[]>(
     `SELECT COUNT(*) as count 
      FROM courses 
-     WHERE hod_id = ? 
+     WHERE (department_id = ? OR hod_id = ?) 
        AND is_active = TRUE 
        AND deleted_at IS NULL`,
-    [userId]
+    [deptId, userId]
   );
-  stats.departmentCourses = deptCourses[0]?.count || 0;
+  stats.departmentCourses = Number(deptCourses[0]?.count || 0);
 
-  // Approved papers (by this HOD)
+  // Approved papers (by this department/HOD)
   const approved = await query<any[]>(
     `SELECT COUNT(*) as count 
-     FROM exam_papers 
-     WHERE hod_id = ? 
-       AND status IN ('hod_approved', 'dean_approved', 'ready_for_print', 'printed', 'published') 
-       AND deleted_at IS NULL`,
-    [userId]
+     FROM exam_papers ep
+     JOIN courses c ON ep.course_id = c.id
+     WHERE (c.department_id = ? OR ep.hod_id = ?) 
+       AND ep.status IN ('hod_approved', 'dean_approved', 'ready_for_print', 'printed', 'published') 
+       AND ep.deleted_at IS NULL`,
+    [deptId, userId]
   );
-  stats.approvedPapers = approved[0]?.count || 0;
+  stats.approvedPapers = Number(approved[0]?.count || 0);
 
-  // Rejected papers (by this HOD)
+  // Rejected papers (by this department/HOD)
   const rejected = await query<any[]>(
     `SELECT COUNT(*) as count 
-     FROM exam_papers 
-     WHERE hod_id = ? 
-       AND status = 'hod_rejected' 
-       AND deleted_at IS NULL`,
-    [userId]
+     FROM exam_papers ep
+     JOIN courses c ON ep.course_id = c.id
+     WHERE (c.department_id = ? OR ep.hod_id = ?) 
+       AND ep.status = 'hod_rejected' 
+       AND ep.deleted_at IS NULL`,
+    [deptId, userId]
   );
-  stats.rejectedPapers = rejected[0]?.count || 0;
+  stats.rejectedPapers = Number(rejected[0]?.count || 0);
 
-  // Lecturers with permissions in HOD's courses
+  // Lecturers with permissions in HOD's department
   const lecturersWithPermissions = await query<any[]>(
     `SELECT COUNT(DISTINCT lp.lecturer_id) as count 
      FROM lecturer_permissions lp
      JOIN courses c ON lp.course_id = c.id
-     WHERE c.hod_id = ? 
+     WHERE (c.department_id = ? OR c.hod_id = ?) 
        AND lp.is_active = TRUE`,
-    [userId]
+    [deptId, userId]
   );
-  stats.lecturersWithPermissions = lecturersWithPermissions[0]?.count || 0;
+  stats.lecturersWithPermissions = Number(lecturersWithPermissions[0]?.count || 0);
 
   // PhD Candidates in HOD's department (or where they are supervisor/examiner)
   const phdCount = await query<any[]>(
     `SELECT COUNT(DISTINCT pc.id) as count 
      FROM phd_candidates pc
-     JOIN programmes p ON pc.programme_id = p.id
-     JOIN staff u ON u.id = ?
+     LEFT JOIN programmes p ON pc.programme_id = p.id
      LEFT JOIN viva_schedules vs ON pc.id = vs.candidate_id
      LEFT JOIN viva_examiners ve ON vs.id = ve.viva_id
-     WHERE (pc.supervisor_id = ? OR pc.co_supervisor_id = ? OR ve.examiner_id = ? OR p.department_id = u.department_id)
+     WHERE (pc.supervisor_id = ? OR pc.co_supervisor_id = ? OR ve.examiner_id = ? 
+            OR p.department_id = ? OR pc.id IN (
+              SELECT pcs.candidate_id FROM phd_candidate_supervisors pcs WHERE pcs.supervisor_id = ?
+            ))
        AND pc.deleted_at IS NULL`,
-    [userId, userId, userId, userId]
+    [userId, userId, userId, deptId, userId]
   );
-  stats.myCandidates = phdCount[0]?.count || 0;
+  stats.myCandidates = Number(phdCount[0]?.count || 0);
 }
 
 async function getDeanStats(collegeId: number, stats: Record<string, number>) {
