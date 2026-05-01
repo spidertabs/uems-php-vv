@@ -30,12 +30,16 @@ export async function GET(req: NextRequest) {
         s.email, s.first_name, s.last_name, 
         COALESCE(CONCAT(s.first_name, ' ', s.last_name), pc.registration_number) AS candidate_name,
         p.name AS programme_name,
-        sup.first_name AS supervisor_first_name, 
-        sup.last_name AS supervisor_last_name
+        p.code AS programme_code,
+        (SELECT COUNT(*) FROM thesis_submissions ts WHERE ts.candidate_id = pc.id) AS thesis_count,
+        (SELECT COUNT(*) FROM viva_schedules vs WHERE vs.candidate_id = pc.id) AS viva_count,
+        COALESCE(CONCAT(sup.first_name, ' ', sup.last_name), '—') AS supervisor_name,
+        COALESCE(CONCAT(csup.first_name, ' ', csup.last_name), '—') AS co_supervisor_name
       FROM phd_candidates pc
       LEFT JOIN students s ON pc.registration_number = s.registration_number
       JOIN programmes p ON pc.programme_id = p.id
       LEFT JOIN staff sup ON pc.supervisor_id = sup.id
+      LEFT JOIN staff csup ON pc.co_supervisor_id = csup.id
       WHERE pc.deleted_at IS NULL
     `;
 
@@ -84,16 +88,31 @@ export async function GET(req: NextRequest) {
 
     sql += ' ORDER BY pc.created_at DESC';
 
-    if (limit && limit !== 'all') {
-      const limitNum = parseInt(limit);
-      if (!isNaN(limitNum) && limitNum > 0) {
-        sql += ' LIMIT ?';
-        params.push(limitNum);
-      }
-    }
+    // Handle pagination
+    const page = parseInt(searchParams.get('page') || '1');
+    const limitNum = limit === 'all' ? 1000 : parseInt(limit || '20');
+    const offset = (page - 1) * limitNum;
+
+    // Get total count for pagination
+    const countSql = `SELECT COUNT(*) as total FROM (${sql}) as sub`;
+    const countResult = await query<any[]>(countSql, params);
+    const total = parseInt(countResult[0]?.total || '0');
+
+    // Add LIMIT and OFFSET to main query
+    sql += ' LIMIT ? OFFSET ?';
+    params.push(limitNum, offset);
 
     const candidates = await query<any[]>(sql, params);
-    return NextResponse.json({ candidates });
+
+    return NextResponse.json({ 
+      candidates,
+      pagination: {
+        total,
+        page,
+        limit: limitNum,
+        total_pages: Math.ceil(total / limitNum)
+      }
+    });
   } catch (error) {
     console.error('Error fetching candidates:', error);
     return NextResponse.json({ error: 'Failed to fetch candidates' }, { status: 500 });
