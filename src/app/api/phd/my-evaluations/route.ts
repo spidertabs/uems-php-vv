@@ -74,40 +74,24 @@ export async function POST(req: NextRequest) {
     }
 
     if (!isAuthorized) {
-      // Check 2: primary or co-supervisor on the candidate
-      try {
-        const supervisorRows = await query<any[]>(
-          `SELECT 1 FROM viva_schedules vs
-           JOIN phd_candidates pc ON vs.candidate_id = pc.id
-           WHERE vs.id = ? AND (pc.supervisor_id = ? OR pc.co_supervisor_id = ?)
-           LIMIT 1`,
-          [viva_id, user.id, user.id]
-        );
-        if (supervisorRows.length > 0) isAuthorized = true;
-      } catch (err) {
-        console.error('[my-evaluations] supervisor check failed:', err);
-      }
-    }
-
-    if (!isAuthorized) {
-      // Check 3: supervisor in the phd_candidate_supervisors join table (if it exists)
-      try {
-        const extraSupRows = await query<any[]>(
-          `SELECT 1 FROM phd_candidate_supervisors pcs
-           JOIN viva_schedules vs ON vs.candidate_id = pcs.candidate_id
-           WHERE vs.id = ? AND pcs.supervisor_id = ?
-           LIMIT 1`,
-          [viva_id, user.id]
-        );
-        if (extraSupRows.length > 0) isAuthorized = true;
-      } catch (_err) {
-        // Table may not exist – silently ignore
-      }
-    }
-
-    if (!isAuthorized) {
       return NextResponse.json(
-        { error: 'You are not assigned as an examiner or supervisor for this viva' },
+        { error: 'You are not assigned as an examiner for this viva' },
+        { status: 403 }
+      );
+    }
+
+    // Explicitly reject if user is a supervisor for this candidate to prevent bias
+    const supervisorCheck = await query<any[]>(
+      `SELECT pc.id FROM viva_schedules vs
+       JOIN phd_candidates pc ON vs.candidate_id = pc.id
+       WHERE vs.id = ? AND (pc.supervisor_id = ? OR pc.co_supervisor_id = ?)
+       LIMIT 1`,
+      [viva_id, user.id, user.id]
+    );
+
+    if (supervisorCheck.length > 0) {
+      return NextResponse.json(
+        { error: 'Supervisors are not permitted to evaluate their own candidates to ensure impartiality.' },
         { status: 403 }
       );
     }

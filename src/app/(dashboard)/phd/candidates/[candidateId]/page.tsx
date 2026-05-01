@@ -346,32 +346,25 @@ export default function CandidateDetailPage() {
           );
           
           if (me) {
-            setMyExaminerRecord(me);
-            const myEval = v.evaluations?.find((ev: any) => String(ev.examiner_id) === String(me.examiner_id));
-            if (myEval) {
-              prefillDraft(myEval);
-            }
-          } else {
-            // Check if current user is an assigned supervisor/co-supervisor of the candidate
-            // even if they are not explicitly on the viva's panel yet.
-            if (candidate && (
+            // ONLY lecturers/professors who are NOT the primary or co-supervisor can evaluate.
+            const isActuallySupervisor = candidate && (
               Number(candidate.supervisor_id) === Number(currentUser.id) || 
               Number(candidate.co_supervisor_id) === Number(currentUser.id)
-            )) {
-              const existingEval = v.evaluations?.find((ev: any) => Number(ev.examiner_id) === Number(currentUser.id));
-              setMyExaminerRecord({
-                examiner_id: currentUser.id,
-                user_id: currentUser.id,
-                examiner_name: currentUser.name || 'Current User',
-                examiner_email: currentUser.email || '',
-                role: (Number(candidate.supervisor_id) === Number(currentUser.id) ? 'supervisor' : 'co_supervisor') as ExaminerRole,
-                confirmed: true,
-                evaluation_submitted: existingEval ? !!existingEval.is_submitted : false,
-                evaluation_id: existingEval ? (existingEval.id || existingEval.evaluation_id || null) : null
-              });
+            );
+
+            // If they are on the panel but are also a supervisor, they shouldn't evaluate.
+            if (isActuallySupervisor) {
+              setMyExaminerRecord(null); 
             } else {
-              setMyExaminerRecord(null);
+              setMyExaminerRecord(me);
+              const myEval = v.evaluations?.find((ev: any) => String(ev.examiner_id) === String(me.examiner_id));
+              if (myEval) {
+                prefillDraft(myEval);
+              }
             }
+          } else {
+            // Not on panel, definitely no evaluation form
+            setMyExaminerRecord(null);
           }
         }
       } else {

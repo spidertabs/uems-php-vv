@@ -632,7 +632,7 @@ CREATE TABLE viva_recommendations (
     outcome             viva_outcome NOT NULL,
     correction_deadline DATE,
     final_comments      TEXT,
-    issued_by           INT          NOT NULL REFERENCES staff(id) ON DELETE RESTRICT,
+    issued_by           INT          NOT NULL REFERENCES staff(id) ON DELETE RESTRICT, -- Usually HOD
     issued_at           TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );
 CREATE INDEX idx_vrec_viva    ON viva_recommendations (viva_id);
