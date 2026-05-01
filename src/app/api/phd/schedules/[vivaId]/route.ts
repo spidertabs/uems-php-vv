@@ -78,12 +78,12 @@ async function buildVivaDetail(vivaId: number): Promise<any | null> {
   // ③.b Supervisors (to add to expected evaluators)
   try {
     viva.supervisors = await query<any[]>(
-      `SELECT DISTINCT u.id as supervisor_id, CONCAT(u.first_name, ' ', u.last_name) as supervisor_name, u.email as supervisor_email, 'supervisor' as role
+      `SELECT DISTINCT u.id as supervisor_id, u.id as user_id, CONCAT(u.first_name, ' ', u.last_name) as supervisor_name, u.email as supervisor_email, 'supervisor' as role
        FROM phd_candidates pc
        JOIN staff u ON (pc.supervisor_id = u.id OR pc.co_supervisor_id = u.id)
        WHERE pc.id = ?
        UNION
-       SELECT pcs.supervisor_id as supervisor_id, CONCAT(u.first_name, ' ', u.last_name) as supervisor_name, u.email as supervisor_email, pcs.role as role
+       SELECT pcs.supervisor_id as supervisor_id, u.id as user_id, CONCAT(u.first_name, ' ', u.last_name) as supervisor_name, u.email as supervisor_email, pcs.role as role
        FROM phd_candidate_supervisors pcs
        JOIN staff u ON pcs.supervisor_id = u.id
        WHERE pcs.candidate_id = ?`,

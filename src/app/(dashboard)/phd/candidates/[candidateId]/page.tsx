@@ -167,6 +167,7 @@ interface CurrentUser {
   id: number;
   role: string;
   email?: string;
+  name?: string;
 }
 
 // Tabs available depend on role
@@ -351,8 +352,26 @@ export default function CandidateDetailPage() {
               prefillDraft(myEval);
             }
           } else {
-            // Fallback for HOD/Admin who are NOT examiners but want to see the tab content
-            setMyExaminerRecord(null);
+            // Check if current user is an assigned supervisor/co-supervisor of the candidate
+            // even if they are not explicitly on the viva's panel yet.
+            if (candidate && (
+              Number(candidate.supervisor_id) === Number(currentUser.id) || 
+              Number(candidate.co_supervisor_id) === Number(currentUser.id)
+            )) {
+              const existingEval = v.evaluations?.find((ev: any) => Number(ev.examiner_id) === Number(currentUser.id));
+              setMyExaminerRecord({
+                examiner_id: currentUser.id,
+                user_id: currentUser.id,
+                examiner_name: currentUser.name || 'Current User',
+                examiner_email: currentUser.email || '',
+                role: (Number(candidate.supervisor_id) === Number(currentUser.id) ? 'supervisor' : 'co_supervisor') as ExaminerRole,
+                confirmed: true,
+                evaluation_submitted: existingEval ? !!existingEval.is_submitted : false,
+                evaluation_id: existingEval ? (existingEval.id || existingEval.evaluation_id || null) : null
+              });
+            } else {
+              setMyExaminerRecord(null);
+            }
           }
         }
       } else {
@@ -1183,6 +1202,21 @@ export default function CandidateDetailPage() {
                       </div>
                     </div>
                   )}
+                </div>
+              )}
+              
+              {!myExaminerRecord && !MANAGER_ROLES.includes(currentUser?.role || '') && (
+                <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-8 text-center shadow-sm dark:border-indigo-900/30 dark:bg-indigo-900/20">
+                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-900/40">
+                    <span className="text-2xl">📋</span>
+                  </div>
+                  <h3 className="mt-4 text-sm font-medium text-indigo-900 dark:text-indigo-100">Evaluator Assignment</h3>
+                  <p className="mt-2 text-sm text-indigo-700 dark:text-indigo-300">
+                    You are not assigned as an examiner or supervisor for this specific viva session.
+                  </p>
+                  <p className="mt-1 text-xs text-indigo-600 dark:text-indigo-400">
+                    If you believe this is an error, please contact the HOD or Viva Coordinator.
+                  </p>
                 </div>
               )}
 
