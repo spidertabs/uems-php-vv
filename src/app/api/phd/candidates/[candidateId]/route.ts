@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAuth } from '@/lib/auth';
-import { hasPermission } from '@/lib/rbac';
+import { hasPermission, canEditCandidate } from '@/lib/rbac';
 import { query } from '@/lib/db';
 
 export async function GET(
@@ -101,12 +101,12 @@ export async function PUT(
 ) {
   try {
     const user = await verifyAuth(req);
-    if (!user || !['viva_coordinator', 'admin'].includes(user.role)) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
-    }
-
     const { candidateId: candidateIdStr } = await context.params;
     const candidateId = parseInt(candidateIdStr);
+
+    if (!user || !(await canEditCandidate(user, candidateId))) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    }
     const body = await req.json();
 
     // Only allow updating certain fields

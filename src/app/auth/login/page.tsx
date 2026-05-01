@@ -77,7 +77,7 @@ export default function LoginPage() {
                 id="email"
                 name="email"
                 type="email"
-                placeholder="admin@kiu.ac.ug"
+                placeholder=""
                 value={formData.email}
                 onChange={handleChange}
                 required
@@ -95,7 +95,7 @@ export default function LoginPage() {
                   id="password"
                   name="password"
                   type={showPassword ? 'text' : 'password'}
-                  placeholder="••••••••"
+                  placeholder=""
                   value={formData.password}
                   onChange={handleChange}
                   required

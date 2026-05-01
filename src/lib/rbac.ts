@@ -104,6 +104,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
     'view_audit_logs',
     'manage_system',
     'system_settings',
+    'edit_candidate_details',
   ],
   
   exam_master: [
@@ -151,6 +152,9 @@ export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
     
     // Notifications
     'view_notifications',
+
+    // PhD Management
+    'edit_candidate_details',
   ],
   
   hod: [
@@ -208,6 +212,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
     'edit_own_evaluations',
     'view_candidate_evaluations',
     'submit_viva_recommendations',
+    'edit_candidate_details',
     
     // Notifications
     'view_notifications',
@@ -272,6 +277,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
     'view_candidate_evaluations',
     'manage_viva_schedules',
     'submit_viva_recommendations',
+    'edit_candidate_details',
     'view_notifications',
     'view_own_profile',
     'edit_own_profile',
@@ -862,6 +868,45 @@ export async function canManageUser(managerId: number, targetUserId: number): Pr
 // =====================================================
 // PHASE E — PhD Viva Voce RBAC helpers
 // =====================================================
+
+/**
+ * Returns true if the user can EDIT a given candidate's profile.
+ * Grants access to: coordinator, admin.
+ * Grants access to HOD: if candidate is in their department.
+ * Grants access to Dean: if candidate is in their college.
+ */
+export async function canEditCandidate(user: UserPayload, candidateId: number): Promise<boolean> {
+  if (['viva_coordinator', 'admin'].includes(user.role)) return true;
+
+  try {
+    const candidates = await query<any[]>(
+      `SELECT pc.id, p.department_id, p.college_id 
+       FROM phd_candidates pc
+       JOIN programmes p ON pc.programme_id = p.id
+       WHERE pc.id = ? LIMIT 1`,
+      [candidateId]
+    );
+
+    if (!candidates || candidates.length === 0) return false;
+    const candidate = candidates[0];
+
+    // HOD check
+    if (user.role === 'hod') {
+      return user.department_id === candidate.department_id;
+    }
+
+    // Dean check
+    if (user.role === 'dean') {
+      return user.college_id === candidate.college_id;
+    }
+
+    return false;
+  } catch (error) {
+    console.error('Error checking candidate edit access:', error);
+    return false;
+  }
+}
+
 
 /**
  * Returns true if the user has the viva_coordinator role (or is admin).
