@@ -22,6 +22,7 @@ interface ExamPaper {
   total_marks: number;
   instructions: string;
   footer_text?: string;
+  created_by_name?: string;
 }
 
 interface Question {
@@ -530,6 +531,16 @@ export default function PreviewExamPaperPage() {
                 </span>
               </p>
             </div>
+            {paper.created_by_name && (
+              <div className="col-span-2">
+                <p className="font-semibold text-gray-700 dark:text-gray-300 print:text-black">
+                  Internal Examiner:
+                </p>
+                <p className="text-lg font-bold text-gray-900 dark:text-white print:text-black">
+                  {paper.created_by_name}
+                </p>
+              </div>
+            )}
           </div>
         </div>
 

@@ -404,7 +404,7 @@ export default function ExamPapersPage() {
                     </span>
                     <span>•</span>
                     <span className="flex items-center gap-1">
-                      👤 {paper.created_by_name}
+                      👤 Created by: {paper.created_by_name}
                     </span>
                     {paper.hod_name && (
                       <>

@@ -1022,7 +1022,7 @@ export default function DashboardPage() {
                                   </span>
                                 </div>
                                 <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                                  {group.activities[0].description.split('by')[0].trim()}
+                                  {group.activities[0].description}
                                 </p>
                               </div>
                               <div className="flex flex-shrink-0 items-center gap-2">
