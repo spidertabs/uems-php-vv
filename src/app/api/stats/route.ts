@@ -410,6 +410,16 @@ async function getAdminStats(stats: Record<string, number>) {
   stats.myPapers = allPapers[0]?.count || 0;
   stats.totalPapers = allPapers[0]?.count || 0;
 
+  // Approved papers
+  const approved = await query<any[]>(
+    `SELECT COUNT(*) as count 
+     FROM exam_papers 
+     WHERE status IN ('hod_approved', 'dean_approved', 'ready_for_print', 'printed', 'published') 
+       AND deleted_at IS NULL`,
+    []
+  );
+  stats.approvedPapers = approved[0]?.count || 0;
+
   // Papers needing approval
   const needsApproval = await query<any[]>(
     `SELECT COUNT(*) as count 

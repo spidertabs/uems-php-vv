@@ -109,7 +109,17 @@ export default function ProfilePage() {
 
       if (statsRes && statsRes.ok) {
         const statsData = await statsRes.json();
-        setStats(statsData.data || statsData);
+        const rawStats = statsData.data || statsData;
+        
+        // Map API stats (camelCase) to Profile stats (snake_case)
+        setStats({
+          total_papers: rawStats.totalPapers || rawStats.myPapers || 0,
+          total_questions: rawStats.totalQuestions || rawStats.myQuestions || 0,
+          papers_approved: rawStats.approvedPapers || 0,
+          papers_pending: rawStats.pendingApprovals || rawStats.submittedPapers || 0,
+          questions_used: rawStats.activePermissions || 0, // Fallback to permissions or something relevant
+          active_courses: rawStats.activeCourses || rawStats.totalCourses || rawStats.departmentCourses || 0,
+        });
       }
 
       if (activityRes && activityRes.ok) {
