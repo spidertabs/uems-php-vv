@@ -32,7 +32,7 @@ interface User {
 }
 
 interface FilterOptions {
-  courses: Array<{ id: number; code: string; title: string }>;
+  courses: Array<{ id: number; code: string; title: string; studyUnitsCount?: number }>;
   studyUnits: Array<{ id: number; title: string; course_code: string }>;
   bloomLevels: string[];
   difficultyLevels: string[];
@@ -173,7 +173,12 @@ export default function QuestionBankPage() {
         const courses = coursesData.courses || [];
         setFilterOptions((prev) => ({
           ...prev,
-          courses: courses.map((c: any) => ({ id: c.id, code: c.code, title: c.title })),
+          courses: courses.map((c: any) => ({ 
+            id: c.id, 
+            code: c.code, 
+            title: c.title,
+            studyUnitsCount: c.study_units_count 
+          })),
         }));
       } else {
         const errorData = await coursesRes.json();
@@ -315,7 +320,7 @@ export default function QuestionBankPage() {
               <option value="all">Select a course</option>
               {filterOptions.courses.map((course) => (
                 <option key={course.code} value={course.code}>
-                  {course.code} - {course.title}
+                  {course.code} - {course.title} {course.studyUnitsCount !== undefined ? `(${course.studyUnitsCount} Study Units)` : ''}
                 </option>
               ))}
             </select>

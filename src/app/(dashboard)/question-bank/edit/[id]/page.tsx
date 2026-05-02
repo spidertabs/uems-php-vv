@@ -10,6 +10,7 @@ interface Course {
   id: number;
   code: string;
   title: string;
+  study_units_count?: number;
 }
 
 interface StudyUnit {
@@ -255,7 +256,7 @@ export default function EditQuestionPage() {
                 <option value="">Select a course</option>
                 {courses.map((course) => (
                   <option key={course.id} value={course.id}>
-                    {course.code} - {course.title}
+                    {course.code} - {course.title} {course.study_units_count !== undefined ? `(${course.study_units_count} Study Units)` : ''}
                   </option>
                 ))}
               </select>
