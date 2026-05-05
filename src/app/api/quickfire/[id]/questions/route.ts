@@ -11,6 +11,9 @@ export async function GET(
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const assessmentId = parseInt(params.id);
+    if (isNaN(assessmentId)) {
+      return NextResponse.json({ error: `Invalid Assessment ID: ${params.id}` }, { status: 400 });
+    }
     const questions = await getQuestionsByAssessment(assessmentId);
 
     return NextResponse.json({ success: true, data: questions });
@@ -28,6 +31,9 @@ export async function POST(
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const assessmentId = parseInt(params.id);
+    if (isNaN(assessmentId)) {
+      return NextResponse.json({ error: `Invalid Assessment ID: ${params.id}` }, { status: 400 });
+    }
     const assessment = await getAssessmentById(assessmentId);
 
     if (!assessment) {

@@ -11,6 +11,10 @@ export async function GET(
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const id = parseInt(params.id);
+    if (isNaN(id)) {
+      return NextResponse.json({ error: `Invalid Assessment ID: ${params.id}` }, { status: 400 });
+    }
+
     const assessment = await getAssessmentById(id);
 
     if (!assessment) {

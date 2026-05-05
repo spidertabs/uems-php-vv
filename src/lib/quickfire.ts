@@ -13,7 +13,7 @@ import {
 
 export async function getAssessmentsByLecturer(lecturerId: number): Promise<QuickfireAssessment[]> {
   const sql = `
-    SELECT qa.*, c.code as course_code, c.title as course_title
+    SELECT qa.id, qa.course_id, qa.lecturer_id, qa.title, qa.description, qa.duration_minutes, qa.is_active, qa.show_results, qa.created_at, qa.updated_at, c.code as course_code, c.title as course_title
     FROM quickfire_assessments qa
     JOIN courses c ON qa.course_id = c.id
     WHERE qa.lecturer_id = ?
@@ -24,7 +24,7 @@ export async function getAssessmentsByLecturer(lecturerId: number): Promise<Quic
 
 export async function getAssessmentById(id: number): Promise<QuickfireAssessment | null> {
   const sql = `
-    SELECT qa.*, c.code as course_code, c.title as course_title, s.first_name || ' ' || s.last_name as lecturer_name
+    SELECT qa.id, qa.course_id, qa.lecturer_id, qa.title, qa.description, qa.duration_minutes, qa.is_active, qa.show_results, qa.created_at, qa.updated_at, c.code as course_code, c.title as course_title, s.first_name || ' ' || s.last_name as lecturer_name
     FROM quickfire_assessments qa
     JOIN courses c ON qa.course_id = c.id
     JOIN staff s ON qa.lecturer_id = s.id
