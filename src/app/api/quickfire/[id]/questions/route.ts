@@ -4,18 +4,19 @@ import { getAssessmentById, getQuestionsByAssessment, addQuestion } from '@/lib/
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await verifyAuth(req);
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const assessmentId = parseInt(params.id);
+    const { id: rawId } = await params;
+    const assessmentId = parseInt(rawId);
     if (isNaN(assessmentId)) {
-      return NextResponse.json({ error: `Invalid Assessment ID: ${params.id}` }, { status: 400 });
+      return NextResponse.json({ error: `Invalid Assessment ID: ${rawId}` }, { status: 400 });
     }
-    const questions = await getQuestionsByAssessment(assessmentId);
 
+    const questions = await getQuestionsByAssessment(assessmentId);
     return NextResponse.json({ success: true, data: questions });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
@@ -24,16 +25,18 @@ export async function GET(
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await verifyAuth(req);
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const assessmentId = parseInt(params.id);
+    const { id: rawId } = await params;
+    const assessmentId = parseInt(rawId);
     if (isNaN(assessmentId)) {
-      return NextResponse.json({ error: `Invalid Assessment ID: ${params.id}` }, { status: 400 });
+      return NextResponse.json({ error: `Invalid Assessment ID: ${rawId}` }, { status: 400 });
     }
+
     const assessment = await getAssessmentById(assessmentId);
 
     if (!assessment) {

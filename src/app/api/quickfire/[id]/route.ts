@@ -4,15 +4,16 @@ import { getAssessmentById, updateAssessment } from '@/lib/quickfire';
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await verifyAuth(req);
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const id = parseInt(params.id);
+    const { id: rawId } = await params;
+    const id = parseInt(rawId);
     if (isNaN(id)) {
-      return NextResponse.json({ error: `Invalid Assessment ID: ${params.id}` }, { status: 400 });
+      return NextResponse.json({ error: `Invalid Assessment ID: ${rawId}` }, { status: 400 });
     }
 
     const assessment = await getAssessmentById(id);
@@ -34,13 +35,18 @@ export async function GET(
 
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await verifyAuth(req);
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const id = parseInt(params.id);
+    const { id: rawId } = await params;
+    const id = parseInt(rawId);
+    if (isNaN(id)) {
+      return NextResponse.json({ error: `Invalid Assessment ID: ${rawId}` }, { status: 400 });
+    }
+
     const assessment = await getAssessmentById(id);
 
     if (!assessment) {

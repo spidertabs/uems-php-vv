@@ -5,13 +5,17 @@ import { query } from '@/lib/db';
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await verifyAuth(req);
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const qId = parseInt(params.id);
+    const { id: rawId } = await params;
+    const qId = parseInt(rawId);
+    if (isNaN(qId)) {
+      return NextResponse.json({ error: `Invalid Question ID: ${rawId}` }, { status: 400 });
+    }
 
     // Verify ownership or check if admin
     const questionCheck = await query(
@@ -38,13 +42,17 @@ export async function DELETE(
 
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await verifyAuth(req);
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const qId = parseInt(params.id);
+    const { id: rawId } = await params;
+    const qId = parseInt(rawId);
+    if (isNaN(qId)) {
+      return NextResponse.json({ error: `Invalid Question ID: ${rawId}` }, { status: 400 });
+    }
 
     // Verify ownership or check if admin
     const questionCheck = await query(
