@@ -12,6 +12,7 @@ export default function ManageAssessmentPage() {
   const [questions, setQuestions] = useState<QuickfireQuestion[]>([]);
   const [loading, setLoading] = useState(true);
   const [addingQuestion, setAddingQuestion] = useState(false);
+  const [editingQuestionId, setEditingQuestionId] = useState<number | null>(null);
   
   // New Question Form
   const [newQuestion, setNewQuestion] = useState({
@@ -59,29 +60,27 @@ export default function ManageAssessmentPage() {
         options: newQuestion.question_type === 'multiple_choice' ? newQuestion.options.filter(o => o.trim() !== '') : null,
         min_words: newQuestion.question_type === 'essay' && newQuestion.min_words ? parseInt(newQuestion.min_words) : null,
         max_words: newQuestion.question_type === 'essay' && newQuestion.max_words ? parseInt(newQuestion.max_words) : null,
-        sequence_order: questions.length + 1
+        sequence_order: editingQuestionId ? undefined : questions.length + 1
       };
 
-      const response = await fetch(`/api/quickfire/${id}/questions`, {
-        method: 'POST',
+      const url = editingQuestionId 
+        ? `/api/quickfire/questions/${editingQuestionId}` 
+        : `/api/quickfire/${id}/questions`;
+      
+      const method = editingQuestionId ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method: method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
 
       if (response.ok) {
-        setNewQuestion({
-          question_text: '',
-          question_type: 'multiple_choice',
-          options: ['', '', '', ''],
-          correct_answer: '',
-          marks: 1,
-          min_words: '',
-          max_words: '',
-        });
+        resetForm();
         fetchData();
       } else {
         const error = await response.json();
-        alert(error.error || 'Failed to add question');
+        alert(error.error || 'Failed to save question');
       }
     } catch (error) {
       console.error('Submit Error:', error);
@@ -98,6 +97,39 @@ export default function ManageAssessmentPage() {
     } catch (error) {
       console.error('Delete Error:', error);
     }
+  };
+
+  const editQuestion = (q: QuickfireQuestion) => {
+    setEditingQuestionId(q.id);
+    const opts = q.options || [];
+    setNewQuestion({
+      question_text: q.question_text,
+      question_type: q.question_type,
+      options: [
+        opts[0] || '',
+        opts[1] || '',
+        opts[2] || '',
+        opts[3] || ''
+      ],
+      correct_answer: q.correct_answer || '',
+      marks: q.marks,
+      min_words: q.min_words ? String(q.min_words) : '',
+      max_words: q.max_words ? String(q.max_words) : ''
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const resetForm = () => {
+    setEditingQuestionId(null);
+    setNewQuestion({
+      question_text: '',
+      question_type: 'multiple_choice',
+      options: ['', '', '', ''],
+      correct_answer: '',
+      marks: 1,
+      min_words: '',
+      max_words: '',
+    });
   };
 
   if (loading) return <div className="flex h-96 items-center justify-center lg:pl-64">Loading...</div>;
@@ -132,9 +164,19 @@ export default function ManageAssessmentPage() {
         {/* Left Column: Questions List & Add Form */}
         <div className="lg:col-span-2 space-y-8">
           
-          {/* Add Question Form */}
+          {/* Add/Edit Question Form */}
           <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">➕ Add Question</h2>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                {editingQuestionId ? '✏️ Edit Question' : '➕ Add Question'}
+              </h2>
+              {editingQuestionId && (
+                <button onClick={resetForm} className="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+                  Cancel Edit
+                </button>
+              )}
+            </div>
+
             <form onSubmit={handleAddQuestion} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium mb-1.5">Question Text</label>
@@ -167,7 +209,7 @@ export default function ManageAssessmentPage() {
                     type="number"
                     min="1"
                     value={newQuestion.marks}
-                    onChange={e => setNewQuestion({...newQuestion, marks: parseInt(e.target.value)})}
+                    onChange={e => setNewQuestion({...newQuestion, marks: parseInt(e.target.value) || 1})}
                     className="w-full rounded-lg border border-gray-300 p-2.5 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                   />
                 </div>
@@ -231,9 +273,9 @@ export default function ManageAssessmentPage() {
               <button 
                 type="submit"
                 disabled={addingQuestion}
-                className="w-full bg-indigo-600 text-white rounded-lg py-2.5 font-bold hover:bg-indigo-700 transition disabled:opacity-50 mt-4"
+                className={`w-full text-white rounded-lg py-2.5 font-bold transition disabled:opacity-50 mt-4 ${editingQuestionId ? 'bg-green-600 hover:bg-green-700' : 'bg-indigo-600 hover:bg-indigo-700'}`}
               >
-                {addingQuestion ? 'Saving...' : 'Add Question to Assessment'}
+                {addingQuestion ? 'Saving...' : (editingQuestionId ? 'Save Changes' : 'Add Question')}
               </button>
             </form>
           </section>
@@ -247,17 +289,20 @@ export default function ManageAssessmentPage() {
               </div>
             ) : (
               questions.map((q, idx) => (
-                <div key={q.id} className="group rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+                <div key={q.id} className={`group rounded-xl border p-5 shadow-sm transition-colors ${editingQuestionId === q.id ? 'border-green-400 bg-green-50 dark:border-green-600 dark:bg-green-900/20' : 'border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800'}`}>
                   <div className="flex justify-between items-start mb-2">
                     <span className="text-xs font-bold text-indigo-600 uppercase">Q {q.sequence_order || idx + 1} • {q.question_type.replace('_', ' ')} • {q.marks} Marks</span>
-                    <button onClick={() => deleteQuestion(q.id)} className="text-gray-400 hover:text-red-500 transition-colors">🗑️</button>
+                    <div className="flex gap-2">
+                       <button onClick={() => editQuestion(q)} className="text-gray-400 hover:text-indigo-500 transition-colors" title="Edit">✏️</button>
+                       <button onClick={() => deleteQuestion(q.id)} className="text-gray-400 hover:text-red-500 transition-colors" title="Delete">🗑️</button>
+                    </div>
                   </div>
                   <p className="text-gray-900 dark:text-white font-medium">{q.question_text}</p>
                   
                   {q.question_type === 'multiple_choice' && q.options && (
                     <div className="mt-3 grid grid-cols-2 gap-2">
                       {(q.options as any).map((opt: string, i: number) => (
-                        <div key={i} className={`text-sm p-2 rounded border ${opt === q.correct_answer ? 'bg-green-50 border-green-200 text-green-700 dark:bg-green-900/20 dark:border-green-800/50 dark:text-green-400' : 'bg-gray-50 border-gray-100 dark:bg-gray-700/50 dark:border-gray-700 dark:text-gray-400'}`}>
+                        <div key={i} className={`text-sm p-2 rounded border ${opt === q.correct_answer ? 'bg-green-50 border-green-200 text-green-700 dark:bg-green-900/30 dark:border-green-800/50 dark:text-green-400' : 'bg-gray-50 border-gray-100 dark:bg-gray-800/50 dark:border-gray-700 dark:text-gray-300'}`}>
                           {String.fromCharCode(65 + i)}. {opt}
                           {opt === q.correct_answer && <span className="ml-2">✓</span>}
                         </div>

@@ -101,6 +101,26 @@ export async function addQuestion(data: Partial<QuickfireQuestion>): Promise<num
   return result.insertId;
 }
 
+export async function updateQuestion(id: number, data: Partial<QuickfireQuestion>): Promise<void> {
+  const fields: string[] = [];
+  const values: any[] = [];
+
+  if (data.question_text !== undefined) { fields.push('question_text = ?'); values.push(data.question_text); }
+  if (data.question_type !== undefined) { fields.push('question_type = ?'); values.push(data.question_type); }
+  if (data.options !== undefined) { fields.push('options = ?'); values.push(data.options ? JSON.stringify(data.options) : null); }
+  if (data.correct_answer !== undefined) { fields.push('correct_answer = ?'); values.push(data.correct_answer); }
+  if (data.marks !== undefined) { fields.push('marks = ?'); values.push(data.marks); }
+  if (data.min_words !== undefined) { fields.push('min_words = ?'); values.push(data.min_words); }
+  if (data.max_words !== undefined) { fields.push('max_words = ?'); values.push(data.max_words); }
+  if (data.sequence_order !== undefined) { fields.push('sequence_order = ?'); values.push(data.sequence_order); }
+
+  if (fields.length === 0) return;
+
+  const sql = `UPDATE quickfire_questions SET ${fields.join(', ')} WHERE id = ?`;
+  values.push(id);
+  await query(sql, values);
+}
+
 export async function deleteQuestion(id: number): Promise<void> {
   await query('DELETE FROM quickfire_questions WHERE id = ?', [id]);
 }
