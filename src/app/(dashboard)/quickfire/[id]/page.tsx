@@ -25,6 +25,8 @@ export default function ManageAssessmentPage() {
     max_words: '',
   });
 
+  const [fetchError, setFetchError] = useState<string | null>(null);
+
   const fetchData = useCallback(async () => {
     try {
       const [aRes, qRes] = await Promise.all([
@@ -38,10 +40,14 @@ export default function ManageAssessmentPage() {
         setAssessment(aData.data);
         setQuestions(qData.data);
       } else {
-        router.push('/quickfire');
+        const aErr = await aRes.json().catch(()=>({}));
+        const qErr = await qRes.json().catch(()=>({}));
+        console.error("Errors:", aErr, qErr);
+        setFetchError(`Failed to load data. Assessment API says: ${aErr.error || aRes.statusText}. Questions API says: ${qErr.error || qRes.statusText}.`);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Fetch Error:', error);
+      setFetchError(error.message || 'Network error');
     } finally {
       setLoading(false);
     }
@@ -133,6 +139,7 @@ export default function ManageAssessmentPage() {
   };
 
   if (loading) return <div className="flex h-96 items-center justify-center lg:pl-64">Loading...</div>;
+  if (fetchError) return <div className="flex h-96 items-center justify-center lg:pl-64 text-red-500 font-bold p-8 border">{fetchError}</div>;
   if (!assessment) return null;
 
   return (
