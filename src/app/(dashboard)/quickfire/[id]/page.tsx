@@ -13,6 +13,13 @@ export default function ManageAssessmentPage() {
   const [loading, setLoading] = useState(true);
   const [addingQuestion, setAddingQuestion] = useState(false);
   const [editingQuestionId, setEditingQuestionId] = useState<number | null>(null);
+  const [isEditingSettings, setIsEditingSettings] = useState(false);
+  const [settingsForm, setSettingsForm] = useState({
+    title: '',
+    duration_minutes: '',
+    is_active: true,
+    show_results: true,
+  });
   
   // New Question Form
   const [newQuestion, setNewQuestion] = useState({
@@ -56,6 +63,43 @@ export default function ManageAssessmentPage() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  useEffect(() => {
+    if (assessment) {
+      setSettingsForm({
+        title: assessment.title,
+        duration_minutes: assessment.duration_minutes ? String(assessment.duration_minutes) : '',
+        is_active: assessment.is_active,
+        show_results: assessment.show_results,
+      });
+    }
+  }, [assessment]);
+
+  const handleUpdateSettings = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const response = await fetch(`/api/quickfire/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: settingsForm.title,
+          duration_minutes: settingsForm.duration_minutes ? parseInt(settingsForm.duration_minutes) : null,
+          is_active: settingsForm.is_active,
+          show_results: settingsForm.show_results,
+        }),
+      });
+
+      if (response.ok) {
+        setIsEditingSettings(false);
+        fetchData();
+      } else {
+        const error = await response.json();
+        alert(error.error || 'Failed to update settings');
+      }
+    } catch (error) {
+      console.error('Update Settings Error:', error);
+    }
+  };
 
   const handleAddQuestion = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -344,9 +388,13 @@ export default function ManageAssessmentPage() {
                 <label className="text-xs font-bold text-gray-500 uppercase">Time Allotted</label>
                 <p className="text-sm font-medium">{assessment.duration_minutes ? `${assessment.duration_minutes} Minutes` : 'Unlimited'}</p>
               </div>
+              <div>
+                <label className="text-xs font-bold text-gray-500 uppercase">Results Visibility</label>
+                <p className="text-sm font-medium">{assessment.show_results ? 'Visible to Students' : 'Hidden'}</p>
+              </div>
               <div className="pt-4 border-t dark:border-gray-700">
                  <button 
-                  onClick={() => alert('Settings edit coming soon!')}
+                  onClick={() => setIsEditingSettings(true)}
                   className="text-sm text-indigo-600 hover:underline font-medium"
                  >
                    Edit Assessment Settings
@@ -354,6 +402,90 @@ export default function ManageAssessmentPage() {
               </div>
             </div>
           </section>
+
+          {/* Settings Modal */}
+          {isEditingSettings && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+              <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-800 border dark:border-gray-700">
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white">Edit Settings</h3>
+                  <button onClick={() => setIsEditingSettings(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">✕</button>
+                </div>
+                
+                <form onSubmit={handleUpdateSettings} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1.5">Assessment Title</label>
+                    <input 
+                      type="text"
+                      required
+                      value={settingsForm.title}
+                      onChange={e => setSettingsForm({...settingsForm, title: e.target.value})}
+                      className="w-full rounded-lg border border-gray-300 p-2.5 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-1.5">Duration (Minutes)</label>
+                    <input 
+                      type="number"
+                      placeholder="Leave blank for unlimited"
+                      value={settingsForm.duration_minutes}
+                      onChange={e => setSettingsForm({...settingsForm, duration_minutes: e.target.value})}
+                      className="w-full rounded-lg border border-gray-300 p-2.5 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-900/50">
+                    <div>
+                      <p className="text-sm font-medium">Accepting Responses</p>
+                      <p className="text-xs text-gray-500">Enable or disable student access</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        className="sr-only peer"
+                        checked={settingsForm.is_active}
+                        onChange={e => setSettingsForm({...settingsForm, is_active: e.target.checked})}
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 dark:peer-focus:ring-indigo-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-indigo-600"></div>
+                    </label>
+                  </div>
+
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-900/50">
+                    <div>
+                      <p className="text-sm font-medium">Show Results</p>
+                      <p className="text-xs text-gray-500">Students see scores after submission</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        className="sr-only peer"
+                        checked={settingsForm.show_results}
+                        onChange={e => setSettingsForm({...settingsForm, show_results: e.target.checked})}
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 dark:peer-focus:ring-indigo-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-indigo-600"></div>
+                    </label>
+                  </div>
+
+                  <div className="flex gap-3 pt-4">
+                    <button 
+                      type="button" 
+                      onClick={() => setIsEditingSettings(false)}
+                      className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium hover:bg-gray-50 dark:border-gray-600 dark:text-white dark:hover:bg-gray-700"
+                    >
+                      Cancel
+                    </button>
+                    <button 
+                      type="submit"
+                      className="flex-1 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 shadow-md"
+                    >
+                      Save Changes
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
 
           <section className="rounded-xl border-none bg-gradient-to-br from-indigo-600 to-purple-700 p-6 shadow-lg text-white">
             <h3 className="text-lg font-bold mb-2">🚀 Launch Info</h3>
