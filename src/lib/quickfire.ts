@@ -84,7 +84,7 @@ export async function getQuestionsByAssessment(assessmentId: number): Promise<Qu
 export async function addQuestion(data: Partial<QuickfireQuestion>): Promise<number> {
   const sql = `
     INSERT INTO quickfire_questions (assessment_id, question_text, question_type, options, correct_answer, marks, min_words, max_words, sequence_order)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?::question_type, ?::jsonb, ?, ?, ?, ?, ?)
   `;
   const options = data.options ? JSON.stringify(data.options) : null;
   const result = await query(sql, [
@@ -106,8 +106,8 @@ export async function updateQuestion(id: number, data: Partial<QuickfireQuestion
   const values: any[] = [];
 
   if (data.question_text !== undefined) { fields.push('question_text = ?'); values.push(data.question_text); }
-  if (data.question_type !== undefined) { fields.push('question_type = ?'); values.push(data.question_type); }
-  if (data.options !== undefined) { fields.push('options = ?'); values.push(data.options ? JSON.stringify(data.options) : null); }
+  if (data.question_type !== undefined) { fields.push('question_type = ?::question_type'); values.push(data.question_type); }
+  if (data.options !== undefined) { fields.push('options = ?::jsonb'); values.push(data.options ? JSON.stringify(data.options) : null); }
   if (data.correct_answer !== undefined) { fields.push('correct_answer = ?'); values.push(data.correct_answer); }
   if (data.marks !== undefined) { fields.push('marks = ?'); values.push(data.marks); }
   if (data.min_words !== undefined) { fields.push('min_words = ?'); values.push(data.min_words); }
