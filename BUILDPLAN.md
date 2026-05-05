@@ -22,6 +22,7 @@
 | PhD VV — Panel Structure (v3.1.2) | ✅ Complete | 100% |
 | Student Mobile App — API Supporting (Phase G) | 🏗️ Planned | 0% |
 | Exam Timetable & Course Enrollment (Phase H) | 🏗️ Planned | 0% |
+| Quickfire Module (Phase I) | ✅ Complete | 100% |
 
 ---
 
@@ -85,6 +86,12 @@ Everything below is **done and shipped**. Listed here for reference only.
 - [x] Dashboard with key metrics
 - [x] Paper statistics by status, course, programme
 - [x] Audit log viewer
+
+### Quickfire Module
+- [x] Database Schema: Assessments, Questions, Attempts, Answers
+- [x] Reporting Views: Results summary and detailed Q&A
+- [x] Essay Support: Minimum and maximum word count constraints
+- [x] Standalone Supabase Script: `sql/quickfire_module.sql`
 
 ### User & Org Management
 - [x] User management page (admin)

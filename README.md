@@ -61,6 +61,9 @@ UEMS-PHD-VV provides:
 - ✅ **Viva scheduling, panel assignment, and examiner confirmation**
 - ✅ **Structured examiner evaluation** with auto-calculated scores
 - ✅ **Panel recommendation and outcome recording**
+- ✅ **Quickfire Assessments** (manual assessments without HOD approval)
+- ✅ **Essay and MCQ Support** with word count constraints for essays
+- ✅ **Mobile-matched reporting** for student work preview
 
 ---
 
@@ -204,7 +207,8 @@ Draft → Submit → HOD Review → HOD Approval → Ready for Print → Printin
 - **Results & Reports**: Real-time access to viva outcomes and examiner feedback
 - **Schedule Management**: View upcoming viva dates, venues, and panel members
 - **Thesis Tracker**: Monitor submission history and version status
-- **Smart Notifications**: Push alerts for schedule changes, examiner confirmations, and final results
+- **Quickfire Participation**: Take quick assessments, view scores, and receive immediate feedback
+- **Smart Notifications**: Push alerts for schedule changes, examiner confirmations, final results, and new Quickfire assessments
 - **Progress Visualization**: Dynamic tracking of the PhD lifecycle (Enrolled → Thesis → Viva → Awarded)
 
 ---

@@ -39,6 +39,11 @@ const headerNavLinks: NavLink[] = [
     href: '/question-bank',
     roles: ['lecturer', 'hod', 'admin'],
   },
+  {
+    title: '⚡ Quickfire',
+    href: '/quickfire',
+    roles: ['lecturer', 'hod', 'dean', 'admin'],
+  },
 
   // Organization
   {
