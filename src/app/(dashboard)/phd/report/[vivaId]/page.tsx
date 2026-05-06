@@ -137,7 +137,7 @@ export default function VivaReportPage() {
         .cmt-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .cmt-box { border: 1px solid #e5e7eb; border-radius: 3px; padding: 9px 11px; background: #ffffff; }
         .cmt-lbl { font-size: 8.5px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 3px; }
-        .cmt-txt { font-family: 'EB Garamond', Georgia, serif; font-size: 13px; color: #4b5563; line-height: 1.5; }
+        .cmt-txt { font-family: 'EB Garamond', Georgia, serif; font-size: 13px; color: #4b5563; line-height: 1.5; text-align: justify; }
         .cmt-s .cmt-lbl { color: #059669; }
         .cmt-w .cmt-lbl { color: #d97706; }
         .cmt-c .cmt-lbl { color: #2563eb; }
@@ -154,7 +154,7 @@ export default function VivaReportPage() {
 
         .final-comments-box { margin-top: 10px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 3px; padding: 10px 14px; }
         .final-comments-lbl { font-size: 8.5px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #9ca3af; margin-bottom: 4px; }
-        .final-comments-txt { font-family: 'EB Garamond, Georgia, serif'; font-size: 13px; color: #374151; line-height: 1.6; }
+        .final-comments-txt { font-family: 'EB Garamond, Georgia, serif'; font-size: 13px; color: #374151; line-height: 1.6; text-align: justify; }
 
         .sig-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; margin-top: 6px; }
         .sig-item { border-top: 1px solid #374151; padding-top: 5px; }
