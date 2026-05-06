@@ -900,7 +900,7 @@ export default function CandidateDetailPage() {
                                   <select
                                     value={recForm.outcome}
                                     onChange={(e) => setRecForm(p => ({ ...p, outcome: e.target.value as any }))}
-                                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                   >
                                     <option value="">Select Outcome...</option>
                                     {Object.entries(OUTCOME_LABELS).map(([k, v]) => (
@@ -915,7 +915,7 @@ export default function CandidateDetailPage() {
                                       type="date"
                                       value={recForm.correction_deadline}
                                       onChange={(e) => setRecForm(p => ({ ...p, correction_deadline: e.target.value }))}
-                                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                      className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                     />
                                   </div>
                                 )}
@@ -927,7 +927,7 @@ export default function CandidateDetailPage() {
                                   onChange={(e) => setRecForm(p => ({ ...p, final_comments: e.target.value }))}
                                   rows={2}
                                   placeholder="Summarize the panel agreement..."
-                                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                  className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                 />
                               </div>
                               {recError && <p className="text-xs text-red-500 font-medium">{recError}</p>}
@@ -988,7 +988,7 @@ export default function CandidateDetailPage() {
                               onChange={(e) => setPostponeReason(e.target.value)}
                               required
                               rows={2}
-                              className="w-full rounded-lg border border-amber-200 px-3 py-2 text-sm focus:outline-none dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                              className="w-full rounded-lg border border-amber-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none dark:bg-gray-800 dark:border-gray-700 dark:text-white"
                             />
                             <div className="flex gap-2">
                               <button type="button" onClick={() => setShowPostpone(false)} className="flex-1 text-xs text-gray-500">Cancel</button>
@@ -1143,7 +1143,7 @@ export default function CandidateDetailPage() {
                                       setDraft(p => ({ ...p, [f.key]: val }));
                                     }
                                   }}
-                                  className="w-16 rounded-lg border border-gray-300 px-2 py-1.5 text-center text-sm focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                  className="w-16 rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-center text-sm text-gray-900 focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                 />
                                 <span className="text-xs text-gray-400">/25</span>
                               </div>
@@ -1168,7 +1168,7 @@ export default function CandidateDetailPage() {
                                 onChange={(e) => setDraft(p => ({ ...p, [f.key]: e.target.value }))}
                                 rows={3}
                                 placeholder={f.placeholder}
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                               />
                             </div>
                           ))}
@@ -1304,7 +1304,7 @@ export default function CandidateDetailPage() {
                 value={editForm.thesis_title || ''}
                 onChange={(e) => setEditForm(p => ({ ...p, thesis_title: e.target.value }))}
                 rows={3}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
               />
             </div>
 
