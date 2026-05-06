@@ -9,7 +9,7 @@ export async function POST(
 ) {
   try {
     const user = await verifyAuth(req);
-    if (!user || !['viva_coordinator', 'admin'].includes(user.role)) {
+    if (!user || !['viva_coordinator', 'admin', 'hod', 'dean'].includes(user.role)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 

@@ -190,7 +190,7 @@ export async function PUT(
 ) {
   try {
     const user = await verifyAuth(req);
-    if (!user || !['viva_coordinator', 'admin'].includes(user.role)) {
+    if (!user || !['viva_coordinator', 'admin', 'hod', 'dean'].includes(user.role)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
