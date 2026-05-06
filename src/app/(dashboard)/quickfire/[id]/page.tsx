@@ -101,6 +101,34 @@ export default function ManageAssessmentPage() {
     }
   };
 
+  const handleAddMinutes = async (additionalMinutes: number) => {
+    if (!assessment) return;
+    const currentDuration = assessment.duration_minutes || 0;
+    const newDuration = currentDuration + additionalMinutes;
+
+    try {
+      const response = await fetch(`/api/quickfire/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: assessment.title,
+          duration_minutes: newDuration,
+          is_active: assessment.is_active,
+          show_results: assessment.show_results,
+        }),
+      });
+
+      if (response.ok) {
+        fetchData();
+      } else {
+        const error = await response.json();
+        alert(error.error || 'Failed to add minutes');
+      }
+    } catch (error) {
+      console.error('Add Minutes Error:', error);
+    }
+  };
+
   const handleAddQuestion = async (e: React.FormEvent) => {
     e.preventDefault();
     setAddingQuestion(true);
@@ -386,7 +414,25 @@ export default function ManageAssessmentPage() {
               </div>
               <div>
                 <label className="text-xs font-bold text-gray-500 uppercase">Time Allotted</label>
-                <p className="text-sm font-medium">{assessment.duration_minutes ? `${assessment.duration_minutes} Minutes` : 'Unlimited'}</p>
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-sm font-medium">{assessment.duration_minutes ? `${assessment.duration_minutes} Minutes` : 'Unlimited'}</p>
+                  <div className="flex gap-1">
+                    <button 
+                      onClick={() => handleAddMinutes(5)}
+                      className="px-2 py-1 text-[10px] font-bold bg-indigo-50 text-indigo-600 rounded hover:bg-indigo-100 transition-colors"
+                      title="Add 5 minutes"
+                    >
+                      +5m
+                    </button>
+                    <button 
+                      onClick={() => handleAddMinutes(10)}
+                      className="px-2 py-1 text-[10px] font-bold bg-indigo-50 text-indigo-600 rounded hover:bg-indigo-100 transition-colors"
+                      title="Add 10 minutes"
+                    >
+                      +10m
+                    </button>
+                  </div>
+                </div>
               </div>
               <div>
                 <label className="text-xs font-bold text-gray-500 uppercase">Results Visibility</label>

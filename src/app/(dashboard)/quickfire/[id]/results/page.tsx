@@ -97,7 +97,11 @@ export default function AssessmentResultsPage() {
                   </tr>
                 ) : (
                   results.map((r) => (
-                    <tr key={r.attempt_id} className={`hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors ${selectedAttempt === r.attempt_id ? 'bg-indigo-50/50 dark:bg-indigo-900/10' : ''}`}>
+                    <tr 
+                      key={r.attempt_id} 
+                      onClick={() => viewDetails(r.attempt_id)}
+                      className={`hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors cursor-pointer ${selectedAttempt === r.attempt_id ? 'bg-indigo-50/50 dark:bg-indigo-900/10' : ''}`}
+                    >
                       <td className="px-6 py-4">
                         <div className="font-bold text-gray-900 dark:text-white">{r.student_name}</div>
                         <div className="text-xs text-gray-500">{r.registration_number}</div>
