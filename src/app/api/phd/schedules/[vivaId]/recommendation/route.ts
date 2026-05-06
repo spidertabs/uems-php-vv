@@ -18,7 +18,7 @@ export async function GET(
     const vivaId = parseInt(vivaIdStr);
 
     const recommendation = await query<any[]>(
-      `SELECT id, viva_id, outcome, correction_deadline, final_comments, created_at, updated_at
+      `SELECT id, viva_id, outcome, correction_deadline, final_comments, issued_by, issued_at
        FROM viva_recommendations
        WHERE viva_id = ?`,
       [vivaId]
@@ -120,17 +120,17 @@ export async function POST(
       // Update existing
       await query(
         `UPDATE viva_recommendations SET 
-         outcome = ?, correction_deadline = ?, final_comments = ?, updated_at = NOW()
+         outcome = ?, correction_deadline = ?, final_comments = ?, issued_by = ?, issued_at = NOW()
          WHERE viva_id = ?`,
-        [outcome, correction_deadline || null, final_comments || null, vivaId]
+        [outcome, correction_deadline || null, final_comments || null, user.id, vivaId]
       );
       result = { id: existing[0].id, updated: true };
     } else {
       // Create new
       const insertResult = await query<any>(
-        `INSERT INTO viva_recommendations (viva_id, outcome, correction_deadline, final_comments, created_at, updated_at)
-         VALUES (?, ?, ?, ?, NOW(), NOW())`,
-        [vivaId, outcome, correction_deadline || null, final_comments || null]
+        `INSERT INTO viva_recommendations (viva_id, outcome, correction_deadline, final_comments, issued_by, issued_at)
+         VALUES (?, ?, ?, ?, ?, NOW())`,
+        [vivaId, outcome, correction_deadline || null, final_comments || null, user.id]
       );
       result = { id: (insertResult as any).insertId, created: true };
     }
