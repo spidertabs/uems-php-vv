@@ -212,67 +212,71 @@ export default function VivaDetailPage() {
 
       {/* Header */}
       <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white truncate">
                 Viva — {viva.candidate_name}
               </h1>
-              <span className={`rounded-full px-3 py-1 text-xs font-medium ${VIVA_STATUS_COLORS[viva.status]}`}>
+              <span className={`whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium ${VIVA_STATUS_COLORS[viva.status]}`}>
                 {viva.status.replace('_', ' ').toUpperCase()}
               </span>
             </div>
             <p className="mt-1 font-mono text-sm text-gray-500 dark:text-gray-400">
               {viva.registration_number} · {viva.programme_name}
             </p>
-            <p className="mt-2 text-sm text-gray-700 dark:text-gray-300">
-              📅 {formatDate(viva.scheduled_date)} · ⏰ {formatTime(viva.scheduled_time)} · ⏱ {viva.duration_minutes} min
-            </p>
-            <p className="text-sm text-gray-600 dark:text-gray-400">📍 {viva.venue}</p>
-            {viva.supervisor_name && (
-              <p className="text-sm text-gray-600 dark:text-gray-400">👤 Supervisor: {viva.supervisor_name}</p>
-            )}
-            <p className="mt-2 max-w-2xl text-sm italic text-gray-500 dark:text-gray-400">
+            <div className="mt-2 space-y-1 text-sm text-gray-700 dark:text-gray-300">
+              <p className="flex flex-wrap gap-x-3">
+                <span className="whitespace-nowrap">📅 {formatDate(viva.scheduled_date)}</span>
+                <span className="whitespace-nowrap">⏰ {formatTime(viva.scheduled_time)}</span>
+                <span className="whitespace-nowrap">⏱ {viva.duration_minutes} min</span>
+              </p>
+              <p className="flex items-center gap-1.5">📍 <span className="truncate">{viva.venue}</span></p>
+              {viva.supervisor_name && (
+                <p className="flex items-center gap-1.5">👤 Supervisor: <span className="truncate">{viva.supervisor_name}</span></p>
+              )}
+            </div>
+            <p className="mt-3 max-w-2xl text-sm italic text-gray-500 dark:text-gray-400 line-clamp-2">
               &ldquo;{viva.thesis_title}&rdquo;
             </p>
           </div>
 
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-wrap gap-2 lg:flex-col lg:w-48">
             {/* HOD/Admin-only controls */}
             {isHodOrAdmin && viva.status === 'scheduled' && (
               <>
                 <button onClick={handleComplete}
-                  className="rounded-lg bg-emerald-600 px-4 py-2 text-sm text-white hover:bg-emerald-700">
-                  ✅ Mark Complete
+                  className="inline-flex flex-1 items-center justify-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700">
+                  ✅ Complete
                 </button>
                 <button onClick={() => setShowPostpone(true)}
-                  className="rounded-lg border border-orange-300 px-4 py-2 text-sm text-orange-600 hover:bg-orange-50 dark:text-orange-400">
+                  className="inline-flex flex-1 items-center justify-center rounded-lg border border-orange-300 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:text-orange-400">
                   ⏸ Postpone
                 </button>
               </>
             )}
             {viva.recommendation && (
               <Link href={`/phd/report/${vivaId}`}
-                className="rounded-lg bg-indigo-600 px-4 py-2 text-sm text-white hover:bg-indigo-700">
-                🖨️ View Full Report
+                className="inline-flex flex-1 items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">
+                🖨️ Report
               </Link>
             )}
             {/* Examiner shortcut to evaluation */}
             {isExaminerOnPanel && (
               <Link href={`/phd/candidates/${viva.candidate_id}?tab=evaluation&vivaId=${vivaId}`}
-                className="flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-bold text-white hover:bg-indigo-700">
-                📝 My Evaluation
+                className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-bold text-white hover:bg-indigo-700">
+                📝 Evaluate
               </Link>
             )}
           </div>
         </div>
 
         {/* Tabs */}
-        <div className="mt-6 border-b border-gray-200 dark:border-gray-700">
-          <nav className="-mb-px flex gap-6">
+        <div className="mt-6 border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
+          <nav className="-mb-px flex gap-6 min-w-max">
             {tabs.map(t => (
               <button key={t.key} onClick={() => setActiveTab(t.key)}
-                className={`pb-3 text-sm font-medium transition-colors border-b-2 ${
+                className={`pb-3 whitespace-nowrap text-sm font-medium transition-colors border-b-2 ${
                   activeTab === t.key
                     ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400'
                     : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400'
@@ -495,19 +499,19 @@ export default function VivaDetailPage() {
                         {ex.panel_slot ? `${ex.panel_slot}. ` : ''}{ex.examiner_name}
                       </p>
                       <p className="text-xs text-gray-500 dark:text-gray-400">{ex.examiner_email}</p>
-                      <span className="mt-1 inline-block rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-700 dark:bg-indigo-900 dark:text-indigo-200">
+                      <span className="mt-1 inline-block whitespace-nowrap rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-700 dark:bg-indigo-900 dark:text-indigo-200">
                         {EXAMINER_ROLE_LABELS[ex.role]}
                       </span>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
                     {ex.confirmed ? (
-                      <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-700 dark:bg-green-900 dark:text-green-200">
+                      <span className="whitespace-nowrap rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-700 dark:bg-green-900 dark:text-green-200">
                         ✅ Confirmed
                       </span>
                     ) : (
                       <>
-                        <span className="rounded-full bg-yellow-100 px-3 py-1 text-xs font-medium text-yellow-700 dark:bg-yellow-900 dark:text-yellow-200">
+                        <span className="whitespace-nowrap rounded-full bg-yellow-100 px-3 py-1 text-xs font-medium text-yellow-700 dark:bg-yellow-900 dark:text-yellow-200">
                           ⏳ Awaiting
                         </span>
                         {isHodOrAdmin && viva.status !== 'completed' && (
@@ -576,16 +580,16 @@ export default function VivaDetailPage() {
                   <div className="mb-4 flex items-center justify-between">
                     <div>
                       <p className="font-semibold text-gray-900 dark:text-white">{ev.examiner_name}</p>
-                      <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs text-indigo-700 dark:bg-indigo-900 dark:text-indigo-200">
+                      <span className="whitespace-nowrap rounded-full bg-indigo-100 px-2 py-0.5 text-xs text-indigo-700 dark:bg-indigo-900 dark:text-indigo-200">
                         {EXAMINER_ROLE_LABELS[ev.examiner_panel_role]}
                       </span>
                     </div>
                     {ev.is_submitted ? (
-                      <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-700 dark:bg-green-900 dark:text-green-200">
+                      <span className="whitespace-nowrap rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-700 dark:bg-green-900 dark:text-green-200">
                         ✅ Submitted {ev.submitted_at ? `· ${formatDate(ev.submitted_at)}` : ''}
                       </span>
                     ) : (
-                      <span className="rounded-full bg-yellow-100 px-3 py-1 text-xs font-medium text-yellow-700 dark:bg-yellow-900 dark:text-yellow-200">
+                      <span className="whitespace-nowrap rounded-full bg-yellow-100 px-3 py-1 text-xs font-medium text-yellow-700 dark:bg-yellow-900 dark:text-yellow-200">
                         ⏳ Draft / Not Submitted
                       </span>
                     )}
@@ -632,7 +636,7 @@ export default function VivaDetailPage() {
           {viva.recommendation ? (
             <div className="rounded-xl border border-emerald-200 bg-white p-6 shadow-md dark:border-emerald-700 dark:bg-gray-800">
               <div className="flex items-center gap-4 mb-4">
-                <span className={`rounded-full px-4 py-1.5 text-sm font-semibold ${OUTCOME_COLORS[viva.recommendation.outcome]}`}>
+                <span className={`whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-semibold ${OUTCOME_COLORS[viva.recommendation.outcome]}`}>
                   {OUTCOME_LABELS[viva.recommendation.outcome]}
                 </span>
                 <span className="text-sm text-gray-500 dark:text-gray-400">
@@ -682,7 +686,7 @@ export default function VivaDetailPage() {
                           onChange={() => setRecForm(p => ({ ...p, outcome: v }))}
                           className="h-4 w-4 text-emerald-600"
                         />
-                        <span className={`rounded-full px-3 py-0.5 text-xs font-medium ${OUTCOME_COLORS[v]}`}>{l}</span>
+                        <span className={`whitespace-nowrap rounded-full px-3 py-0.5 text-xs font-medium ${OUTCOME_COLORS[v]}`}>{l}</span>
                       </label>
                     ))}
                   </div>

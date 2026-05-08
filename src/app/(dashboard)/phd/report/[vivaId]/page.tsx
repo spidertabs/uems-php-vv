@@ -84,6 +84,7 @@ export default function VivaReportPage() {
           background: #ffffff;
           color: #111827;
           width: 210mm;
+          max-width: 95vw;
           min-height: 297mm;
           margin: 28px auto;
           box-shadow: 0 4px 40px rgba(0,0,0,0.15);
@@ -97,9 +98,12 @@ export default function VivaReportPage() {
         .rpt-conf { font-size: 10px; color: #9ca3af; letter-spacing: 0.1em; text-transform: uppercase; padding-bottom: 8px; display: block; }
         .rpt-topbar { height: 4px; background: linear-gradient(90deg, #064e3b 0%, #059669 55%, #6ee7b7 100%); margin: 0; }
 
-        .rpt-cols { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid #d1d5db; }
+        .rpt-cols { display: grid; grid-template-columns: 1fr; border-bottom: 1px solid #d1d5db; }
+        @media (min-width: 768px) {
+          .rpt-cols { grid-template-columns: 1fr 1fr; }
+          .rpt-col:first-child { border-right: 1px solid #d1d5db; }
+        }
         .rpt-col { padding: 18px 40px; }
-        .rpt-col:first-child { border-right: 1px solid #d1d5db; }
 
         .rpt-grp-lbl { font-size: 8.5px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: #9ca3af; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #f3f4f6; }
         .rpt-f { margin-bottom: 9px; }
@@ -119,7 +123,7 @@ export default function VivaReportPage() {
 
         .st { width: 100%; border-collapse: collapse; font-size: 12px; }
         .st thead tr { border-bottom: 1.5px solid #111827; }
-        .st th { padding: 5px 8px; text-align: center; font-size: 8.5px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #6b7280; }
+        .st th { padding: 5px 8px; text-align: center; font-size: 8.5px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #6b7280; white-space: nowrap; }
         .st th:first-child { text-align: left; }
         .st td { padding: 9px 8px; text-align: center; color: #374151; border-bottom: 1px solid #f3f4f6; }
         .st td:first-child { text-align: left; }
@@ -133,8 +137,11 @@ export default function VivaReportPage() {
         .cmt-block { margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px dashed #e5e7eb; }
         .cmt-block:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
         .cmt-who { font-size: 12px; font-weight: 600; color: #111827; margin-bottom: 7px; }
-        .cmt-who span { font-weight: 400; color: #9ca3af; font-size: 10px; margin-left: 6px; }
-        .cmt-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .cmt-who span { font-weight: 400; color: #9ca3af; font-size: 10px; margin-left: 6px; white-space: nowrap; }
+        .cmt-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+        @media (min-width: 640px) {
+          .cmt-grid { grid-template-columns: 1fr 1fr; }
+        }
         .cmt-box { border: 1px solid #e5e7eb; border-radius: 3px; padding: 9px 11px; background: #ffffff; }
         .cmt-lbl { font-size: 8.5px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 3px; }
         .cmt-txt { font-family: 'EB Garamond', Georgia, serif; font-size: 13px; color: #4b5563; line-height: 1.5; text-align: justify; }
@@ -148,7 +155,7 @@ export default function VivaReportPage() {
           border: 1.5px solid #111827; border-radius: 2px;
           padding: 6px 14px; font-size: 12px; font-weight: 700;
           letter-spacing: 0.06em; text-transform: uppercase; color: #111827;
-          margin-bottom: 10px;
+          margin-bottom: 10px; white-space: nowrap;
         }
         .outcome-score { font-weight: 400; font-size: 12px; border-left: 1px solid #d1d5db; padding-left: 10px; margin-left: 4px; }
 
@@ -156,14 +163,20 @@ export default function VivaReportPage() {
         .final-comments-lbl { font-size: 8.5px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #9ca3af; margin-bottom: 4px; }
         .final-comments-txt { font-family: 'EB Garamond, Georgia, serif'; font-size: 13px; color: #374151; line-height: 1.6; text-align: justify; }
 
-        .sig-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; margin-top: 6px; }
+        .sig-row { display: grid; grid-template-columns: 1fr; gap: 24px; margin-top: 6px; }
+        @media (min-width: 640px) {
+          .sig-row { grid-template-columns: 1fr 1fr 1fr; }
+        }
         .sig-item { border-top: 1px solid #374151; padding-top: 5px; }
         .sig-lbl { font-size: 8.5px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #9ca3af; }
         .sig-nm { font-size: 11px; color: #374151; margin-top: 2px; }
 
-        .rpt-foot { padding: 10px 40px; border-top: 1px solid #d1d5db; display: flex; justify-content: space-between; align-items: center; }
+        .rpt-foot { padding: 10px 40px; border-top: 1px solid #d1d5db; display: flex; flex-direction: column; gap: 10px; align-items: center; text-align: center; }
+        @media (min-width: 640px) {
+          .rpt-foot { flex-direction: row; justify-content: space-between; text-align: left; }
+        }
         .rpt-foot-txt { font-size: 9px; color: #9ca3af; }
-        .rpt-foot-stamp { font-size: 9px; font-weight: 700; color: #d1d5db; letter-spacing: 0.1em; text-transform: uppercase; border: 1px solid #e5e7eb; padding: 2px 8px; border-radius: 2px; }
+        .rpt-foot-stamp { font-size: 9px; font-weight: 700; color: #d1d5db; letter-spacing: 0.1em; text-transform: uppercase; border: 1px solid #e5e7eb; padding: 2px 8px; border-radius: 2px; white-space: nowrap; }
 
         /* ══════════════════════════════════════
            DARK MODE — only via .dark class on <html>
@@ -228,7 +241,7 @@ export default function VivaReportPage() {
           .rpt { padding: 0 !important; margin: 0 !important; }
           .rpt-paper {
             background: white !important; color: #111827 !important;
-            width: 100% !important; margin: 0 !important; padding-top: 0 !important;
+            width: 210mm !important; max-width: none !important; margin: 0 !important; padding-top: 0 !important;
             box-shadow: none !important; min-height: 0 !important;
             position: absolute !important; top: 0 !important; left: 0 !important;
           }
@@ -263,16 +276,16 @@ export default function VivaReportPage() {
       <div className="rpt lg:pl-64">
 
         {/* ── Toolbar ── */}
-        <div className="no-print sticky top-0 z-50 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-6 py-3 flex items-center justify-between">
+        <div className="no-print sticky top-0 z-50 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-6 py-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <Link
             href={`/phd/schedules/${vivaId}`}
-            className="text-sm text-emerald-600 hover:underline dark:text-emerald-400"
+            className="inline-flex items-center text-sm text-emerald-600 hover:underline dark:text-emerald-400"
           >
             ← Back to Viva
           </Link>
           <button
             onClick={() => window.print()}
-            className="flex items-center gap-1.5 bg-emerald-900 hover:bg-emerald-800 dark:bg-emerald-700 dark:hover:bg-emerald-600 text-white border-0 rounded-md px-4 py-2 text-sm font-semibold cursor-pointer transition-colors duration-150"
+            className="flex items-center justify-center gap-1.5 bg-emerald-900 hover:bg-emerald-800 dark:bg-emerald-700 dark:hover:bg-emerald-600 text-white border-0 rounded-md px-4 py-2 text-sm font-semibold cursor-pointer transition-colors duration-150"
           >
             🖨️ Print Report
           </button>
@@ -332,6 +345,7 @@ export default function VivaReportPage() {
             {submittedEvals.length === 0 ? (
               <p style={{ fontSize: 12, color: '#9ca3af', fontStyle: 'italic' }}>No evaluations submitted yet.</p>
             ) : (
+            <div className="overflow-x-auto">
               <table className="st">
                 <thead>
                   <tr>
@@ -347,8 +361,8 @@ export default function VivaReportPage() {
                   {submittedEvals.map((ev, i) => (
                     <tr key={i}>
                       <td>
-                        <div className="en">{ev.examiner_name}</div>
-                        <div className="er">{EXAMINER_ROLE_LABELS[ev.examiner_role as ExaminerRole]}</div>
+                        <div className="en whitespace-nowrap">{ev.examiner_name}</div>
+                        <div className="er whitespace-nowrap">{EXAMINER_ROLE_LABELS[ev.examiner_role as ExaminerRole]}</div>
                       </td>
                       <td className="sv">{ev.originality_score ?? '—'}</td>
                       <td className="sv">{ev.methodology_score ?? '—'}</td>
@@ -359,7 +373,7 @@ export default function VivaReportPage() {
                   ))}
                   {submittedEvals.length > 1 && (
                     <tr className="ar">
-                      <td>Panel Average</td>
+                      <td className="whitespace-nowrap">Panel Average</td>
                       <td>{avgScore('originality_score')?.toFixed(1) ?? '—'}</td>
                       <td>{avgScore('methodology_score')?.toFixed(1) ?? '—'}</td>
                       <td>{avgScore('presentation_score')?.toFixed(1) ?? '—'}</td>
@@ -369,6 +383,7 @@ export default function VivaReportPage() {
                   )}
                 </tbody>
               </table>
+            </div>
             )}
           </div>
 

@@ -89,14 +89,14 @@ export default function PhdReportsPage() {
   return (
     <div className="space-y-8 lg:pl-64">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">📊 PhD Reports</h1>
           <p className="mt-1 text-gray-600 dark:text-gray-400">
             {totalCandidates} total candidate{totalCandidates !== 1 ? 's' : ''}
           </p>
         </div>
-        <Link href="/phd" className="text-sm text-emerald-600 hover:underline dark:text-emerald-400">
+        <Link href="/phd" className="inline-flex items-center text-sm text-emerald-600 hover:underline dark:text-emerald-400">
           ← PhD Dashboard
         </Link>
       </div>
@@ -109,14 +109,14 @@ export default function PhdReportsPage() {
           </h2>
           <div className="space-y-2">
             {pendingActions.map((a) => (
-              <div key={a.viva_id} className="flex items-center justify-between rounded-lg bg-white p-3 shadow-sm dark:bg-gray-800">
+              <div key={a.viva_id} className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-lg bg-white p-3 shadow-sm dark:bg-gray-800">
                 <div>
                   <p className="font-medium text-gray-900 dark:text-white">{a.candidate_name}</p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">{a.registration_number} · {a.reason}</p>
                 </div>
                 <Link
                   href={`/phd/schedules/${a.viva_id}`}
-                  className="rounded-lg bg-orange-100 px-3 py-1 text-xs text-orange-700 hover:bg-orange-200 dark:bg-orange-900 dark:text-orange-200"
+                  className="inline-flex items-center justify-center rounded-lg bg-orange-100 px-3 py-1 text-xs text-orange-700 hover:bg-orange-200 dark:bg-orange-900 dark:text-orange-200"
                 >
                   Resolve →
                 </Link>
@@ -141,7 +141,7 @@ export default function PhdReportsPage() {
                 return (
                   <div key={row.status}>
                     <div className="mb-1 flex items-center justify-between text-sm">
-                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${CANDIDATE_STATUS_COLORS[row.status]}`}>
+                      <span className={`whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium ${CANDIDATE_STATUS_COLORS[row.status]}`}>
                         {CANDIDATE_STATUS_LABELS[row.status]}
                       </span>
                       <span className="text-gray-700 dark:text-gray-300">
@@ -173,7 +173,7 @@ export default function PhdReportsPage() {
                 return (
                   <div key={row.outcome}>
                     <div className="mb-1 flex items-center justify-between text-sm">
-                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${OUTCOME_COLORS[row.outcome]}`}>
+                      <span className={`whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium ${OUTCOME_COLORS[row.outcome]}`}>
                         {OUTCOME_LABELS[row.outcome]}
                       </span>
                       <span className="text-gray-700 dark:text-gray-300">
@@ -231,7 +231,7 @@ export default function PhdReportsPage() {
                     </td>
                     <td className="px-6 py-4 font-semibold text-gray-900 dark:text-white">{row.total}</td>
                     <td className="px-6 py-4">
-                      <span className="rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-800 dark:bg-green-900 dark:text-green-200">
+                      <span className="whitespace-nowrap rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-800 dark:bg-green-900 dark:text-green-200">
                         {row.awarded}
                       </span>
                     </td>

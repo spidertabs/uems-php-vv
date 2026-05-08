@@ -191,16 +191,16 @@ export default function PhdDashboardPage() {
             </p>
           </div>
           {canManageVivás && (
-            <div className="hidden md:flex flex-col gap-2 text-right">
+            <div className="flex flex-col gap-2 text-right sm:flex-row md:flex-col lg:flex-row">
               <Link
                 href="/phd/candidates/new"
-                className="rounded-lg bg-white/20 px-4 py-2 text-sm font-medium backdrop-blur-sm hover:bg-white/30 transition-colors"
+                className="inline-flex items-center justify-center rounded-lg bg-white/20 px-4 py-2 text-sm font-medium backdrop-blur-sm hover:bg-white/30 transition-colors"
               >
                 + Register Candidate
               </Link>
               <Link
                 href="/phd/schedules/new"
-                className="rounded-lg bg-white/20 px-4 py-2 text-sm font-medium backdrop-blur-sm hover:bg-white/30 transition-colors"
+                className="inline-flex items-center justify-center rounded-lg bg-white/20 px-4 py-2 text-sm font-medium backdrop-blur-sm hover:bg-white/30 transition-colors"
               >
                 + Schedule Viva
               </Link>
@@ -273,7 +273,7 @@ export default function PhdDashboardPage() {
                         </p>
                       </div>
                       <div className="flex-shrink-0 text-right">
-                        <span className="inline-block rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
+                        <span className="inline-block whitespace-nowrap rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
                           {getRelativeDate(viva.scheduled_date)}
                         </span>
                         <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
@@ -317,7 +317,7 @@ export default function PhdDashboardPage() {
                 return (
                   <div key={row.status}>
                     <div className="mb-1 flex items-center justify-between text-sm">
-                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${CANDIDATE_STATUS_COLORS[row.status]}`}>
+                      <span className={`whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium ${CANDIDATE_STATUS_COLORS[row.status]}`}>
                         {CANDIDATE_STATUS_LABELS[row.status]}
                       </span>
                       <span className="font-semibold text-gray-900 dark:text-white">
@@ -367,7 +367,7 @@ export default function PhdDashboardPage() {
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{o.programme_name}</td>
                     <td className="px-6 py-4">
-                      <span className={`rounded-full px-3 py-1 text-xs font-medium ${OUTCOME_COLORS[o.outcome]}`}>
+                      <span className={`whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium ${OUTCOME_COLORS[o.outcome]}`}>
                         {OUTCOME_LABELS[o.outcome]}
                       </span>
                     </td>

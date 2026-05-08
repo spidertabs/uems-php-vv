@@ -116,7 +116,7 @@ function VivaSchedulesPageInner() {
   return (
     <div className="space-y-6 lg:pl-64">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">📅 Viva Schedules</h1>
           <p className="mt-1 text-gray-600 dark:text-gray-400">
@@ -125,7 +125,7 @@ function VivaSchedulesPageInner() {
         </div>
         <Link
           href="/phd/schedules/new"
-          className="rounded-lg bg-emerald-600 px-4 py-2 text-white transition-colors hover:bg-emerald-700"
+          className="inline-flex items-center justify-center rounded-lg bg-emerald-600 px-4 py-2 text-white transition-colors hover:bg-emerald-700 sm:w-auto"
         >
           + Schedule Viva
         </Link>
@@ -137,7 +137,7 @@ function VivaSchedulesPageInner() {
           <button
             key={opt.value}
             onClick={() => setFilterStatus(opt.value)}
-            className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+            className={`whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
               filterStatus === opt.value
                 ? 'bg-emerald-600 text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
@@ -237,13 +237,13 @@ function VivaSchedulesPageInner() {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`rounded-full px-3 py-1 text-xs font-medium ${VIVA_STATUS_COLORS[row.viva_status]}`}>
+                      <span className={`whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium ${VIVA_STATUS_COLORS[row.viva_status]}`}>
                         {row.viva_status.replace('_', ' ')}
                       </span>
                     </td>
                     <td className="px-6 py-4">
                       {row.outcome ? (
-                        <span className={`rounded-full px-3 py-1 text-xs font-medium ${OUTCOME_COLORS[row.outcome]}`}>
+                        <span className={`whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium ${OUTCOME_COLORS[row.outcome]}`}>
                           {OUTCOME_LABELS[row.outcome]}
                         </span>
                       ) : (

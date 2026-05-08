@@ -115,8 +115,9 @@ export default function IssueRecommendationPage() {
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
           {viva.candidate_name} · {viva.registration_number} · {viva.programme_name}
         </p>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-          Viva: {fmt(viva.scheduled_date)} — {viva.venue}
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 flex flex-wrap gap-x-3">
+          <span className="whitespace-nowrap">Viva: {fmt(viva.scheduled_date)}</span>
+          <span className="whitespace-nowrap">📍 {viva.venue}</span>
         </p>
       </div>
 
@@ -153,27 +154,27 @@ export default function IssueRecommendationPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-200 dark:border-gray-700 text-left text-xs text-gray-500 uppercase">
-                  <th className="pb-2 pr-4">Examiner</th>
-                  <th className="pb-2 pr-4">Role</th>
-                  <th className="pb-2 pr-2 text-center">Orig</th>
-                  <th className="pb-2 pr-2 text-center">Meth</th>
-                  <th className="pb-2 pr-2 text-center">Pres</th>
-                  <th className="pb-2 pr-2 text-center">Lit</th>
-                  <th className="pb-2 text-center font-semibold">Total</th>
+                  <th className="pb-2 pr-4 whitespace-nowrap">Examiner</th>
+                  <th className="pb-2 pr-4 whitespace-nowrap">Role</th>
+                  <th className="pb-2 pr-2 text-center whitespace-nowrap">Orig</th>
+                  <th className="pb-2 pr-2 text-center whitespace-nowrap">Meth</th>
+                  <th className="pb-2 pr-2 text-center whitespace-nowrap">Pres</th>
+                  <th className="pb-2 pr-2 text-center whitespace-nowrap">Lit</th>
+                  <th className="pb-2 text-center font-semibold whitespace-nowrap">Total</th>
                 </tr>
               </thead>
               <tbody>
                 {viva.evaluations.map((ev) => (
                   <tr key={ev.id} className="border-b border-gray-100 dark:border-gray-700 last:border-0">
                     <td className="py-2 pr-4 font-medium text-gray-900 dark:text-white">{ev.examiner_name}</td>
-                    <td className="py-2 pr-4 text-gray-500 dark:text-gray-400 text-xs">
+                    <td className="py-2 pr-4 text-gray-500 dark:text-gray-400 text-xs whitespace-nowrap">
                       {EXAMINER_ROLE_LABELS[ev.examiner_panel_role]}
                     </td>
                     <td className="py-2 pr-2 text-center">{ev.originality_score ?? '—'}</td>
                     <td className="py-2 pr-2 text-center">{ev.methodology_score ?? '—'}</td>
                     <td className="py-2 pr-2 text-center">{ev.presentation_score ?? '—'}</td>
                     <td className="py-2 pr-2 text-center">{ev.literature_score ?? '—'}</td>
-                    <td className="py-2 text-center font-bold text-emerald-600 dark:text-emerald-400">
+                    <td className="py-2 text-center font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
                       {ev.overall_score ?? '—'}
                     </td>
                   </tr>
@@ -235,7 +236,7 @@ export default function IssueRecommendationPage() {
                       onChange={() => setForm((p) => ({ ...p, outcome: v }))}
                       className="h-4 w-4 text-emerald-600"
                     />
-                    <span className={`rounded-full px-3 py-1 text-sm font-medium ${OUTCOME_COLORS[v]}`}>{l}</span>
+                    <span className={`whitespace-nowrap rounded-full px-3 py-1 text-sm font-medium ${OUTCOME_COLORS[v]}`}>{l}</span>
                   </label>
                 ))}
               </div>

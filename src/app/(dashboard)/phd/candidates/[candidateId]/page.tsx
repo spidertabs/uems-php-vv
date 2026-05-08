@@ -696,11 +696,11 @@ export default function CandidateDetailPage() {
 
       {/* Header Card */}
       <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{candidate.candidate_name}</h1>
-              <span className={`rounded-full px-3 py-1 text-xs font-medium ${CANDIDATE_STATUS_COLORS[candidate.status]}`}>
+        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white truncate">{candidate.candidate_name}</h1>
+              <span className={`whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium ${CANDIDATE_STATUS_COLORS[candidate.status]}`}>
                 {CANDIDATE_STATUS_LABELS[candidate.status]}
               </span>
             </div>
@@ -712,15 +712,15 @@ export default function CandidateDetailPage() {
               &ldquo;{candidate.thesis_title}&rdquo;
             </p>
           </div>
-          <div className="space-y-1 text-right text-sm text-gray-600 dark:text-gray-400">
+          <div className="space-y-1 text-left md:text-right text-sm text-gray-600 dark:text-gray-400 border-t border-gray-100 pt-4 md:border-0 md:pt-0">
             {candidate.supervisor_name && (
-              <p>👤 <span className="font-medium">Supervisor:</span> {candidate.supervisor_name}</p>
+              <p>👤 <span className="font-medium whitespace-nowrap">Supervisor:</span> <span className="truncate inline-block max-w-[200px] align-bottom">{candidate.supervisor_name}</span></p>
             )}
             {candidate.co_supervisor_name && (
-              <p>👤 <span className="font-medium">Co-Supervisor:</span> {candidate.co_supervisor_name}</p>
+              <p>👤 <span className="font-medium whitespace-nowrap">Co-Supervisor:</span> <span className="truncate inline-block max-w-[200px] align-bottom">{candidate.co_supervisor_name}</span></p>
             )}
             {candidate.enrolment_year && (
-              <p>📅 <span className="font-medium">Enrolled:</span> {candidate.enrolment_year}</p>
+              <p>📅 <span className="font-medium whitespace-nowrap">Enrolled:</span> {candidate.enrolment_year}</p>
             )}
           </div>
         </div>
@@ -734,13 +734,13 @@ export default function CandidateDetailPage() {
         )}
 
         {/* Tabs */}
-        <div className="mt-6 border-b border-gray-200 dark:border-gray-700">
-          <nav className="-mb-px flex gap-6">
+        <div className="mt-6 border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
+          <nav className="-mb-px flex gap-6 min-w-max">
             {tabs.map((t) => (
               <button
                 key={t.key}
                 onClick={() => setActiveTab(t.key)}
-                className={`border-b-2 pb-3 text-sm font-medium transition-colors ${
+                className={`border-b-2 pb-3 whitespace-nowrap text-sm font-medium transition-colors ${
                   activeTab === t.key
                     ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400'
                     : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
@@ -791,11 +791,11 @@ export default function CandidateDetailPage() {
                       className="cursor-pointer group relative rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition-all hover:border-emerald-300 hover:shadow-md dark:border-gray-700 dark:bg-gray-800"
                     >
                       <div className="flex items-center justify-between">
-                        <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${VIVA_STATUS_COLORS[v.viva_status as keyof typeof VIVA_STATUS_COLORS]}`}>
+                        <span className={`whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${VIVA_STATUS_COLORS[v.viva_status as keyof typeof VIVA_STATUS_COLORS]}`}>
                           {v.viva_status.replace('_', ' ')}
                         </span>
                         {v.outcome && (
-                          <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${OUTCOME_COLORS[v.outcome as keyof typeof OUTCOME_COLORS]}`}>
+                          <span className={`whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${OUTCOME_COLORS[v.outcome as keyof typeof OUTCOME_COLORS]}`}>
                             {OUTCOME_LABELS[v.outcome as keyof typeof OUTCOME_LABELS]}
                           </span>
                         )}
@@ -844,11 +844,11 @@ export default function CandidateDetailPage() {
                       </div>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      <span className={`rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider ${VIVA_STATUS_COLORS[vivaDetail.status as keyof typeof VIVA_STATUS_COLORS]}`}>
+                       <span className={`whitespace-nowrap rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider ${VIVA_STATUS_COLORS[vivaDetail.status as keyof typeof VIVA_STATUS_COLORS]}`}>
                         {vivaDetail.status.replace('_', ' ').toUpperCase()}
                       </span>
                       {vivaDetail.recommendation?.outcome && (
-                        <span className={`rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider ${OUTCOME_COLORS[vivaDetail.recommendation.outcome as keyof typeof OUTCOME_COLORS]}`}>
+                          <span className={`whitespace-nowrap rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider ${OUTCOME_COLORS[vivaDetail.recommendation.outcome as keyof typeof OUTCOME_COLORS]}`}>
                           {OUTCOME_LABELS[vivaDetail.recommendation.outcome as keyof typeof OUTCOME_LABELS]}
                         </span>
                       )}
@@ -869,7 +869,7 @@ export default function CandidateDetailPage() {
                           </p>
                           <div className="flex items-center gap-2">
                             <span className="text-xs uppercase font-bold text-gray-400">Status:</span>
-                            <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${VIVA_STATUS_COLORS[vivaDetail.status as keyof typeof VIVA_STATUS_COLORS]}`}>
+                            <span className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${VIVA_STATUS_COLORS[vivaDetail.status as keyof typeof VIVA_STATUS_COLORS]}`}>
                               {vivaDetail.status}
                             </span>
                           </div>

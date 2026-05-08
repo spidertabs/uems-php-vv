@@ -110,14 +110,14 @@ export default function MyCandidatesPage() {
     <div className="space-y-6 lg:pl-64">
       {/* Header */}
       <div className="rounded-2xl bg-gradient-to-r from-teal-600 to-emerald-700 p-8 text-white shadow-xl">
-        <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="mb-1 text-3xl font-bold">👤 My Candidates</h1>
             <p className="text-teal-100 text-sm">
               PhD candidates assigned to you — as a supervisor, co-supervisor, or examiner.
             </p>
           </div>
-          <div className="text-right">
+          <div className="text-left sm:text-right">
             <p className="text-4xl font-bold">{loading ? '—' : pagination.total}</p>
             <p className="text-sm text-teal-200">
               {pagination.total === 1 ? 'candidate' : 'candidates'} assigned
@@ -240,19 +240,19 @@ export default function MyCandidatesPage() {
                       </td>
                       <td className="px-6 py-4">
                         {c.role_as_supervisor === 'primary' ? (
-                          <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
+                          <span className="whitespace-nowrap rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
                             Primary Supervisor
                           </span>
                         ) : c.role_as_supervisor === 'co_supervisor' ? (
-                          <span className="rounded-full bg-blue-100 px-2.5 py-1 text-xs font-medium text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
+                          <span className="whitespace-nowrap rounded-full bg-blue-100 px-2.5 py-1 text-xs font-medium text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
                             Co-Supervisor
                           </span>
                         ) : c.role_as_supervisor === 'supervisor' ? (
-                          <span className="rounded-full bg-teal-100 px-2.5 py-1 text-xs font-medium text-teal-700 dark:bg-teal-900/40 dark:text-teal-300">
+                          <span className="whitespace-nowrap rounded-full bg-teal-100 px-2.5 py-1 text-xs font-medium text-teal-700 dark:bg-teal-900/40 dark:text-teal-300">
                             Supervisor
                           </span>
                         ) : c.role_as_supervisor === 'examiner' ? (
-                          <span className="rounded-full bg-purple-100 px-2.5 py-1 text-xs font-medium text-purple-700 dark:bg-purple-900/40 dark:text-purple-300">
+                          <span className="whitespace-nowrap rounded-full bg-purple-100 px-2.5 py-1 text-xs font-medium text-purple-700 dark:bg-purple-900/40 dark:text-purple-300">
                             Examiner
                           </span>
                         ) : (
@@ -261,16 +261,16 @@ export default function MyCandidatesPage() {
                       </td>
                       <td className="px-6 py-4">
                         <span
-                          className={`rounded-full px-3 py-1 text-xs font-medium ${CANDIDATE_STATUS_COLORS[c.status]}`}
+                          className={`whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium ${CANDIDATE_STATUS_COLORS[c.status]}`}
                         >
                           {CANDIDATE_STATUS_LABELS[c.status]}
                         </span>
                         {c.pending_evaluations > 0 ? (
-                          <p className="mt-1 flex items-center gap-1 text-[10px] font-bold uppercase text-red-500 animate-pulse">
-                            ⚠️ Pending Evaluation ({c.pending_evaluations})
+                          <p className="mt-1 flex items-center gap-1 whitespace-nowrap text-[10px] font-bold uppercase text-red-500 animate-pulse">
+                            ⚠️ Pending Ev ({c.pending_evaluations})
                           </p>
                         ) : c.completed_evaluations > 0 ? (
-                          <p className="mt-1 flex items-center gap-1 text-[10px] font-bold uppercase text-emerald-500">
+                          <p className="mt-1 flex items-center gap-1 whitespace-nowrap text-[10px] font-bold uppercase text-emerald-500">
                             ✅ Evaluated ({c.completed_evaluations})
                           </p>
                         ) : null}
@@ -341,29 +341,29 @@ export default function MyCandidatesPage() {
                       <p className="mt-1 text-xs text-gray-600 dark:text-gray-400">
                         {c.programme_code}
                         {c.role_as_supervisor === 'primary' && (
-                          <span className="ml-2 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
+                          <span className="ml-2 whitespace-nowrap rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
                             Primary
                           </span>
                         )}
                         {c.role_as_supervisor === 'co_supervisor' && (
-                          <span className="ml-2 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
+                          <span className="ml-2 whitespace-nowrap rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
                             Co-Supervisor
                           </span>
                         )}
                         {c.role_as_supervisor === 'supervisor' && (
-                          <span className="ml-2 rounded-full bg-teal-100 px-2 py-0.5 text-xs font-medium text-teal-700 dark:bg-teal-900/40 dark:text-teal-300">
+                          <span className="ml-2 whitespace-nowrap rounded-full bg-teal-100 px-2 py-0.5 text-xs font-medium text-teal-700 dark:bg-teal-900/40 dark:text-teal-300">
                             Supervisor
                           </span>
                         )}
                         {c.role_as_supervisor === 'examiner' && (
-                          <span className="ml-2 rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700 dark:bg-purple-900/40 dark:text-purple-300">
+                          <span className="ml-2 whitespace-nowrap rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700 dark:bg-purple-900/40 dark:text-purple-300">
                             Examiner
                           </span>
                         )}
                       </p>
                     </div>
                     <span
-                      className={`flex-shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${CANDIDATE_STATUS_COLORS[c.status]}`}
+                      className={`flex-shrink-0 whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium ${CANDIDATE_STATUS_COLORS[c.status]}`}
                     >
                       {CANDIDATE_STATUS_LABELS[c.status]}
                     </span>

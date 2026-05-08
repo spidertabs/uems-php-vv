@@ -144,7 +144,7 @@ export default function CandidatesPage() {
   return (
     <div className="space-y-6 lg:pl-64">
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
             👨‍🎓 {pageTitle}
@@ -157,7 +157,7 @@ export default function CandidatesPage() {
         {isHodOrAdmin && (
           <Link
             href="/phd/candidates/new"
-            className="rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-emerald-700"
+            className="inline-flex items-center justify-center rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-emerald-700 sm:w-auto"
           >
             + Register Candidate
           </Link>
@@ -166,13 +166,13 @@ export default function CandidatesPage() {
 
       {/* Role badge */}
       {currentUser && (
-        <div className="flex items-center gap-2">
-          <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-300">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="whitespace-nowrap rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-300">
             Viewing as: {ROLE_LABELS[currentUser.role] ?? currentUser.role}
           </span>
           {isEvaluatorOnly && (
-            <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
-              ⚠️ You can only see candidates assigned to you
+            <span className="whitespace-nowrap rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
+              ⚠️ Assigned only
             </span>
           )}
         </div>
@@ -297,7 +297,7 @@ export default function CandidatesPage() {
                           )}
                         </td>
                         <td className="px-6 py-4">
-                          <span className={`rounded-full px-3 py-1 text-xs font-medium ${CANDIDATE_STATUS_COLORS[c.status]}`}>
+                          <span className={`whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium ${CANDIDATE_STATUS_COLORS[c.status]}`}>
                             {CANDIDATE_STATUS_LABELS[c.status]}
                           </span>
                           {c.enrolment_year && (
@@ -344,7 +344,7 @@ export default function CandidatesPage() {
                           {c.programme_code} · {c.supervisor_name ?? 'No supervisor'}
                         </p>
                       </div>
-                      <span className={`flex-shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${CANDIDATE_STATUS_COLORS[c.status]}`}>
+                      <span className={`flex-shrink-0 whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium ${CANDIDATE_STATUS_COLORS[c.status]}`}>
                         {CANDIDATE_STATUS_LABELS[c.status]}
                       </span>
                     </div>
