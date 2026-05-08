@@ -8,7 +8,7 @@ A unified digital platform for managing the complete academic examination lifecy
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-v4-38bdf8?logo=tailwind-css)](https://tailwindcss.com/)
 [![Version](https://img.shields.io/badge/Version-3.1-green)](https://github.com/spidertabs/uems)
 
-!(./public/screenshots/public/screenshots/uems_phd_vv_readme_banner.png)
+![](./public/screenshots/uems_phd_vv_readme_banner.png)
 ---
 
 ## 📋 Table of Contents
