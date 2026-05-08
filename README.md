@@ -13,7 +13,9 @@ A unified digital platform for managing the complete academic examination lifecy
 ## 📋 Table of Contents
 
 - [Overview](#overview)
-- [Key Features](#key-features)
+- [Functional Features](#-functional-features)
+- [Non-Functional Features](#-non-functional-features)
+- [Extended Features](#-extended-features)
 - [Tech Stack](#tech-stack)
 - [System Workflow](#system-workflow)
 - [Screenshots](#screenshots)
@@ -65,25 +67,29 @@ UEMS-PHD-VV provides:
 
 ---
 
-## ✨ Key Features
+## ✅ Functional Features
+
+These are the core capabilities the system performs — what the application *does*.
+
+---
 
 ### 📚 Question Bank Management
 
 - Create and categorise questions by course, study unit, and difficulty
 - Support for multiple question types (MCQ, Essay, Practical, Case Study, etc.)
-- Bloom's taxonomy classification
-- Question reusability tracking
-- HOD approval workflow for questions
+- Bloom's taxonomy classification for cognitive-level targeting
+- Question reusability tracking — usage count updated automatically on paper add/remove
+- HOD approval workflow for questions before they enter the shared bank
 
 ### 📝 Exam Paper Creation
 
-- Visual paper builder with drag-and-drop
-- **Hierarchical question support** with unlimited nesting levels
-- Section management (Section A, B, C, etc.)
-- Automatic mark calculation
-- Choice questions (e.g., "Answer any 2 of 3")
-- Custom instructions and footer text
-- Real-time preview
+- Visual paper builder with drag-and-drop question ordering
+- **Hierarchical question support** with unlimited nesting levels (e.g., 1a, 1b, 1b(i), 1b(ii))
+- Section management (Section A, B, C, etc.) with custom headings and instructions
+- Automatic total mark calculation, updated on every add, edit, or remove
+- Choice questions (e.g., "Answer any 2 of 3") with configurable group rules
+- Custom instructions and footer text per paper
+- Real-time formatted paper preview before submission
 
 ### ✅ Exam Paper Approval Workflow
 
@@ -91,23 +97,23 @@ UEMS-PHD-VV provides:
 Draft → Submit → HOD Review → HOD Approval → Ready for Print → Printing → Printed → Published
 ```
 
-- Multi-stage approval process
-- Feedback and comments at each stage
-- Full version history with snapshots
-- In-app notifications at every transition
+- Multi-stage approval process with clearly defined state transitions
+- Feedback and threaded comments at each stage, with resolved/unresolved tracking
+- Full version history — complete JSON snapshots taken at every status change
+- In-app notifications triggered at every workflow transition
 
 ### 🖨️ Print Management
 
-- Centralised print queue for Exam Master
-- Track printing status and quantities
-- Print history and audit trail
-- Bulk printing support
+- Centralised print queue for the Exam Master role
+- Track printing status (queued → printing → printed) and copy quantities
+- Print history with timestamps and quantity records per paper
+- Bulk printing support across multiple papers simultaneously
 
-### 🎓 PhD Viva Voce Administration *(New in v3.1)*
+### 🎓 PhD Viva Voce Administration
 
 #### Candidate Management
 
-- Register PhD candidates and link to their user account and programme
+- Register PhD candidates and link each to their user account, programme, and supervisor
 - Track candidate status through the full doctoral lifecycle:
 
   ```
@@ -115,35 +121,35 @@ Draft → Submit → HOD Review → HOD Approval → Ready for Print → Printin
   → Corrections Pending → Corrections Submitted → Awarded / Withdrawn
   ```
 
-- Record supervisors and co-supervisors per candidate
+- Record primary supervisors and co-supervisors per candidate
+- Status auto-advances on key database events via triggers (no manual coordinator action required)
 
 #### Thesis Submission Tracking
 
-- Upload and store thesis PDF versions
+- Upload and store thesis PDF versions in Supabase Storage
 - **Automatic version incrementing** on each re-submission (database trigger)
-- Submission notes and file metadata
+- Submission notes and file metadata recorded per version
 
 #### Viva Scheduling
 
 - Schedule oral defence sessions with date, time, venue, and duration
 - Manage status transitions: `scheduled → in_progress → completed` (or `postponed / cancelled`)
-- Record postponement reasons
+- Record postponement reasons for audit purposes
 - Coordinator-assigned scheduling with full audit trail
 
 #### Examiner Panel Management
 
-- Assign structured three-member panels using designated slots:
-  - **Slot 1**: Professor / Staff
-  - **Slot 2**: Lecturer / Staff
+- Assign structured three-member panels using designated role slots:
+  - **Slot 1**: Chairperson (Professor / Senior Staff)
+  - **Slot 2**: Internal Examiner (Lecturer / Staff)
   - **Slot 3**: External Examiner
-- "Configure Panel" interface with role-based filtering for each slot
-- Track individual confirmation status per examiner
-- Record notification timestamps
-- Prevent duplicate assignments (unique constraint per viva + examiner and unique per viva + slot)
+- Role-based filtering in the "Configure Panel" modal for each slot
+- Track individual confirmation status per examiner with notification timestamps
+- Unique constraints prevent duplicate assignments (per viva + examiner, per viva + slot)
 
 #### Structured Evaluations
 
-- Each examiner submits an independent evaluation with four scored criteria:
+- Each examiner submits an independent evaluation scored across four criteria:
 
   | Criterion | Max Marks |
   |-----------|-----------|
@@ -154,7 +160,7 @@ Draft → Submit → HOD Review → HOD Approval → Ready for Print → Printin
   | **Total (auto-calculated)** | **100** |
 
 - Free-text fields for strengths, weaknesses, recommended corrections, and general comments
-- Evaluations locked until formally submitted (`is_submitted` flag)
+- Evaluations locked in draft until formally submitted via `is_submitted` flag
 - `overall_score` is a **generated column** — always consistent, never manually entered
 
 #### Panel Recommendations
@@ -165,40 +171,49 @@ Draft → Submit → HOD Review → HOD Approval → Ready for Print → Printin
   - `pass_with_major_corrections`
   - `fail`
 - Correction deadline tracking for non-pass outcomes
-- Final panel comments recorded centrally
+- Final panel comments recorded centrally alongside the recommendation
 
 #### Examiner & Supervisor Portal
 
-- **Personalized Dashboard**: "My Candidates" view showing only those assigned to the current staff member
-- **Role-specific Badges**: Clearly distinguish between Primary Supervisor, Co-Supervisor, and Examiner roles
-- **Submission Alerts**: Visual cues and "Evaluate" buttons for pending viva scores
-- **Access Control**: Supervisors can view their candidates' thesis history and previous viva reports
+- **Personalised Dashboard**: "My Candidates" view scoped to the signed-in staff member
+- **Role-specific Badges**: Distinguishes Primary Supervisor, Co-Supervisor, and Examiner roles at a glance
+- **Evaluation Alerts**: Prominent "Evaluate ★" buttons and "Pending Evaluation" warnings for outstanding submissions
+- **Access Control**: Supervisors can view thesis history and previous viva reports for their own candidates only
 
-### 👥 User Management
+### ⚡ Quickfire Assessments
 
-- Role-based permissions (Lecturer, HOD, Dean, Exam Master, Viva Coordinator, Admin)
-- Granular course-level permissions
-- HOD can grant question creation rights to lecturers
-- Secure session-based authentication
+- Lecturers create timed MCQ or essay assessments directly from the web interface — no HOD approval required
+- Configurable time limits, results visibility (hidden or revealed), and accepting/closed status
+- Students access assessments via a unique numeric ID in the Quickfire Flutter app
+- Live participation tracking and real-time result collection via Supabase Realtime
+- Results and submission reports viewable per-student from the web app
+- PDF export of assessment reports with official KIU branding
+
+### 📅 Exam Timetable & Enrollment
+
+- **HOD Timetable Control**: Centrally manage exam dates, times, and venues for all published papers
+- **Course Enrollment**: Students register for specific courses each semester, automatically gaining access to the corresponding exam schedules
+- **Invigilation Assignments**: HODs assign lecturers to supervise specific exam slots; the Invigilation Overview card view shows each supervisor's full duty list
+- **Privacy Enforcement**: Students only see schedules for enrolled courses; lecturers only see enrollment counts for papers they are assigned to supervise
+- **Automated Notifications**: Alerts dispatched to students and supervisors on new schedules and assignment changes
+
+### 👥 User & Permission Management
+
+- Role-based permissions across six roles: Lecturer, HOD, Dean, Exam Master, Viva Coordinator, Admin
+- Granular course-level permissions — HODs grant or revoke question-creation rights per lecturer per course
+- Unified Supabase Auth — a single set of credentials works across the web app, UEMS Mobile, and Quickfire Exam Portal
+- Session management with secure token tracking
 
 ### 📊 Reports & Analytics
 
-- Dashboard with key metrics across both modules
+- Dashboard with live metric cards spanning both the exam paper and PhD modules
 - Paper statistics by status, course, and programme
-- Viva schedule overview (coordinator dashboard)
-- Candidate progress tracking
-- Examiner evaluation summaries
-- Audit logs and activity history
-
-#### Exam Timetable & Enrollment
-
-- **HOD Timetable Control**: Centrally manage exam dates, times, and venues for published papers
-- **Course Enrollment**: Students register for specific courses each semester; this automatically grants them access to the corresponding exam schedules
-- **Supervision Assignments**: HODs assign lecturers to supervise exam slots
-- **Privacy Enforcement**:
-  - Students only see schedules for courses they are enrolled in for the current semester
-  - Lecturers only see enrollment counts for papers they are assigned to supervise
-- **Automated Notifications**: Alert students and supervisors of new schedules and assignments
+- Viva schedule overview with upcoming vivás, panel confirmation status, and evaluation progress
+- Candidate status distribution charts (Enrolled, Viva Scheduled, Awarded, etc.)
+- Viva outcome charts (Pass, Pass with Corrections, Fail) per programme
+- Examiner evaluation summaries with per-criterion and panel-average scores
+- Pending Actions alerts for candidates awaiting corrections or coordinator follow-up
+- PDF-formatted Viva Voce Examination Reports with KIU branding, panel evaluation tables, and panel averages
 
 ### 📱 Student Mobile Application (Flutter) *(Upcoming)*
 
@@ -207,7 +222,109 @@ Draft → Submit → HOD Review → HOD Approval → Ready for Print → Printin
 - **Thesis Tracker**: Monitor submission history and version status
 - **Quickfire Participation**: Take quick assessments, view scores, and receive immediate feedback
 - **Smart Notifications**: Push alerts for schedule changes, examiner confirmations, final results, and new Quickfire assessments
-- **Progress Visualization**: Dynamic tracking of the PhD lifecycle (Enrolled → Thesis → Viva → Awarded)
+- **Progress Visualisation**: Dynamic tracking of the PhD lifecycle (Enrolled → Thesis → Viva → Awarded)
+
+---
+
+## 🔧 Non-Functional Features
+
+These define *how well* the system performs — quality attributes, constraints, and system behaviour.
+
+### ⚡ Performance
+
+- React Server Components render heavy dashboard pages on the server and stream HTML to the browser, minimising time-to-first-meaningful-paint for data-dense views such as the PhD Reports and Viva Schedule list
+- Supabase connection pooling handles concurrent university-wide load during peak exam registration and results periods
+- Vercel's edge network caches static assets and server-rendered pages globally, keeping response times low for users connecting from the Kampala campus
+
+### 🛡️ Security
+
+- **Supabase Row-Level Security (RLS)** is enforced at the database layer — a misconfigured API route cannot accidentally expose another user's data, because the database itself refuses the query
+- Role-based access control (RBAC) governs every page, API route, and database query; roles are checked server-side on every request
+- Unique constraints at the database level prevent duplicate panel assignments, duplicate paper-question orderings, and duplicate session tokens independently of application logic
+- Environment secrets (`SUPABASE_SERVICE_ROLE_KEY`, `SESSION_SECRET`) are stored in Vercel's encrypted Environment Variables and never committed to the repository
+- GitHub branch protection on `clean-main` requires pull request review before any code reaches the production deployment
+
+### 🔁 Reliability & Data Integrity
+
+- **Generated column**: `viva_evaluations.overall_score` is computed by PostgreSQL from the four criteria scores — it cannot be manually overridden or left inconsistent
+- **Database triggers** enforce automatic state transitions (candidate status on viva schedule insert/complete, thesis version increment on re-submission, mark recalculation on question add/edit/remove) — these invariants hold even if the application layer is bypassed
+- **Soft deletes** (`deleted_at` timestamp) on all major tables preserve historical records and support recovery without permanent data loss
+- **JSON validation** via `CHECK` constraints on all JSON columns rejects malformed data at the database level before it reaches the application
+- Full version snapshots of every exam paper are stored as JSON at each workflow transition — no state is ever truly lost
+
+### 🌍 Cross-Platform Consistency
+
+- The web administration interface is fully responsive and tested on desktop and laptop viewports (the primary staff use case)
+- The Quickfire Exam Portal's security and lockdown protocols behave consistently across Linux Desktop, Android, iOS, and Web targets via a unified `fullscreen.dart` platform bridge
+- Supabase Auth and RLS policies apply identically regardless of which client application (web, UEMS Mobile, or Quickfire) issues the query
+
+### 🎨 Usability & Branding
+
+- Consistent **emerald/green design system** (`#10B981` primary) aligned with the official KIU visual identity, applied uniformly across all dashboard pages via Tailwind CSS v4 and Shadcn UI components
+- Status badges, progress bars, and colour-coded lifecycle labels give coordinators and supervisors at-a-glance situational awareness without reading raw data
+- All dialogs, confirmation prompts, and warning messages use formal academic language appropriate to a university examination context
+- Dark mode support via Tailwind's `dark:` variant classes throughout the interface
+
+### 🔧 Maintainability & Developer Experience
+
+- **TypeScript end-to-end**: database query result types, API response shapes, and React component props all derive from shared type definitions in `src/types/index.ts` — a schema change surfaces as a compile error across every layer
+- Business logic is cleanly separated into `services/`, `lib/`, and `types/` layers; UI components in `components/ui/` are Shadcn-generated and independently replaceable
+- Supabase CLI enables local development with a full-fidelity stack (PostgreSQL + Auth + Storage + Realtime) via `supabase start` — no cloud dependency during development
+- GitHub → Vercel CI/CD: every push to `clean-main` triggers an automatic build and production deploy in under 40 seconds; every pull request gets an isolated preview URL for testing before merge
+
+---
+
+## 🚀 Extended Features
+
+Capabilities that go beyond the core examination workflow — cross-cutting concerns, advanced tooling, and planned enhancements.
+
+### 📋 Audit Logs
+
+Every meaningful action in the system is recorded in the `audit_logs` table and surfaced in the Audit Logs page accessible to Admin users. Each log entry captures the acting user, their role, the action performed, the affected resource (table and record ID), a before/after JSON diff for data changes, the IP address, and a precise timestamp. Audit logs are append-only and cannot be edited or deleted through the application interface. This provides a complete, tamper-evident history of all examination management activity — paper approvals, panel assignments, permission grants, status changes, and login events — supporting both internal governance and any external accreditation audit requirements.
+
+### 🔔 Notification System
+
+The notifications table drives a real-time in-app notification centre visible to all roles. Notifications are triggered automatically by workflow events: paper submissions, HOD approvals or rejections, print queue updates, viva scheduling, examiner panel assignments, evaluation submission, and panel recommendation issuance. Each notification carries a priority level (low / medium / high), a read/unread flag, and a direct link to the relevant resource. The bell icon in the top navigation bar displays an unread count badge that updates without a page refresh. Bulk "Mark all read" and individual read actions are supported.
+
+### 🗂️ Workflow History & Version Control
+
+Every exam paper carries a complete `workflow_history` — a timestamped record of every status transition, the user who triggered it, and the reason or comment attached. Alongside this, `exam_paper_versions` stores a full JSON snapshot of the paper's questions, marks, and metadata at the moment of each transition. This means any previous version of a paper can be reconstructed exactly, supporting dispute resolution, accreditation evidence, and rollback to a prior approved state.
+
+### 🖨️ PDF Report Generation
+
+The system generates professionally formatted PDF documents for two primary use cases. Viva Voce Examination Reports carry the official KIU logo, candidate information, examination details, the full panel evaluation table (per-criterion and per-examiner scores with a panel average row), the binding recommendation, and a confidentiality footer. Quickfire Assessment Reports export per-student submissions with question text, selected answers, and — when results are visible — score breakdowns. All PDFs are suitable for institutional archival and printing.
+
+### 🔍 Search & Filtering
+
+A global search bar in the top navigation queries across exam papers, questions, courses, and candidates simultaneously. Individual list pages (Question Bank, PhD Candidates, Viva Schedules, Course Enrollment) carry their own contextual filters — by course, study unit, Bloom level, difficulty, question type, candidate status, viva date range, and more — enabling staff to locate specific records quickly across large datasets.
+
+### 🏛️ Organisational Structure Management
+
+Colleges, departments, and programmes are managed as first-class entities shared across both the UEMS exam paper module and the PhD Viva Voce module. An Admin can add or edit colleges (e.g., SOMAC, SONAS, CEM, SOL), nest departments within them, and attach academic programmes to departments. This hierarchy drives course ownership (HOD per department), programme association for exam papers, and PhD candidate programme registration — a single structural change propagates correctly through both modules.
+
+### 📊 Analytics Dashboard *(Planned)*
+
+Lecturers and HODs will be able to view per-student time-on-question metrics, submission patterns, and flagged security events from a dedicated analytics panel. Aggregate cohort-level data will help identify questions with unusually high skip or error rates, informing future question bank curation and paper design.
+
+### 🤖 AI-Assisted Question Suggestions *(Planned)*
+
+An AI layer will analyse the existing question bank and suggest new questions based on the course syllabus, identified coverage gaps, and the Bloom's taxonomy distribution of existing questions. Suggested questions enter a pending state and require HOD approval before joining the live bank, preserving the existing quality-control workflow.
+
+### 📧 Email Notifications — SMTP Integration *(Planned)*
+
+All in-app notifications will gain an optional email delivery channel via SMTP integration. Staff and students will be able to configure their notification preferences, and critical alerts (viva scheduling, panel assignment, correction deadlines) will be delivered to institutional email addresses regardless of whether the recipient is logged in.
+
+### 🔑 Biometric Unlock for Quickfire *(Planned)*
+
+As an alternative to the 4-digit supervisor PIN, fingerprint or face recognition will be supported on compatible devices for faster supervisor verification during busy exam sessions, reducing interruption time during live invigilated assessments.
+
+### 🌐 Multi-Institution Support *(Planned)*
+
+The platform architecture will be extended to support multi-tenant deployments, allowing other universities to onboard under their own branding and Supabase configuration. Each institution will have isolated data namespaces enforced at the database level via separate Supabase RLS policies and project-level separation.
+
+### 🗣️ Accessibility Enhancements *(Planned)*
+
+Screen reader support (TalkBack / VoiceOver) will be introduced in the Quickfire mobile app to make the exam environment accessible to students with visual impairments. Font scaling and high-contrast theme variants will be configurable per-student without compromising the security lockdown posture of the kiosk environment.
 
 ---
 
