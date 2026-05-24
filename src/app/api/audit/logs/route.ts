@@ -115,7 +115,7 @@ export async function GET(request: NextRequest) {
         al.created_at,
         CONCAT(COALESCE(u.first_name, 'Unknown'), ' ', COALESCE(u.last_name, 'User')) as user_name,
         COALESCE(u.email, 'deleted@user.com') as user_email,
-        COALESCE(u.role, 'unknown') as user_role
+        COALESCE(CAST(u.role AS TEXT), 'unknown') as user_role
       FROM audit_logs al
       LEFT JOIN staff u ON al.user_id = u.id
       WHERE ${whereClause}
