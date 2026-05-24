@@ -264,7 +264,7 @@ export default function ManageAssessmentPage() {
                   rows={2}
                   value={newQuestion.question_text}
                   onChange={e => setNewQuestion({...newQuestion, question_text: e.target.value})}
-                  className="w-full rounded-lg border border-gray-300 p-2.5 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  className="w-full rounded-lg border border-gray-300 bg-white p-2.5 text-sm text-gray-900 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                   placeholder="Enter the question here..."
                 />
               </div>
@@ -275,7 +275,7 @@ export default function ManageAssessmentPage() {
                   <select 
                     value={newQuestion.question_type}
                     onChange={e => setNewQuestion({...newQuestion, question_type: e.target.value as any})}
-                    className="w-full rounded-lg border border-gray-300 p-2.5 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    className="w-full rounded-lg border border-gray-300 bg-white p-2.5 text-sm text-gray-900 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                   >
                     <option value="multiple_choice">Multiple Choice</option>
                     <option value="essay">Essay / Open Ended</option>
@@ -289,7 +289,7 @@ export default function ManageAssessmentPage() {
                     min="1"
                     value={newQuestion.marks}
                     onChange={e => setNewQuestion({...newQuestion, marks: parseInt(e.target.value) || 1})}
-                    className="w-full rounded-lg border border-gray-300 p-2.5 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    className="w-full rounded-lg border border-gray-300 bg-white p-2.5 text-sm text-gray-900 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                   />
                 </div>
               </div>
@@ -316,7 +316,7 @@ export default function ManageAssessmentPage() {
                           next[idx] = e.target.value;
                           setNewQuestion({...newQuestion, options: next});
                         }}
-                        className="flex-1 rounded-lg border border-gray-300 p-2 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                        className="flex-1 rounded-lg border border-gray-300 bg-white p-2 text-sm text-gray-900 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                       />
                     </div>
                   ))}
@@ -333,7 +333,7 @@ export default function ManageAssessmentPage() {
                       placeholder="Optional"
                       value={newQuestion.min_words}
                       onChange={e => setNewQuestion({...newQuestion, min_words: e.target.value})}
-                      className="w-full rounded-lg border border-gray-300 p-2.5 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                      className="w-full rounded-lg border border-gray-300 bg-white p-2.5 text-sm text-gray-900 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                     />
                   </div>
                   <div>
@@ -343,7 +343,7 @@ export default function ManageAssessmentPage() {
                       placeholder="Optional"
                       value={newQuestion.max_words}
                       onChange={e => setNewQuestion({...newQuestion, max_words: e.target.value})}
-                      className="w-full rounded-lg border border-gray-300 p-2.5 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                      className="w-full rounded-lg border border-gray-300 bg-white p-2.5 text-sm text-gray-900 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                     />
                   </div>
                 </div>
@@ -466,7 +466,7 @@ export default function ManageAssessmentPage() {
                       required
                       value={settingsForm.title}
                       onChange={e => setSettingsForm({...settingsForm, title: e.target.value})}
-                      className="w-full rounded-lg border border-gray-300 p-2.5 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                      className="w-full rounded-lg border border-gray-300 bg-white p-2.5 text-sm text-gray-900 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                     />
                   </div>
 
@@ -477,7 +477,7 @@ export default function ManageAssessmentPage() {
                       placeholder="Leave blank for unlimited"
                       value={settingsForm.duration_minutes}
                       onChange={e => setSettingsForm({...settingsForm, duration_minutes: e.target.value})}
-                      className="w-full rounded-lg border border-gray-300 p-2.5 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                      className="w-full rounded-lg border border-gray-300 bg-white p-2.5 text-sm text-gray-900 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                     />
                   </div>
 
